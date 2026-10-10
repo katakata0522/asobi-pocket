@@ -93,9 +93,13 @@ test('favorites teach first-time use and labels match the selected view', async 
 
 test('card widths and heights match and support controls do not cover the play button', async ({ page }) => {
   await page.goto('/');
-  const rects = await page.locator('#games-grid .game-card').evaluateAll(cards => cards.map(card => { const r = card.getBoundingClientRect(); return { w: r.width, h: r.height }; }));
-  expect(Math.max(...rects.map(r => r.w)) - Math.min(...rects.map(r => r.w))).toBeLessThan(1);
-  expect(Math.max(...rects.map(r => r.h)) - Math.min(...rects.map(r => r.h))).toBeLessThan(1);
+  await page.evaluate(() => document.fonts.ready);
+  const spread = dimension => page.locator('#games-grid .game-card').evaluateAll((cards, dimension) => {
+    const sizes = cards.map(card => card.getBoundingClientRect()[dimension]);
+    return Math.max(...sizes) - Math.min(...sizes);
+  }, dimension);
+  await expect.poll(() => spread('width')).toBeLessThan(1);
+  await expect.poll(() => spread('height')).toBeLessThan(1);
   await page.locator('.game-card[data-id="ito"] .card-title-link').click();
   await expect(page.locator('#btn-detail-scoreboard')).toBeVisible();
   await expect(page.locator('#btn-toggle-scoreboard')).not.toBeVisible();
