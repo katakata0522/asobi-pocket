@@ -1,0 +1,12 @@
+{
+  "name": "asobi-pocket-qa",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:source": "node scripts/validate-asobi-pocket-quality.cjs && node scripts/validate-asobi-seo-content.cjs",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.60.0"
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "id": "asobi-pocket-pwa",
+  "name": "あそびポケット - 多人数パーティーゲーム＆暇つぶし図鑑",
+  "short_name": "あそびポケット",
+  "description": "出先や待ち時間、飲み会で！スマホ1台・道具なしですぐ遊べるパーティーゲーム＆暇つぶし図鑑ツール集",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f8f6ef",
+  "theme_color": "#f8f6ef",
+  "lang": "ja",
+  "categories": [
+    "games",
+    "entertainment",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "assets/pocket-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/pocket-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/pocket-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "ito (イト)",
+      "short_name": "ito",
+      "description": "数字を言わずに例える協力ゲーム",
+      "url": "./index.html#game/ito",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧶</text></svg>",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "朝までそれ正解",
+      "short_name": "朝それ",
+      "description": "満場一致の正解を決める議論ゲーム",
+      "url": "./index.html#game/asa-sore",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☀️</text></svg>",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "ワードウルフ",
+      "short_name": "ワードウルフ",
+      "description": "お題違いのウルフを見破る心理トーク",
+      "url": "./index.html#game/word-wolf",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐺</text></svg>",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "爆弾タイマー",
+      "short_name": "爆弾タイマー",
+      "description": "爆発する前にスマホを回せ！",
+      "url": "./index.html#game/bomb-timer",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💣</text></svg>",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "反射神経タップ対決",
+      "short_name": "2人対戦",
+      "description": "スマホを挟んで0.01秒を競う真剣勝負！",
+      "url": "./index.html#game/duel-reflex",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "指置きルーレット",
+      "short_name": "指ルーレット",
+      "description": "誰が奢るか0秒で決定！",
+      "url": "./index.html#game/finger-roulette",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👆</text></svg>",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}

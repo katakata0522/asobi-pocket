@@ -1,0 +1,29 @@
+{
+  "purpose": "CI-only external dependencies. Media redistribution rights remain unverified; these files are excluded from Git. Private production release requires original media and server configuration.",
+  "files": [
+    {
+      "path": "my-webservice/asobi-pocket/assets/pocket-192.png",
+      "sha256": "1056c3f4cbeeed9bf48aed795e8a6d9bcefa3b671006f214de7e601df4194d63",
+      "bytes": 4798,
+      "url": "https://katakatalab.com/asobi-pocket/assets/pocket-192.png"
+    },
+    {
+      "path": "my-webservice/asobi-pocket/assets/pocket-512.png",
+      "sha256": "941ea4a274af41fe60c5d8aac09bf0e7e9b1afc421bf803b4db5a28244c63781",
+      "bytes": 15790,
+      "url": "https://katakatalab.com/asobi-pocket/assets/pocket-512.png"
+    },
+    {
+      "path": "my-webservice/asobi-pocket/assets/share-card.png",
+      "sha256": "3cf9fe736db5b46437fa430937d7154470f7e179f32a28839f012a36972b8c12",
+      "bytes": 34935,
+      "url": "https://katakatalab.com/asobi-pocket/assets/share-card.png"
+    },
+    {
+      "path": "my-webservice/asobi-pocket/assets/pocket-mark.svg",
+      "sha256": "f15aaf0adf0a515a11e56484f173e6f3ca22f093fc53e555844b6a57fd465697",
+      "bytes": 503,
+      "url": "https://katakatalab.com/asobi-pocket/assets/pocket-mark.svg"
+    }
+  ]
+}

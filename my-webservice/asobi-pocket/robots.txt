@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://katakatalab.com/asobi-pocket/sitemap.xml

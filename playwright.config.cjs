@@ -1,0 +1,2 @@
+const {defineConfig,devices}=require('@playwright/test');
+module.exports=defineConfig({testDir:'./tests/asobi-pocket-e2e',timeout:30000,expect:{timeout:5000},fullyParallel:false,workers:1,reporter:'list',use:{baseURL:'http://127.0.0.1:4174',trace:'off',...(process.env.ASOBI_DEVICE==='pixel'?devices['Pixel 7']:devices['Desktop Chrome'])},webServer:{command:'node scripts/public-qa/serve.cjs',url:'http://127.0.0.1:4174',reuseExistingServer:!process.env.CI,timeout:20000}});

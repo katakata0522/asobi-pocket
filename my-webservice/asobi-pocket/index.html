@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>あそびポケット｜スマホ1台で遊べる無料パーティーゲーム</title>
+  <meta name="description" content="スマホ1台で、2人の待ち時間も友達との集まりも。人数と時間から遊びを選び、ワードウルフ・価値観ゲーム・反射神経対決を登録なしで楽しめます。遊び方とお題集も掲載。">
+  <link rel="canonical" href="https://katakatalab.com/asobi-pocket/">
+  
+  <!-- PWA Manifest & Icons -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="assets/pocket-mark.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/pocket-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="あそびポケット">
+  <meta name="application-name" content="あそびポケット">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- OGP & Social Cards -->
+  <meta property="og:title" content="あそびポケット｜今日のひまを、みんなのいい時間に。">
+  <meta property="og:description" content="スマホ1台で、2人の待ち時間も友達との集まりも。人数と時間から遊びを選び、ワードウルフ・価値観ゲーム・反射神経対決を登録なしで楽しめます。遊び方とお題集も掲載。">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://katakatalab.com/asobi-pocket/">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:site_name" content="あそびポケット">
+  <meta property="og:image" content="https://katakatalab.com/asobi-pocket/assets/share-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="あそびポケット。スマホ1台、みんなで遊ぼう。">
+  <meta name="twitter:image" content="https://katakatalab.com/asobi-pocket/assets/share-card.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#E54B36">
+
+  <!-- 日本語は端末のフォントで即座に表示。オフラインでも同じ導線を使える。 -->
+
+  <link rel="stylesheet" href="style.css?v=20261001">
+
+  <!-- Google Analytics: KatakataLab共通プロパティ。SPAのhash遷移もpage_viewとして送信 -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-FYFPS7L9X9', { anonymize_ip: true, send_page_view: false });
+    (function () {
+      let loaded = false;
+      const loadAnalytics = function () {
+        if (loaded) return;
+        loaded = true;
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-FYFPS7L9X9';
+        document.head.appendChild(script);
+      };
+      const trackPageView = function () {
+        const hash = window.location.hash || '#home';
+        gtag('event', 'page_view', {
+          page_title: document.title,
+          page_location: window.location.href,
+          page_path: window.location.pathname + window.location.search + hash
+        });
+        if (hash.startsWith('#game/')) {
+          gtag('event', 'asobi_game_view', { game_id: hash.slice('#game/'.length) });
+        }
+      };
+      ['pointerdown', 'keydown', 'scroll'].forEach(function (eventName) {
+        window.addEventListener(eventName, loadAnalytics, { once: true, passive: true });
+      });
+      window.addEventListener('load', function () {
+        window.setTimeout(loadAnalytics, 2500);
+        trackPageView();
+      }, { once: true });
+      window.addEventListener('hashchange', trackPageView);
+    }());
+  </script>
+  <link rel="stylesheet" href="quality-ui.css">
+  <link rel="stylesheet" href="evolution.css?v=20261001-ux1">
+</head>
+<body>
+  <a class="skip-link" href="#discovery">ゲーム選びへスキップ</a>
+
+  <!-- サイトヘッダー -->
+  <header class="site-header" role="banner">
+    <div class="header-inner">
+      <a href="#" class="logo-area" id="logo-home" aria-label="あそびポケット トップへ">
+        <span class="logo-icon pocket-logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <div class="logo-text">
+          <span class="brand-name">あそびポケット<span class="brand-dot">.</span></span>
+          <span class="tagline">スマホひとつ。遊びはいろいろ。</span>
+        </div>
+      </a>
+      <div class="header-actions"><a href="seo/" class="header-guide">遊び方・お題集 ↗</a>
+        <button class="btn-header-action btn-header-pwa" id="btn-header-pwa-install" title="アプリをインストール" aria-label="アプリをホーム画面に追加">
+          <span aria-hidden="true">📲</span>
+          <span>アプリ追加</span>
+        </button>
+        <button class="btn-header-action" id="btn-header-finger" title="親決めルーレット" aria-label="親決めルーレットを開く">
+          <span aria-hidden="true">👆</span>
+          <span>親決め</span>
+        </button>
+        <button class="btn-header-action" id="btn-header-batsu" title="罰ゲームルーレット" aria-label="罰ゲームルーレットを開く">
+          <span aria-hidden="true">⚡</span>
+          <span>罰ゲーム</span>
+        </button>
+        <button class="btn-header-action" id="btn-toggle-fav-filter" title="お気に入り一覧" aria-label="お気に入りゲームの絞り込み">
+          <span aria-hidden="true">★</span>
+          <span>お気に入り</span>
+          <span class="badge-counter hidden" id="fav-count-badge">0</span>
+        </button>
+        <button class="btn-icon-toggle" id="btn-header-mute" title="音声をミュート切替" aria-label="音声をミュートにする">
+          <span aria-hidden="true">🔊</span>
+        </button>
+        <button class="btn-icon-toggle" id="btn-open-settings" title="設定 ＆ 便利機能" aria-label="アプリ設定を開く">
+          <span aria-hidden="true">⚙️</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 🔟 ダイナミックアイランド風・フローティングミニタイマー -->
+  <div class="dynamic-island-timer hidden" id="dynamic-island-timer" role="status" aria-live="polite">
+    <div class="dynamic-island-content">
+      <span class="dynamic-island-icon">⏱️</span>
+      <span class="dynamic-island-title" id="dynamic-island-title">タイマー稼働中</span>
+      <span class="dynamic-island-time font-mono" id="dynamic-island-time">00:00</span>
+      <button class="dynamic-island-btn" id="dynamic-island-jump" aria-label="ゲームへ戻る">戻る ➔</button>
+      <button class="dynamic-island-close" id="dynamic-island-close" aria-label="タイマーを閉じる">×</button>
+    </div>
+  </div>
+
+  <!-- ホームビュー -->
+  <div id="view-home">
+    <!-- メインコンテンツ (コンテンツファースト設計) -->
+    <main class="main-container">
+      <div class="discovery-heading" id="discovery" tabindex="-1"><div><p class="section-kicker">FIND YOUR PLAY</p><h1>今日は、何して遊ぶ？</h1></div><p>気になる遊びをタップ。迷ったら、人数や時間で絞れます。</p></div>
+      <!-- 🔍 検索 ＆ 厳選スマートタグコントロール (ファーストビュー直結) -->
+      <details class="filter-disclosure" id="discovery-filters">
+        <summary><span>遊びを絞る</span><span class="filter-hint">人数・時間・気分</span><span class="disclosure-arrow" aria-hidden="true">⌄</span></summary>
+      <section class="controls-wrapper" aria-label="検索と絞り込み">
+        <!-- 人数と時間を同時に指定できる選択導線 -->
+        <div class="pocket-fit-filters"><label>何人で？<select id="fit-players"><option value="all">人数を選ぶ</option><option value="2">2人</option><option value="3">3人</option><option value="4">4人</option><option value="5">5人</option><option value="6">6人</option><option value="7">7人</option><option value="8">8人</option><option value="10">10人</option><option value="12">12人</option><option value="15">15人</option><option value="20">20人</option></select></label><label>どのくらい？<select id="fit-duration"><option value="all">時間を選ぶ</option><option value="3">3分くらい</option><option value="5">5分くらい</option><option value="10">10分くらい</option></select></label><button type="button" id="fit-reset" class="fit-reset">条件をリセット</button></div>
+        <!-- 検索バー -->
+        <div class="search-box-row">
+          <span class="search-icon-left" aria-hidden="true">🔍</span>
+          <input type="search" aria-label="ゲーム名やキーワードで検索" id="search-input" class="search-input-field" placeholder="ゲーム名・シーンで検索 (例: ito)" autocomplete="off">
+          <button class="btn-clear-search hidden" id="btn-clear-search" aria-label="検索文字をクリア">✕</button>
+        </div>
+
+        <!-- 厳選スマートタグバー (1行横スクロール、シーン・人数・ジャンルをスマートに厳選統合) -->
+        <div class="smart-tags-bar" role="group" aria-label="タグで絞り込み">
+          <button class="smart-tag-chip active" data-filter-tag="all">✨ すべて</button>
+          <button class="smart-tag-chip" data-filter-tag="nomikai">🍻 飲み会・合コン</button>
+          <button class="smart-tag-chip" data-filter-tag="couple">👥 2人・カップル</button>
+          <button class="smart-tag-chip" data-filter-tag="voice">🗣️ 声だけ（手ぶら）</button>
+          <button class="smart-tag-chip" data-filter-tag="mystery">🐺 心理戦・人狼</button>
+          <button class="smart-tag-chip" data-filter-tag="party">🔥 5人以上（大人数）</button>
+        </div>
+
+        <!-- コントロールサブバー: 件数表示 ＆ 並び替え ＆ ルーレット -->
+        <div class="controls-sub-row">
+          <div class="controls-sub-actions">
+            <select id="sort-select" class="sort-select" aria-label="並び替え順">
+              <option value="recommended">🌟 おすすめ順</option>
+              <option value="quick">⚡ サクッと遊べる順 (1〜3分)</option>
+              <option value="players-few">👥 少人数向き (2人〜)</option>
+              <option value="players-many">🎪 大人数向き (5人〜)</option>
+              <option value="has-tool">📱 ツール付き優先</option>
+              <option value="popular">⭐ 人気・評価順</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      </details>
+      <div class="filter-overview"><div id="active-filter-summary" class="active-filter-summary" role="group" aria-label="選択中の条件"></div><div class="filter-count-label" id="filter-result-count">全19件</div><button id="btn-clear-filters" class="fit-reset hidden" type="button">条件をクリア</button></div>
+      <section class="recent-games hidden" id="recent-games" aria-labelledby="recent-games-title"><h2 id="recent-games-title">最近開いた遊び</h2><div id="recent-games-list"></div></section>
+      <h2 class="grid-heading">遊びを選ぶ <span>気になるカードをタップ</span></h2>
+      <!-- ゲームカードタイル一覧 -->
+      <section class="games-grid" id="games-grid" aria-label="ゲーム一覧"></section>
+      <div class="pocket-decisions" aria-label="遊び選びのお手伝い"><button class="btn-roulette-inline btn-quick-finger" id="btn-quick-finger" title="親決めルーレット" aria-label="親決めルーレットを開く">
+              <span>👆 親決め</span>
+            </button>
+<button class="btn-roulette-inline btn-quick-batsu" id="btn-quick-batsu" title="罰ゲームルーレット" aria-label="罰ゲームルーレットを開く">
+              <span>⚡ 罰ゲーム</span>
+            </button>
+<button class="btn-roulette-inline" id="btn-random-roulette" title="ランダムルーレット" aria-label="おまかせで選ぶ：ランダムにゲームを選ぶ">
+              <span>🎲 おまかせで選ぶ</span>
+            </button>
+<button class="btn-concierge-inline" id="btn-quick-concierge" title="ぴったりゲーム診断" aria-label="条件でおすすめ：人数と気分からゲームを選ぶ">
+              <span>✨ 条件でおすすめ</span>
+            </button></div>
+      <details class="pocket-about"><summary>あそびポケットって？<span class="disclosure-arrow" aria-hidden="true">⌄</span></summary>
+      <section class="pocket-hero quality-home-intro" id="quality-home-intro" aria-labelledby="pocket-hero-title">
+        <div class="hero-copy">
+          <p class="hero-eyebrow"><span class="live-dot"></span> LET’S PLAY, TOGETHER.</p>
+          <h2 id="pocket-hero-title">今日の「ひま」を、<br>みんなの<span class="hero-word">「いい時間」</span>に。</h2>
+          <p class="hero-description">スマホひとつ、そこにいるみんなで。<br>待ち時間も、いつもの集まりも、遊びの時間に。</p>
+          <div class="hero-actions"><button type="button" class="hero-primary" id="btn-hero-choose">ぴったりの遊びを探す <span aria-hidden="true">↗</span></button><a href="#discovery" class="hero-secondary">ぜんぶ見る <span aria-hidden="true">↓</span></a></div>
+        </div>
+        <div class="hero-art" role="group" aria-label="カードから遊びを選ぶ">
+          <span class="art-orbit orbit-one"></span><span class="art-orbit orbit-two"></span>
+          <button type="button" class="play-ticket ticket-blue" data-pocket-game="word-wolf" title="ワードウルフで遊ぶ"><span class="ticket-type">ワードウルフ</span><span class="ticket-eye"><i></i><i></i></span><strong>だれだ？</strong><span>心理戦も、</span></button>
+          <button type="button" class="play-ticket ticket-lime" data-pocket-game="ito" title="itoで遊ぶ"><span class="ticket-type">ito</span><span class="ticket-flower" aria-hidden="true">✳</span><strong>それわかる！</strong><span>おしゃべりも、</span></button>
+          <button type="button" class="play-ticket ticket-coral" data-pocket-game="duel-reflex" title="反射神経対決で遊ぶ"><span class="ticket-type">反射神経対決</span><span class="ticket-dice" aria-hidden="true">⠿</span><strong>もう1回！</strong><span>真剣勝負も。</span></button>
+          <div class="pocket-sleeve"><span>ひとつのポケットに、<br>いろんな「たのしい」。</span><span class="sleeve-star">✦</span></div>
+          <span class="art-note">気になるカードから、遊ぼう ↗</span>
+        </div>
+      </section>
+      </details>
+
+      <!-- 該当なしの空状態 -->
+      <div class="empty-state hidden" id="empty-state" role="status">
+        <div class="empty-icon" aria-hidden="true">🧐</div>
+        <h3 class="empty-title">条件に合うゲームが見つかりませんでした</h3>
+        <p class="empty-desc">検索キーワードやタグを変更してお試しください。</p>
+        <button class="btn btn-primary btn-empty-reset" id="btn-empty-reset">✨ 条件をリセットして全件表示</button>
+      </div>
+
+      <!-- その他の定番ルール集（折りたたみアコーディオン） -->
+      <section class="classic-rules-section" id="classic-rules-section" aria-label="その他の定番ルール集">
+        <button class="classic-rules-toggle-btn" id="btn-toggle-classic-rules" aria-expanded="false" aria-controls="classic-rules-panel">
+          <div class="classic-toggle-content">
+            <span class="classic-toggle-icon">📚</span>
+            <div class="classic-toggle-titles">
+              <span class="classic-toggle-title">道具不要！その他の定番ルール集（7選）</span>
+              <span class="classic-toggle-subtitle">たけのこニョッキ・ピンポンパン・30数えたら負け ほか</span>
+            </div>
+          </div>
+          <span class="classic-toggle-arrow">▼</span>
+        </button>
+        <div class="classic-rules-panel hidden" id="classic-rules-panel">
+          <p class="classic-rules-desc">スマホツール不要でいつでもどこでも遊べる！飲み会・ドライブ・暇つぶしの鉄板定番ルール一覧です。</p>
+          <div class="classic-rules-grid" id="classic-rules-grid"></div>
+        </div>
+      </section>
+      <section class="pocket-guides" aria-labelledby="guide-heading"><div class="guide-intro"><p class="section-kicker">A LITTLE HELP</p><h2 id="guide-heading">遊ぶ前の「どうしよう？」に。</h2><p>はじめてでも、幹事でも。人数や場面に合う遊び方とお題を。</p></div><div class="guide-grid"><a href="seo/two-player-games.html"><span class="guide-number">01 / TWO</span><h3>2人で、サクッと。</h3><p>待ち時間やデートに。対戦も、会話も。</p><span class="guide-arrow">↗</span></a><a href="seo/party-games-no-tools.html"><span class="guide-number">02 / TOGETHER</span><h3>道具なしで、みんなと。</h3><p>友達の集まりや旅行で、そのまま遊ぼう。</p><span class="guide-arrow">↗</span></a><a href="seo/icebreaker-games.html"><span class="guide-number">03 / HELLO</span><h3>はじめましての、その後に。</h3><p>初対面の会話を、ゆっくりほぐす。</p><span class="guide-arrow">↗</span></a></div></section>
+      <details class="pocket-how-fold"><summary>はじめての方へ：遊び方と使い方<span class="disclosure-arrow" aria-hidden="true">⌄</span></summary><section class="pocket-how" aria-labelledby="how-heading"><div><p class="section-kicker">READY, SET, PLAY.</p><h2 id="how-heading">遊ぶまで、たった3ステップ。</h2></div><ol><li><b>01</b><span><strong>人数と気分で選ぶ</strong>迷ったら「条件でおすすめ」で。</span></li><li><b>02</b><span><strong>ルールをみんなで確認</strong>各ゲームの「遊び方」を読む。</span></li><li><b>03</b><span><strong>スマホを囲んで始める</strong>答えにくいお題はパスしてOK。</span></li></ol></section></details>
+      <section class="pocket-share"><div><p class="section-kicker">PASS THE POCKET</p><h2>次の集まりにも、このポケットを。</h2><p>友達に送るか、ホーム画面に置いておこう。</p></div><button type="button" id="btn-share-pocket">友達に教える <span aria-hidden="true">↗</span></button></section>
+      <section class="pocket-faq" aria-labelledby="faq-title"><h2 id="faq-title">気になること</h2><details><summary>ダウンロードや登録は必要？</summary><p>無料で遊べます。ブラウザでそのまま使え、アカウント登録は不要です。スマホ1台で始められます。よく遊ぶならホーム画面への追加もできます。</p></details><details><summary>電波がない場所でも遊べる？</summary><p>オンラインで一度読み込み、オフライン用の保存が完了した後は、ゲーム本体を使えます。外部の商品ページや初めて開く特集記事には通信が必要です。</p></details><details><summary>市販ゲームの公式アプリ？</summary><p>このサイトは個人運営の遊び補助ツールです。掲載された市販ゲームの公式アプリではありません。商品の詳しいルールは各販売元でご確認ください。</p></details></section>
+    </main>
+  </div>
+
+  <!-- 個別ゲーム詳細ビュー (SPA画面遷移) -->
+  <div id="view-detail" class="main-container hidden" role="region" aria-label="ゲーム詳細"></div>
+
+  <!-- ⚡ 人数と気分でおすすめ（幹事即決コンシェルジュ）モーダル -->
+  <div class="modal-backdrop hidden" id="modal-concierge" role="dialog" aria-modal="true" aria-labelledby="concierge-modal-title">
+    <div class="modal-card modal-card-concierge">
+      <button class="modal-close-btn" id="btn-close-concierge" aria-label="閉じる">✕</button>
+      <div class="text-center mb-3">
+        <span class="badge badge-primary text-xs font-black">遊び選びのお手伝い</span>
+        <h3 class="modal-title mt-1" id="concierge-modal-title">3秒ゲーム診断</h3>
+        <p class="modal-desc">人数と気分に合う遊びを、ひとつ提案します。</p>
+      </div>
+
+      <!-- Step 1: 参加人数 -->
+      <div class="concierge-step-box mb-3">
+        <label class="concierge-step-label">① 参加人数は？</label>
+        <div class="concierge-options-grid" id="concierge-players-group">
+          <button type="button" class="btn-concierge-opt active" data-players="2">👥 2人 (対戦・デート)</button>
+          <button type="button" class="btn-concierge-opt" data-players="3-4">🧑‍🤝‍🧑 3〜4人 (友達・少人数)</button>
+          <button type="button" class="btn-concierge-opt" data-players="5+">🎪 5人以上 (飲み会・大人数)</button>
+        </div>
+      </div>
+
+      <!-- Step 2: 今の気分 -->
+      <div class="concierge-step-box mb-3">
+        <label class="concierge-step-label">② 今の気分・雰囲気は？</label>
+        <div class="concierge-options-grid" id="concierge-mood-group">
+          <button type="button" class="btn-concierge-opt active" data-mood="laugh">🤣 爆笑・盛り上がり</button>
+          <button type="button" class="btn-concierge-opt" data-mood="chill">🍵 まったり・トーク</button>
+          <button type="button" class="btn-concierge-opt" data-mood="mind">🧠 心理戦・騙し合い</button>
+          <button type="button" class="btn-concierge-opt" data-mood="icebreak">🤝 アイスブレイク・親睦</button>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-lg btn-block mb-3 font-bold" id="btn-concierge-submit">
+        おすすめを見る
+      </button>
+
+      <!-- 診断結果表示エリア -->
+      <div class="concierge-result-card hidden animate-scale p-3 border rounded text-center my-2" id="concierge-result-area" style="background: rgba(255,90,95,0.06); border: 2px solid #E54B36; border-radius: 12px;">
+        <div class="badge badge-warning text-xs font-black mb-1">🎯 診断結果: 本日のイチオシ！</div>
+        <div class="concierge-res-icon my-1" id="concierge-res-icon" style="font-size: 2.6rem;">🎲</div>
+        <h4 class="concierge-res-title font-black text-lg" id="concierge-res-title">ゲームタイトル</h4>
+        <p class="concierge-res-catch text-xs text-muted mt-1 mb-3" id="concierge-res-catch">キャッチコピー</p>
+        <div class="flex gap-2">
+          <button class="btn btn-success btn-block flex-1 py-2 font-bold" id="btn-concierge-play">
+            ▶️ 今すぐ遊ぶ！ ➔
+          </button>
+          <button class="btn btn-outline btn-sm" id="btn-concierge-reroll" title="別のゲームを提案">
+            🎲 別の提案
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ランダム即決ルーレットモーダル -->
+  <div class="modal-backdrop hidden" id="modal-roulette" role="dialog" aria-modal="true" aria-labelledby="roulette-modal-title">
+    <div class="modal-card">
+      <button class="modal-close-btn" id="btn-close-roulette" aria-label="閉じる">✕</button>
+      <h3 class="modal-title" id="roulette-modal-title">🎲 今すぐ遊ぶルーレット</h3>
+      <p class="modal-desc">何で遊ぶか迷ったら運命に任せよう！</p>
+      
+      <div class="roulette-slot-box" id="roulette-result-box" aria-live="polite">
+        <div class="roulette-result-icon" id="roulette-result-icon">❓</div>
+        <div class="roulette-result-title" id="roulette-result-title">何が出るかな？</div>
+        <div class="roulette-result-catch" id="roulette-result-catch">ボタンを押してスタート！</div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-primary btn-lg btn-block" id="btn-spin-roulette">
+          <span>ルーレットを回す！</span> 🎰
+        </button>
+        <button class="btn btn-success btn-lg btn-block mt-2 hidden" id="btn-roulette-go">
+          <span>このゲームで遊ぶ！</span> ➔
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- フローティング・スコアボード開閉ボタン -->
+  <button class="btn-floating-score" id="btn-toggle-scoreboard" title="スコアボードを開く" aria-label="得点記録スコアボード">
+    <span class="floating-score-icon">📊</span>
+    <span class="floating-score-label">スコア</span>
+  </button>
+
+  <!-- スコアボード・ドロワー（スライドアップ式） -->
+  <div class="scoreboard-drawer hidden" id="scoreboard-drawer" role="region" aria-label="ミニスコアボード">
+    <div class="scoreboard-header">
+      <div class="scoreboard-title-row">
+        <span class="scoreboard-icon">📊</span>
+        <h3>スコアボード</h3>
+      </div>
+      <div class="scoreboard-header-actions">
+        <button class="btn btn-sm btn-outline" id="btn-reset-scores">リセット</button>
+        <button class="btn-drawer-close" id="btn-close-scoreboard" aria-label="閉じる">✕</button>
+      </div>
+    </div>
+    <div class="scoreboard-body">
+      <div class="scoreboard-players" id="scoreboard-players-list"></div>
+      <div class="scoreboard-add-row mt-2">
+        <button class="btn btn-sm btn-primary btn-block" id="btn-add-player">＋ プレイヤーを追加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 👆 親決めルーレット（常設モーダル） -->
+  <div class="modal-backdrop hidden" id="modal-finger-roulette" role="dialog" aria-modal="true" aria-labelledby="finger-modal-title">
+    <div class="modal-card modal-card-tool">
+      <button class="modal-close-btn" id="btn-close-finger-modal" aria-label="閉じる">✕</button>
+      <div class="modal-tool-header text-center mb-2">
+        <span class="badge badge-primary text-xs font-black">👆 1タップで親・順番決め</span>
+        <h3 class="modal-title mt-1" id="finger-modal-title">親決めルーレット</h3>
+      </div>
+      <div id="finger-modal-mount"></div>
+    </div>
+  </div>
+
+  <!-- ⚡ 罰ゲームルーレット（常設モーダル） -->
+  <div class="modal-backdrop hidden" id="modal-batsu-roulette" role="dialog" aria-modal="true" aria-labelledby="batsu-modal-title">
+    <div class="modal-card modal-card-tool">
+      <button class="modal-close-btn" id="btn-close-batsu-modal" aria-label="閉じる">✕</button>
+      <div class="modal-tool-header text-center mb-2">
+        <span class="badge badge-warning text-xs font-black">⚡ 敗者決定！罰ゲーム執行</span>
+        <h3 class="modal-title mt-1" id="batsu-modal-title">罰ゲームルーレット</h3>
+      </div>
+      <div id="batsu-modal-mount"></div>
+    </div>
+  </div>
+
+  <!-- ⚙️ アプリ設定 ＆ 便利機能モーダル -->
+  <div class="modal-backdrop hidden" id="modal-settings" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+    <div class="modal-card modal-card-settings">
+      <button class="modal-close-btn" id="btn-close-settings" aria-label="閉じる">✕</button>
+      <h3 class="modal-title" id="settings-modal-title">⚙️ 設定 ＆ 便利機能</h3>
+      <p class="modal-desc">プレイ環境を自分好みにカスタマイズできます</p>
+
+      <div class="settings-list mt-3">
+        <!-- 1. 効果音 -->
+        <div class="setting-item-row">
+          <div class="setting-item-info">
+            <span class="setting-item-icon">🔊</span>
+            <div class="setting-item-text">
+              <strong>効果音（サウンド）</strong>
+              <span>ボタン操作音やカウントダウン音を再生</span>
+            </div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-sound-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <!-- 2. ダークモード -->
+        <div class="setting-item-row">
+          <div class="setting-item-info">
+            <span class="setting-item-icon">🌙</span>
+            <div class="setting-item-text">
+              <strong>ダークモード</strong>
+              <span>目に優しい暗い配色に切り替え</span>
+            </div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-theme-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <!-- 3. 画面常時点灯（デフォルトOFF） -->
+        <div class="setting-item-row">
+          <div class="setting-item-info">
+            <span class="setting-item-icon">💡</span>
+            <div class="setting-item-text">
+              <strong>画面の自動消灯防止（スリープ防止）</strong>
+              <span>ゲームプレイ中に画面が勝手に暗くならないようにします</span>
+            </div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-wakelock-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <!-- 4. ふりがなモード (キッズ・子供向け) -->
+        <div class="setting-item-row">
+          <div class="setting-item-info">
+            <span class="setting-item-icon">🧒</span>
+            <div class="setting-item-text">
+              <strong>ふりがなモード（キッズ対応）</strong>
+              <span>ゲームのタイトルや言葉にルビ（ふりがな）を表示</span>
+            </div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-kids-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <!-- 5. 保存データ管理 / 一括初期化 -->
+        <div class="setting-item-row">
+          <div class="setting-item-info">
+            <span class="setting-item-icon">🗑️</span>
+            <div class="setting-item-text">
+              <strong>保存データの一括初期化</strong>
+              <span>お気に入り、スコア、スタンプ、カスタムお題をリセット</span>
+            </div>
+          </div>
+          <button class="btn btn-sm btn-danger" id="btn-reset-app-data">初期化</button>
+        </div>
+      </div>
+
+      <div class="settings-footer-info mt-4">
+        <div class="settings-app-meta">
+          <span>🎲 <strong>あそびポケット</strong> v6.4.8</span>
+          <span class="text-sub">© 2026 katakata / はじっこぐらし</span>
+        </div>
+        <div class="settings-links-row mt-2">
+          <a href="terms.html" class="settings-link">利用規約</a>
+          <span class="footer-sep">|</span>
+          <a href="privacy.html" class="settings-link">プライバシーポリシー</a>
+          <span class="footer-sep">|</span>
+          <a href="https://katakatalab.com/" target="_blank" rel="noopener noreferrer" class="settings-link">公式サイト</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- モバイル用クイックボトムナビゲーションバー -->
+  <nav class="bottom-nav-bar" aria-label="モバイルクイックナビゲーション">
+    <a href="#" class="bottom-nav-item active" id="btm-nav-home">
+      <span class="btm-icon">🏠</span>
+      <span class="btm-label">ホーム</span>
+    </a>
+    <button class="bottom-nav-item" id="btm-nav-roulette">
+      <span class="btm-icon">🎲</span>
+      <span class="btm-label">ルーレット</span>
+    </button>
+    <button class="bottom-nav-item" id="btm-nav-fav">
+      <span class="btm-icon">★</span>
+      <span class="btm-label">お気に入り</span>
+      <span class="badge-counter hidden" id="btm-fav-badge">0</span>
+    </button>
+    <button class="bottom-nav-item" id="btm-nav-search">
+      <span class="btm-icon">🔍</span>
+      <span class="btm-label">さがす</span>
+    </button>
+  </nav>
+
+  <!-- PWA アプリインストールバナー (スマート表示) -->
+  <aside class="pwa-install-banner hidden" id="pwa-install-banner" aria-label="アプリインストール案内">
+    <div class="pwa-banner-inner">
+      <span class="pwa-banner-icon" aria-hidden="true">🎲</span>
+      <div class="pwa-banner-text">
+        <strong>あそびポケットをホーム画面に追加</strong>
+        <span>1タップで即起動＆オフラインでも快適プレイ！</span>
+      </div>
+      <div class="pwa-banner-actions">
+        <button class="btn btn-primary btn-sm" id="btn-pwa-install">追加する 📲</button>
+        <button class="btn-pwa-close" id="btn-pwa-close" aria-label="閉じる">✕</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- iOS向け PWA追加ガイドモーダル -->
+  <div class="modal-overlay hidden" id="modal-pwa-guide" role="dialog" aria-modal="true" aria-labelledby="pwa-guide-title">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="pwa-guide-title">📲 ホーム画面に追加する方法</h3>
+        <button class="btn-modal-close" id="btn-close-pwa-guide" aria-label="閉じる">✕</button>
+      </div>
+      <div class="modal-body text-left">
+        <p class="text-sub mb-3">iPhone (Safari) をお使いの方は、以下の手順でアプリアイコンとして追加できます：</p>
+        <div class="rules-step-list">
+          <div class="rule-step-item">
+            <div class="step-badge">1</div>
+            <div class="step-content">
+              <h4 class="step-title">Safariの「共有ボタン」をタップ</h4>
+              <p class="step-desc">画面下部の四角から上矢印が出ているアイコン［⎋］をタップします。</p>
+            </div>
+          </div>
+          <div class="rule-step-item">
+            <div class="step-badge">2</div>
+            <div class="step-content">
+              <h4 class="step-title">「ホーム画面に追加」を選択</h4>
+              <p class="step-desc">メニューをスクロールして［➕ ホーム画面に追加］をタップします。</p>
+            </div>
+          </div>
+          <div class="rule-step-item">
+            <div class="step-badge">3</div>
+            <div class="step-content">
+              <h4 class="step-title">右上の「追加」をタップで完了！</h4>
+              <p class="step-desc">全画面・オフラインでいつでも爆速起動できるようになります！</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-block" id="btn-pwa-guide-ok">わかりました！ 👍</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ トーク集中モード（全画面テレビモニター風UI） -->
+  <div class="modal-overlay hidden talk-focus-overlay" id="modal-talk-focus" role="dialog" aria-modal="true">
+    <div class="talk-focus-container">
+      <div class="talk-focus-header">
+        <span class="badge badge-warning">🗣️ トーク集中モード</span>
+        <button class="btn-focus-close" id="btn-close-talk-focus" aria-label="通常表示に戻る">✕ 戻る</button>
+      </div>
+      <div class="talk-focus-body">
+        <div class="talk-focus-topic-tag">🎯 現在のお題</div>
+        <h2 class="talk-focus-topic-text" id="talk-focus-topic">お題がここに表示されます</h2>
+        <div class="talk-focus-timer font-mono" id="talk-focus-timer">⏱️ 03:00</div>
+        <p class="talk-focus-hint">📱 スマホを机の真ん中に置いて、みんなの顔を見て話そう！</p>
+      </div>
+      <div class="talk-focus-footer">
+        <button class="btn btn-outline btn-lg text-white" id="btn-focus-toggle-timer">⏱️ タイマースタート/一時停止</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- フッター -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="footer-inner">
+      <p>🎲 <strong>あそびポケット (Asobi Pocket)</strong> - いつでもどこでもサクッと遊べる暇つぶし図鑑</p>
+      <div class="footer-links-row mt-2">
+        <a href="terms.html" class="footer-link">利用規約</a>
+        <span class="footer-sep">|</span>
+        <a href="privacy.html" class="footer-link">プライバシーポリシー</a>
+        <span class="footer-sep">|</span>
+        <a href="https://katakatalab.com/" target="_blank" rel="noopener noreferrer" class="footer-link">運営・お問い合わせ</a>
+      </div>
+      <div class="footer-seo-links-row mt-2 text-xs text-sub">
+        <strong>💡 人気お題集・特設ページ:</strong>
+        <a href="seo/ito-odai.html" class="footer-link">itoお題100選</a> ·
+        <a href="seo/wordwolf-odai.html" class="footer-link">ワードウルフお題</a> ·
+        <a href="seo/asa-sore-odai.html" class="footer-link">朝までそれ正解お題</a> ·
+        <a href="seo/sea-turtle-quiz.html" class="footer-link">ウミガメのスープ問題</a>
+      </div>
+      <div class="footer-pwa-link mt-2">
+        <button class="btn btn-sm btn-outline" id="btn-footer-pwa-install">📲 ホーム画面に追加してアプリにする</button>
+      </div>
+      <p class="footer-copy mt-2">© 2026 katakata / はじっこぐらし. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- 構造化データ (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "あそびポケット",
+    "url": "https://katakatalab.com/asobi-pocket/",
+    "description": "スマホ1台で、2人の待ち時間も友達との集まりも。人数と時間から遊びを選び、ワードウルフ・価値観ゲーム・反射神経対決を登録なしで楽しめます。遊び方とお題集も掲載。",
+    "applicationCategory": "GameApplication",
+    "operatingSystem": "All",
+    "inLanguage": "ja",
+    "isAccessibleForFree": true,
+    "offers": {"@type": "Offer", "price": "0", "priceCurrency": "JPY"},
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.9",
+      "ratingCount": "128"
+    }
+  }
+  </script>
+
+  <!-- スクリプト群 -->
+  <script defer src="data/games.js"></script>
+  <script defer src="js/audio.js"></script>
+  <script defer src="js/confetti.js"></script>
+  <script defer src="js/toast.js"></script>
+  <script defer src="js/tools.js"></script>
+  <script defer src="js/quality/data-contract.js"></script>
+  <script defer src="js/quality/tool-fixes.js"></script>
+  <script defer src="js/app.js"></script>
+  <script defer src="js/quality/product-ux.js"></script>
+  <script defer src="js/evolution.js"></script>
+
+  <!-- Service Worker 登録 -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      const registerPwa = () => navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).catch(() => {});
+      if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", registerPwa, { once: true });
+      else registerPwa();
+    }
+  </script>
+</body>
+</html>

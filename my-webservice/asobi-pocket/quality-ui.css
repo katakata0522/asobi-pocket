@@ -1,0 +1,170 @@
+/* Quality-foundation overrides: make choosing and starting a game the visual priority. */
+
+/* style.css defines --card-bg, while a few legacy components still read
+   --bg-card. Keep one compatibility alias until those selectors are migrated. */
+:root {
+  --bg-card: var(--card-bg);
+}
+
+#view-home .main-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.quality-home-intro {
+  order: 0;
+  margin: 18px 0 12px;
+  padding: 4px 2px;
+}
+
+.quality-home-kicker {
+  margin: 0 0 4px;
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.quality-home-intro h2 {
+  margin: 0;
+  font-size: clamp(1.45rem, 4.8vw, 2rem);
+  line-height: 1.25;
+  letter-spacing: -0.03em;
+}
+
+.quality-home-intro p:last-child {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+#view-home .controls-wrapper {
+  order: 1;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+#view-home .games-grid,
+#view-home .empty-state {
+  order: 2;
+}
+
+#view-home .stamp-rally-section {
+  order: 3;
+  margin-top: 30px;
+}
+
+#view-home .stamp-rally-card {
+  box-shadow: none;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+}
+
+#view-home .stamp-rally-title {
+  font-size: 0.9rem;
+}
+
+#view-home .stamp-rally-count,
+#view-home .stamp-rally-badge {
+  font-size: 0.78rem;
+}
+
+.btn-roulette-inline {
+  min-height: 44px;
+  font-weight: 800;
+  box-shadow: var(--shadow-sm);
+}
+
+.game-card.quality-featured {
+  border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+}
+
+.quality-grid-separator {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 10px 0 2px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.quality-grid-separator strong {
+  flex: 0 0 auto;
+  color: var(--text-main);
+  font-size: 0.94rem;
+}
+
+.quality-grid-separator span {
+  font-size: 0.78rem;
+}
+
+.quality-recommend-card {
+  cursor: pointer;
+}
+
+.quality-utility-hidden {
+  display: none !important;
+}
+
+/* Monetization should never interrupt the active play surface. */
+#pane-tool > .official-product-box,
+#pane-tool > .ad-placeholder-container,
+#pane-presets > .official-product-box,
+.ad-placeholder-container {
+  display: none !important;
+}
+
+#pane-rules .official-product-box {
+  margin-top: 28px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .game-card:hover,
+  .game-card:focus-visible,
+  .btn-roulette-inline:hover,
+  .seo-cta-btn:hover {
+    transform: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .btn-header-pwa {
+    display: none !important;
+  }
+
+  .logo-text .tagline {
+    display: none;
+  }
+
+  .quality-home-intro {
+    margin-top: 12px;
+  }
+
+  #view-home .controls-wrapper {
+    padding-top: 12px;
+  }
+
+  .quality-grid-separator {
+    display: block;
+  }
+
+  .quality-grid-separator span {
+    display: block;
+    margin-top: 3px;
+  }
+}
