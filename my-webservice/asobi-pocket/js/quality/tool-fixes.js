@@ -84,7 +84,7 @@
             <h3 class="tool-title">🐺 ワードウルフ設定</h3>
             <div class="setting-group">
               <label class="setting-label">参加人数: <span id="val-player-count" class="badge-num">${state.playerCount}人</span></label>
-              <input type="range" class="range-slider" min="3" max="8" value="${state.playerCount}" id="range-player-count">
+              <input type="range" class="range-slider" min="3" max="10" value="${state.playerCount}" id="range-player-count">
             </div>
             <div class="setting-group">
               <label class="setting-label">ウルフの人数: <span class="badge-num">${state.wolfCount}人</span></label>
@@ -317,9 +317,11 @@
             return;
           }
           const expected = String(state.citizenWord);
-          const normalizedGuess = guess.normalize("NFKC").toLowerCase();
-          const normalizedExpected = expected.normalize("NFKC").toLowerCase();
-          const correct = normalizedGuess === normalizedExpected || normalizedExpected.includes(normalizedGuess) || normalizedGuess.includes(normalizedExpected);
+          // 部分一致だと1文字だけで正解になる。正規化した全文一致だけ認める。
+          const normalizeAnswer = (value) => String(value).normalize("NFKC").toLowerCase()
+            .replace(/\s+/g, "")
+            .replace(/[ァ-ヶ]/g, char => String.fromCharCode(char.charCodeAt(0) - 0x60));
+          const correct = normalizeAnswer(guess) === normalizeAnswer(expected);
           if (correct) {
             celebrate(100);
             result.innerHTML = `<span class="text-danger font-bold text-lg">🎉 大正解！【${esc(expected)}】<br>🐺 ウルフ側の逆転勝利！</span>`;
@@ -501,6 +503,7 @@
   };
 
   GameTools.renderDuelReflex = function renderDuelReflexFixed(container) {
+    let disposed = false;
     const state = {
       scoreP1: 0,
       scoreP2: 0,
@@ -521,12 +524,14 @@
     };
 
     const startRound = () => {
+      if (disposed) return;
       cleanup();
       state.phase = "waiting";
       state.message = "待て…";
       state.reactionMs = null;
       render();
       state.cueTimer = setTimeout(() => {
+        if (disposed) return;
         state.phase = "go";
         state.startAt = performance.now();
         state.message = "押せ！！！";
@@ -537,6 +542,7 @@
     };
 
     const afterPoint = (winner, message) => {
+      if (disposed) return;
       if (winner === 1) state.scoreP1 += 1;
       if (winner === 2) state.scoreP2 += 1;
       state.message = message;
@@ -598,7 +604,10 @@
     }
 
     render();
-    return cleanup;
+    return () => {
+      disposed = true;
+      cleanup();
+    };
   };
 
   GameTools.renderDuelMash = function renderDuelMashFixed(container) {
@@ -644,14 +653,14 @@
     };
 
     function render() {
-      const winner = state.gauge < 50 ? "PLAYER 1" : state.gauge > 50 ? "PLAYER 2" : "引き分け";
+      const winner = state.gauge < 50 ? "PLAYER 1" : state.gauge > 50 ? "PLAYER 2" : null;
       container.innerHTML = `
         <div class="duel-container mash-battle ${state.phase}">
           <div class="duel-half duel-top" id="mash-p1-btn"><div class="duel-content rotate-180"><div class="duel-player-label">PLAYER 1</div><div class="mash-count">連打数: ${state.p1Taps}</div><div class="mash-tap-hint">ここを全力連打！👆</div></div></div>
           <div class="mash-gauge-track"><div class="mash-gauge-p1" style="height:${100 - state.gauge}%"></div><div class="mash-gauge-center-line"><span class="badge badge-warning font-mono">⏱️ ${state.timeLeft}s</span></div><div class="mash-gauge-p2" style="height:${state.gauge}%"></div></div>
           <div class="duel-half duel-bottom" id="mash-p2-btn"><div class="duel-content"><div class="duel-player-label">PLAYER 2</div><div class="mash-count">連打数: ${state.p2Taps}</div><div class="mash-tap-hint">ここを全力連打！👆</div></div></div>
           ${state.phase === "ready" ? '<div class="duel-overlay"><div class="tool-card text-center"><h3>💥 連打パワーバトル</h3><p>15秒間、1台の画面を上下から連打！</p><button class="btn btn-primary btn-lg mt-2" id="btn-mash-start">FIGHT スタート！</button></div></div>' : ""}
-          ${state.phase === "result" ? `<div class="duel-overlay"><div class="tool-card text-center"><h2>🏆 ${winner}</h2><p class="my-2">P1: ${state.p1Taps}回 vs P2: ${state.p2Taps}回</p><button class="btn btn-primary btn-block mt-3" id="btn-mash-retry">もう一度対決 🔄</button></div></div>` : ""}
+          ${state.phase === "result" ? `<div class="duel-overlay"><div class="tool-card text-center"><h2>${winner ? '🏆 ' + winner + ' の勝利！' : '🤝 引き分け！'}</h2><p class="my-2">P1: ${state.p1Taps}回 vs P2: ${state.p2Taps}回</p><button class="btn btn-primary btn-block mt-3" id="btn-mash-retry">もう一度対決 🔄</button></div></div>` : ""}
         </div>`;
 
       const start = container.querySelector("#btn-mash-start");
@@ -664,8 +673,9 @@
         state.phase = "playing";
         play("playSelect");
         render();
+        const deadlineAt = Date.now() + 15000;
         state.timerId = setInterval(() => {
-          state.timeLeft -= 1;
+          state.timeLeft = Math.max(0, Math.ceil((deadlineAt - Date.now()) / 1000));
           const badge = container.querySelector(".mash-gauge-center-line span");
           if (badge) badge.textContent = `⏱️ ${state.timeLeft}s`;
           if (state.timeLeft <= 0) finish();
@@ -788,6 +798,7 @@
     };
 
     const finish = () => {
+      if (state.phase !== "playing") return;
       cleanup();
       state.phase = "result";
       play("playExplosion");
@@ -817,8 +828,9 @@
         state.currentTopic = getTopic();
         play("playSelect");
         render();
+        const deadlineAt = Date.now() + 60000;
         state.timerId = setInterval(() => {
-          state.timeLeft -= 1;
+          state.timeLeft = Math.max(0, Math.ceil((deadlineAt - Date.now()) / 1000));
           const timer = container.querySelector(".timer-display");
           if (timer) {
             timer.textContent = `⏱️ 残り: ${state.timeLeft} 秒`;

@@ -9,9 +9,10 @@ const safeClearInterval = (id) => (window.SafeTimer ? window.SafeTimer.clearInte
 const safeSetTimeout = (fn, ms) => (window.SafeTimer ? window.SafeTimer.setTimeout(fn, ms) : setTimeout(fn, ms));
 const safeClearTimeout = (id) => (window.SafeTimer ? window.SafeTimer.clearTimeout(id) : clearTimeout(id));
 
-function escapeHTML(str) {
-  if (typeof str !== "string") return String(str || "");
-  return str
+function escapeHTML(value) {
+  // All values (including objects and numbers) must be encoded after coercion.
+  // Skipping replacement for non-string inputs can reintroduce markup.
+  return String(value ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -105,40 +106,43 @@ class GameTimer {
     this.title = title;
     this.gameId = gameId;
     this.isFloating = isFloating;
+    this.deadlineAt = null;
   }
 
   start() {
-    if (this.isRunning) return;
+    if (this.isRunning || this.remaining <= 0) return;
     this.isRunning = true;
+    // Wall-clock deadline avoids silent countdown drift after tab suspension.
+    this.deadlineAt = Date.now() + this.remaining * 1000;
     if (!this.isFloating) {
       GameTimer.activeTimer = this;
     }
     this.timerId = safeSetInterval(() => {
-      this.remaining--;
-      if (this.tickSoundInterval && this.remaining <= this.tickSoundInterval && this.remaining > 0) {
+      const next = Math.max(0, Math.ceil((this.deadlineAt - Date.now()) / 1000));
+      if (next === this.remaining) return;
+      this.remaining = next;
+      if (this.tickSoundInterval && next <= this.tickSoundInterval && next > 0) {
         if (typeof Sound !== "undefined" && typeof Sound.playTick === "function") {
           Sound.playTick(900);
         }
       }
-      if (typeof this.onTick === "function") {
-        this.onTick(this.remaining, this.totalSeconds);
-      }
-      if (this.remaining <= 0) {
+      if (typeof this.onTick === "function") this.onTick(next, this.totalSeconds);
+      if (next === 0) {
+        // Stop before calling onFinish, so a game may safely start a new round.
+        const finish = this.onFinish;
         this.stop();
-        if (typeof this.onFinish === "function") {
-          this.onFinish();
-        }
+        if (typeof finish === "function") finish();
       }
     }, 1000);
   }
 
   pause() {
     if (!this.isRunning) return;
+    this.remaining = Math.max(0, Math.ceil((this.deadlineAt - Date.now()) / 1000));
+    this.deadlineAt = null;
     this.isRunning = false;
-    if (GameTimer.activeTimer === this) {
-      GameTimer.activeTimer = null;
-    }
-    if (this.timerId) {
+    if (GameTimer.activeTimer === this) GameTimer.activeTimer = null;
+    if (this.timerId !== null) {
       safeClearInterval(this.timerId);
       this.timerId = null;
     }
@@ -240,7 +244,7 @@ const GameTools = {
     <summary class="player-custom-summary">👤 プレイヤー名を個別設定する (任意)</summary>
     <div class="player-names-grid mt-2" id="ito-player-inputs">
       ${Array.from({ length: state.playerCount }, (_, i) => `
-        <input type="text" class="input-player-name" data-idx="${i}" value="${state.playerNames[i] || 'プレイヤー' + (i + 1)}" placeholder="名前 ${i + 1}">
+        <input type="text" class="input-player-name" data-idx="${i}" value="${escapeHTML(state.playerNames[i] || 'プレイヤー' + (i + 1))}" maxlength="40" placeholder="名前 ${i + 1}">
       `).join('')}
     </div>
   </details>
@@ -292,7 +296,7 @@ const GameTools = {
         container.querySelectorAll(".input-player-name").forEach(inp => {
           inp.addEventListener("input", (e) => {
             const idx = parseInt(e.target.dataset.idx);
-            state.playerNames[idx] = e.target.value.trim() || `プレイヤー${idx + 1}`;
+            state.playerNames[idx] = e.target.value.trim().slice(0, 40) || `プレイヤー${idx + 1}`;
           });
         });
 
@@ -797,7 +801,7 @@ const GameTools = {
           const item = answersLog[parseInt(btn.dataset.idx)];
           if (item) {
             const tweetText = `【朝までそれ正解】\nお題：「${item.kana}」で始まる${item.topic}…といえば？\n満場一致の正解：『${item.answer}』！\n\n#朝までそれ正解 #あそびポケット\n${window.location.href}`;
-            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`, "_blank");
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`, "_blank", "noopener,noreferrer");
           }
         });
       });
@@ -808,7 +812,7 @@ const GameTools = {
           const item = answersLog[parseInt(btn.dataset.idx)];
           if (item) {
             const lineText = `【朝までそれ正解】\nお題：「${item.kana}」で始まる${item.topic}…といえば？\n満場一致の正解：『${item.answer}』！\n\nあそびポケットで遊ぼう！\n${window.location.href}`;
-            window.open(`https://line.me/R/msg/text/?${encodeURIComponent(lineText)}`, "_blank");
+            window.open(`https://line.me/R/msg/text/?${encodeURIComponent(lineText)}`, "_blank", "noopener,noreferrer");
           }
         });
       });
@@ -842,7 +846,7 @@ const GameTools = {
             <h3 class="tool-title">🐺 ワードウルフ設定</h3>
             <div class="setting-group">
               <label class="setting-label">参加人数: <span id="val-player-count" class="badge-num">${state.playerCount}人</span></label>
-              <input type="range" class="range-slider" min="3" max="8" value="${state.playerCount}" id="range-player-count">
+              <input type="range" class="range-slider" min="3" max="10" value="${state.playerCount}" id="range-player-count">
             </div>
             <div class="setting-group">
               <label class="setting-label">ウルフの人数: <span id="val-wolf-count" class="badge-num">${state.wolfCount}人</span></label>
@@ -2709,22 +2713,26 @@ const GameTools = {
   // 10. スマホ額当てインディアンポーカー
   // ===================================================
   renderIndianPoker(container, game) {
+    const suits = ["♠️", "♥️", "♦️", "♣️"];
     let state = {
-      p1Card: Math.floor(Math.random() * 13) + 1,
-      p2Card: Math.floor(Math.random() * 13) + 1,
-      p1Suit: ["♠️", "♥️", "♦️", "♣️"][Math.floor(Math.random() * 4)],
-      p2Suit: ["♠️", "♥️", "♦️", "♣️"][Math.floor(Math.random() * 4)],
+      p1Card: 1,
+      p2Card: 2,
+      p1Suit: suits[0],
+      p2Suit: suits[1],
       p1Action: null,
       p2Action: null,
       isDuelRevealed: false
     };
 
     function resetDuel() {
-      const suits = ["♠️", "♥️", "♦️", "♣️"];
-      state.p1Card = Math.floor(Math.random() * 13) + 1;
-      state.p2Card = Math.floor(Math.random() * 13) + 1;
-      state.p1Suit = suits[Math.floor(Math.random() * 4)];
-      state.p2Suit = suits[Math.floor(Math.random() * 4)];
+      // Draw two different cards from the same 52-card deck without replacement.
+      const first = Math.floor(Math.random() * 52);
+      let second = Math.floor(Math.random() * 51);
+      if (second >= first) second++;
+      state.p1Card = first % 13 + 1;
+      state.p2Card = second % 13 + 1;
+      state.p1Suit = suits[Math.floor(first / 13)];
+      state.p2Suit = suits[Math.floor(second / 13)];
       state.p1Action = null;
       state.p2Action = null;
       state.isDuelRevealed = false;
@@ -2836,7 +2844,7 @@ const GameTools = {
             <div class="poker-duel-center my-2 py-2 border-y text-center" style="background: rgba(255,90,95,0.04);">
               ${!state.isDuelRevealed ? `
                 <div class="text-xs text-muted font-bold mb-1">二人のアクションが決まったらオープン！</div>
-                <button class="btn btn-primary btn-block btn-lg font-bold pulse-scale" id="btn-poker-open">
+                <button class="btn btn-primary btn-block btn-lg font-bold pulse-scale" id="btn-poker-open" ${!state.p1Action || !state.p2Action ? "disabled" : ""}>
                   🃏 カードオープン判定！ ➔
                 </button>
               ` : `
@@ -2898,6 +2906,7 @@ const GameTools = {
       const btnOpen = container.querySelector("#btn-poker-open");
       if (btnOpen) {
         btnOpen.onclick = () => {
+          if (!state.p1Action || !state.p2Action) return;
           Sound.playFanfare();
           if (typeof Confetti !== "undefined") Confetti.burst(60);
           state.isDuelRevealed = true;
@@ -2926,6 +2935,7 @@ const GameTools = {
       }
     }
 
+    resetDuel();
     render();
     return () => {};
   },
@@ -2943,7 +2953,10 @@ const GameTools = {
       seerAction: null,
       robberAction: null,
       timerSec: 180,
-      timerInterval: null
+      timerInterval: null,
+      votes: [],
+      voteIndex: 0,
+      voteSelection: null
     };
 
     const ROLE_DEFS = {
@@ -2960,7 +2973,7 @@ const GameTools = {
             <h3 class="tool-title">🌕 ワンナイト人狼 設定</h3>
             <div class="setting-group">
               <label class="setting-label">参加人数: <span id="val-ww-players" class="badge-num">${state.playerCount}人</span></label>
-              <input type="range" class="range-slider" min="3" max="6" value="${state.playerCount}" id="range-ww-players">
+              <input type="range" class="range-slider" min="3" max="7" value="${state.playerCount}" id="range-ww-players">
             </div>
 
             <div class="topic-box mb-3 text-left">
@@ -3009,6 +3022,9 @@ const GameTools = {
           state.currentPlayerIdx = 0;
           state.seerAction = null;
           state.robberAction = null;
+          state.votes = [];
+          state.voteIndex = 0;
+          state.voteSelection = null;
           state.step = "confirm";
           update();
         });
@@ -3233,31 +3249,59 @@ const GameTools = {
           update();
         });
 
+
       } else if (state.step === "vote") {
+        // One vote per player. The next player does not see prior ballots.
+        const voter = state.players[state.voteIndex];
+        if (!voter) { state.step = "vote-ready"; update(); return; }
         container.innerHTML = `
           <div class="tool-card text-center">
-            <h3 class="tool-title">🗳️ 投票フェーズ！</h3>
-            <p class="vote-instruction">せーので怪しいと思う人を一斉に指差してください！</p>
-
-            <div class="topic-box mb-3">
-              <span class="topic-tag">💡 投票ルール</span>
-              <div class="text-sm">
-                ・最多得票の人が処刑されます（同率なら全員処刑）。<br>
-                ・人狼を1人でも処刑できれば【村人チームの勝利】！<br>
-                ・人狼が処刑されなければ【人狼チームの勝利】！<br>
-                ・もし誰も人狼がいない場合、全員が1票ずつになる平和村投票なら【全員勝利】！
-              </div>
+            <h3 class="tool-title">🗳️ 秘密投票 (${state.voteIndex + 1}/${state.playerCount})</h3>
+            <p class="pass-desc">${escapeHTML(voter.name)}さんだけで画面を見て、怪しい人を選んでください。</p>
+            <p class="text-xs text-muted">自分自身には投票できません。選んだ票は次の人に表示されません。</p>
+            <div class="vote-player-grid my-3">
+              ${state.players.filter(p => p.id !== voter.id).map(p => `
+                <button type="button" class="btn btn-outline btn-ww-vote-target ${state.voteSelection === p.id ? 'active' : ''}"
+                  data-vote-id="${p.id}" aria-pressed="${state.voteSelection === p.id}">${escapeHTML(p.name)}</button>
+              `).join("")}
             </div>
-
-            <button class="btn btn-warning btn-lg btn-block" id="btn-open-ww-result">
-              <span>投票完了！結果発表 ＆ 正解オープン</span> 🎉
+            <button type="button" class="btn btn-primary btn-block" id="btn-ww-confirm-vote"
+              ${state.voteSelection === null ? "disabled" : ""}>
+              ${state.voteIndex + 1 < state.playerCount ? '投票確定・次の人へ ➔' : '全員の投票を確定'}
             </button>
           </div>
         `;
+        container.querySelectorAll(".btn-ww-vote-target").forEach(button => {
+          button.addEventListener("click", () => {
+            const id = Number(button.dataset.voteId);
+            if (!state.players.some(p => p.id === id && id !== voter.id)) return;
+            state.voteSelection = id;
+            update();
+          });
+        });
+        container.querySelector("#btn-ww-confirm-vote").addEventListener("click", () => {
+          const targetId = state.voteSelection;
+          if (targetId === null || !state.players.some(p => p.id === targetId && targetId !== voter.id)) return;
+          state.votes.push({ voterId: voter.id, targetId });
+          state.voteIndex++;
+          state.voteSelection = null;
+          if (state.voteIndex >= state.playerCount) state.step = "vote-ready";
+          update();
+        });
 
+      } else if (state.step === "vote-ready") {
+        container.innerHTML = `
+          <div class="tool-card text-center">
+            <h3 class="tool-title">🗳️ 全員の投票が完了しました</h3>
+            <p>結果発表で最多得票者と全員の役職を公開します。</p>
+            <p class="text-xs text-muted">全員1票ずつなら処刑なし。それ以外の最多同票は全員処刑とします。</p>
+            <button type="button" class="btn btn-warning btn-lg btn-block" id="btn-open-ww-result">投票結果と役職を公開する ➔</button>
+          </div>
+        `;
         container.querySelector("#btn-open-ww-result").addEventListener("click", () => {
+          if (state.votes.length !== state.playerCount) return;
           Sound.playFanfare();
-          Confetti.burst(80);
+          if (typeof Confetti !== "undefined") Confetti.burst(80);
           state.step = "result";
           update();
         });
@@ -3267,11 +3311,30 @@ const GameTools = {
           window.StampRally.markPlayed("one-night-werewolf");
         }
         const werewolves = state.players.filter(p => p.currentRole === "werewolf");
+
         const hasWerewolf = werewolves.length > 0;
+        const tally = new Map(state.players.map(p => [p.id, 0]));
+        state.votes.forEach(vote => tally.set(vote.targetId, (tally.get(vote.targetId) || 0) + 1));
+        const highest = Math.max(0, ...tally.values());
+        const everyoneOneVote = state.players.every(p => tally.get(p.id) === 1);
+        const executed = everyoneOneVote ? [] : state.players.filter(p => highest > 0 && tally.get(p.id) === highest);
+        const caughtWolf = executed.some(p => p.currentRole === "werewolf");
+        const villageWon = hasWerewolf ? caughtWolf : executed.length === 0;
+        const verdict = !hasWerewolf && executed.length
+          ? "😢 人狼がいないのに処刑。今回は全員敗北"
+          : villageWon ? "🎉 村人チームの勝利！" : "🐺 人狼チームの勝利！";
+        const executionLabel = executed.length
+          ? executed.map(p => escapeHTML(p.name)).join("、") + "（" + highest + "票）"
+          : "処刑なし（全員に1票ずつ）";
 
         container.innerHTML = `
           <div class="tool-card text-center">
-            <h3 class="tool-title">🎉 最終役職オープン！</h3>
+            <h3 class="tool-title">🎉 投票結果・最終役職</h3>
+            <div class="topic-box mb-3" role="status">
+              <h4 class="font-bold">${verdict}</h4>
+              <p>処刑された人：${executionLabel}</p>
+              <p class="text-xs text-muted">怪盗による交換後の役職で勝敗を判定しています。</p>
+            </div>
 
             <div class="roles-list my-3">
               ${state.players.map(p => `
@@ -3440,13 +3503,13 @@ const GameTools = {
         container.querySelector("#btn-share-haiku").addEventListener("click", () => {
           Sound.playClick();
           const tweetText = `【詠み人知らず】奇跡の合作俳句が爆誕！\n\n${state.kami}\n${state.naka}\n${state.shimo}\n\n#詠み人知らず #あそびポケット\n${window.location.href}`;
-          window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`, "_blank");
+          window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`, "_blank", "noopener,noreferrer");
         });
 
         container.querySelector("#btn-share-haiku-line").addEventListener("click", () => {
           Sound.playClick();
           const lineText = `【詠み人知らず】奇跡の合作俳句が爆誕！\n\n${state.kami}\n${state.naka}\n${state.shimo}\n\nあそびポケットで遊ぼう！\n${window.location.href}`;
-          window.open(`https://line.me/R/msg/text/?${encodeURIComponent(lineText)}`, "_blank");
+          window.open(`https://line.me/R/msg/text/?${encodeURIComponent(lineText)}`, "_blank", "noopener,noreferrer");
         });
 
         container.querySelector("#btn-restart-haiku").addEventListener("click", () => {
@@ -3574,6 +3637,8 @@ const GameTools = {
       winner: null,
       reactionMs: 0,
       timerId: null,
+      nextTimerId: null,
+      disposed: false,
       startTime: 0
     };
 
@@ -3603,7 +3668,7 @@ const GameTools = {
                 <button class="btn btn-sm btn-danger mt-1 font-bold" id="btn-duel-batsu">🔥 敗者の罰ゲーム！</button>
               </div>
             ` : `
-              <div class="duel-center-text">${state.phase === 'go' ? `${state.reactionMs}ms` : '集中せよ…'}</div>
+              <div class="duel-center-text">${state.phase === 'go' ? 'GO！' : '集中せよ…'}</div>
             `}
           </div>
 
@@ -3651,6 +3716,7 @@ const GameTools = {
     }
 
     function startRound() {
+      if (state.disposed || state.phase === "win") return;
       Sound.playClick();
       state.phase = "waiting";
       update();
@@ -3716,17 +3782,21 @@ const GameTools = {
         update();
       } else {
         update();
-        safeSetTimeout(() => {
-          if (state.phase !== "win") {
-            startRound();
-          }
+        if (state.nextTimerId) safeClearTimeout(state.nextTimerId);
+        state.nextTimerId = safeSetTimeout(() => {
+          state.nextTimerId = null;
+          if (!state.disposed && state.phase !== "win") startRound();
         }, 1500);
       }
     }
 
     update();
     return () => {
+      state.disposed = true;
       if (state.timerId) safeClearTimeout(state.timerId);
+      if (state.nextTimerId) safeClearTimeout(state.nextTimerId);
+      state.timerId = null;
+      state.nextTimerId = null;
     };
   },
 
@@ -3786,10 +3856,10 @@ const GameTools = {
           ${state.phase === 'result' ? `
             <div class="duel-overlay">
               <div class="tool-card text-center animate-bounce">
-                <h2>🏆 ${state.gauge < 50 ? 'PLAYER 1' : state.gauge > 50 ? 'PLAYER 2' : '引き分け'} の勝利！</h2>
+                <h2>${state.gauge === 50 ? '🤝 引き分け！' : '🏆 PLAYER ' + (state.gauge < 50 ? '1' : '2') + ' の勝利！'}</h2>
                 <p class="my-2">P1: ${state.p1Taps}回 vs P2: ${state.p2Taps}回</p>
                 <button class="btn btn-primary btn-block mt-3" id="btn-mash-retry">もう一度対決 🔄</button>
-                <button class="btn btn-danger btn-block mt-2 font-bold" id="btn-mash-batsu">🔥 敗者の罰ゲーム！ ➔</button>
+                ${state.gauge !== 50 ? '<button class="btn btn-danger btn-block mt-2 font-bold" id="btn-mash-batsu">🔥 敗者の罰ゲーム！ ➔</button>' : ''}
               </div>
             </div>
           ` : ''}
@@ -3828,6 +3898,7 @@ const GameTools = {
           state.timer.start();
 
           function finishMash() {
+            if (state.phase !== "playing") return;
             state.phase = "result";
             Sound.playFanfare();
             if (typeof Confetti !== "undefined") Confetti.launch();
@@ -4683,7 +4754,7 @@ const GameTools = {
 
           <div class="setting-group my-3">
             <label class="setting-label">参加人数: <span class="badge-num">${state.playerCount}人</span></label>
-            <input type="range" class="range-slider" min="3" max="10" value="${state.playerCount}" id="range-takenoko">
+            <input type="range" class="range-slider" min="3" max="12" value="${state.playerCount}" id="range-takenoko">
           </div>
 
           <div class="takenoko-display-box my-4">
@@ -4692,8 +4763,8 @@ const GameTools = {
           </div>
 
           <div class="flex gap-2 justify-center">
-            <button class="btn btn-success btn-lg flex-1" id="btn-takenoko-next">
-              🌱 次のニョッキ！ (+${state.currentCount + 1})
+            <button class="btn btn-success btn-lg flex-1" id="btn-takenoko-next" ${state.currentCount >= state.playerCount ? "disabled" : ""}>
+              ${state.currentCount >= state.playerCount ? "全員の番が終わりました" : "🌱 次のニョッキ！ (+" + (state.currentCount + 1) + ")"}
             </button>
             <button class="btn btn-danger btn-lg" id="btn-takenoko-foul">💥 被った！</button>
           </div>
@@ -4704,10 +4775,12 @@ const GameTools = {
 
       container.querySelector("#range-takenoko").addEventListener("input", (e) => {
         state.playerCount = parseInt(e.target.value);
+        state.currentCount = Math.min(state.currentCount, state.playerCount);
         update();
       });
 
       container.querySelector("#btn-takenoko-next").addEventListener("click", () => {
+        if (state.currentCount >= state.playerCount) return;
         state.currentCount++;
         Sound.playCountBeep(false);
         update();
@@ -4774,7 +4847,7 @@ const GameTools = {
 
           ${!state.isWon ? `
             <div class="input-group my-3 flex gap-2 justify-center">
-              <input type="number" class="input-num" id="input-highlow-guess" placeholder="予想数字を入力">
+              <input type="number" class="input-num" id="input-highlow-guess" min="${state.min}" max="${state.max}" step="1" inputmode="numeric" placeholder="予想数字を入力">
               <button class="btn btn-primary" id="btn-highlow-submit">判定！</button>
             </div>
           ` : `
@@ -4818,8 +4891,17 @@ const GameTools = {
 
     function doGuess() {
       const inp = container.querySelector("#input-highlow-guess");
-      const val = parseInt(inp.value);
-      if (isNaN(val)) return;
+      const raw = String(inp?.value ?? "").trim();
+      if (!/^\d{1,4}$/.test(raw)) {
+        Toast.warning("数字を1つ、整数で入力してください。");
+        return;
+      }
+      const val = Number(raw);
+      if (!Number.isSafeInteger(val) || val < state.min || val > state.max) {
+        Toast.warning(`今は${state.min}〜${state.max}の整数を入力してください。`);
+        return;
+      }
+      if (state.isWon) return;
       state.attempts++;
 
       if (val === state.target) {
@@ -4895,17 +4977,23 @@ const GameTools = {
             </div>
           ` : ''}
 
-          <div class="flex gap-2 justify-center my-3">
-            <button class="btn btn-success flex-1" id="btn-log-yes">⭕ はい (YES)</button>
-            <button class="btn btn-danger flex-1" id="btn-log-no">❌ いいえ (NO)</button>
-            <button class="btn btn-outline flex-1" id="btn-log-irrelevant">❓ 関係ない</button>
+          <div class="setting-group text-left my-3">
+            <label for="input-twenty-question" class="setting-label">今の質問メモ（任意・このラウンドだけ）</label>
+            <input type="text" id="input-twenty-question" class="decision-input" maxlength="120" autocomplete="off"
+              placeholder="例：生き物ですか？">
           </div>
+          <div class="flex gap-2 justify-center my-3">
+            <button class="btn btn-success flex-1" id="btn-log-yes" ${state.remaining <= 0 ? "disabled" : ""}>⭕ はい (YES)</button>
+            <button class="btn btn-danger flex-1" id="btn-log-no" ${state.remaining <= 0 ? "disabled" : ""}>❌ いいえ (NO)</button>
+            <button class="btn btn-outline flex-1" id="btn-log-irrelevant" ${state.remaining <= 0 ? "disabled" : ""}>❓ 関係ない</button>
+          </div>
+          ${state.remaining <= 0 ? '<p class="text-danger font-bold" role="status">20問使い切りました。答え合わせをしてリセットしてください。</p>' : ''}
 
           <div class="history-list mt-4">
             <h4 class="text-sm font-bold text-muted">質問ログ:</h4>
             ${state.logs.map((l, i) => `
               <div class="log-item">
-                Q${i + 1}: ${l.type === 'YES' ? '<span class="text-success font-bold">⭕ YES</span>' : l.type === 'NO' ? '<span class="text-danger font-bold">❌ NO</span>' : '<span class="text-muted">❓ 関係なし</span>'}
+                Q${i + 1}: ${l.question ? '<span class="font-bold">' + escapeHTML(l.question) + '</span> → ' : ''}${l.type === 'YES' ? '<span class="text-success font-bold">⭕ YES</span>' : l.type === 'NO' ? '<span class="text-danger font-bold">❌ NO</span>' : '<span class="text-muted">❓ 関係なし</span>'}
               </div>
             `).reverse().join('')}
           </div>
@@ -4944,8 +5032,10 @@ const GameTools = {
 
     function addLog(type) {
       if (state.remaining <= 0) return;
+      const input = container.querySelector("#input-twenty-question");
+      const question = String(input?.value ?? "").trim().slice(0, 120);
       state.remaining--;
-      state.logs.push({ type });
+      state.logs.push({ type, question });
       if (typeof window !== "undefined" && window.StampRally) {
         window.StampRally.markPlayed("twenty-questions");
       }
@@ -5109,13 +5199,13 @@ const GameTools = {
     let state = {
       current: 0,
       target: 30,
-      turn: 1
+      finished: false
     };
 
     function update() {
       container.innerHTML = `
         <div class="tool-card text-center">
-          <h3 class="tool-title">🔢 30言ったら負けゲーム (21ゲーム)</h3>
+          <h3 class="tool-title">🔢 ${state.target}を言ったら負けゲーム</h3>
 
           <div class="btn-toggle-group my-3">
             <button class="btn-toggle ${state.target === 21 ? 'active' : ''}" data-target="21">21ゲーム</button>
@@ -5127,13 +5217,14 @@ const GameTools = {
             <div class="current-number font-black font-mono ${state.current >= state.target - 3 ? 'text-danger' : 'text-primary'}">
               ${state.current} / ${state.target}
             </div>
-            <small class="text-muted">${state.target} を言わされたプレイヤーが敗北！</small>
+            <small class="text-muted">${state.target} を言わされた人が敗北！</small>
+            ${state.finished ? '<p class="text-danger font-bold" role="status">💥 決着！最後に数字を言った人の負けです。「ゲームやり直し」で再戦できます。</p>' : ''}
           </div>
 
           <div class="flex gap-2 justify-center my-3">
-            <button class="btn btn-primary btn-lg flex-1" data-add="1">+1個進める</button>
-            <button class="btn btn-primary btn-lg flex-1" data-add="2">+2個進める</button>
-            <button class="btn btn-primary btn-lg flex-1" data-add="3">+3個進める</button>
+            <button class="btn btn-primary btn-lg flex-1" data-add="1" ${state.finished || state.current + 1 > state.target ? 'disabled' : ''}>+1個進める</button>
+            <button class="btn btn-primary btn-lg flex-1" data-add="2" ${state.finished || state.current + 2 > state.target ? 'disabled' : ''}>+2個進める</button>
+            <button class="btn btn-primary btn-lg flex-1" data-add="3" ${state.finished || state.current + 3 > state.target ? 'disabled' : ''}>+3個進める</button>
           </div>
 
           <button class="btn btn-outline btn-block mt-3" id="btn-reset-count30">ゲームやり直し 🔄</button>
@@ -5144,23 +5235,25 @@ const GameTools = {
         btn.addEventListener("click", () => {
           state.target = parseInt(btn.dataset.target);
           state.current = 0;
+          state.finished = false;
           update();
         });
       });
 
       container.querySelectorAll("[data-add]").forEach(btn => {
         btn.addEventListener("click", () => {
-          const add = parseInt(btn.dataset.add);
+          const add = Number(btn.dataset.add);
+          if (!Number.isInteger(add) || add < 1 || add > 3 || state.finished || state.current + add > state.target) return;
           state.current += add;
           Sound.playClick();
           Sound.hapticMedium();
-          if (state.current >= state.target) {
+          if (state.current === state.target) {
+            state.finished = true;
             Sound.playExplosion();
             if (typeof window !== "undefined" && window.StampRally) {
               window.StampRally.markPlayed("counting-game-30");
             }
             Toast.warning(`💥 ${state.target}に到達！言った人の負けです！`);
-            state.current = 0;
           }
           update();
         });
@@ -5168,6 +5261,7 @@ const GameTools = {
 
       container.querySelector("#btn-reset-count30").addEventListener("click", () => {
         state.current = 0;
+        state.finished = false;
         update();
       });
     }
@@ -5189,8 +5283,12 @@ const GameTools = {
       timerSec: 5,
       timerMax: 5,
       timerRunning: false,
-      timerInterval: null
+      timerInterval: null,
+      usedWords: []
     };
+
+    const normalizeWord = (value) => String(value ?? "").normalize("NFKC")
+      .replace(/\s+/g, "").toLowerCase();
 
     function startTimer() {
       if (state.timerInterval) {
@@ -5271,6 +5369,24 @@ const GameTools = {
             </button>
           </div>
 
+
+          <div class="setting-group my-3 text-left">
+            <label for="input-wordchain-word" class="setting-label">使った言葉を記録（任意）</label>
+            <div class="flex gap-2">
+              <input type="text" id="input-wordchain-word" class="decision-input" maxlength="30"
+                autocomplete="off" placeholder="例：りんご">
+              <button type="button" class="btn btn-outline" id="btn-wordchain-add">記録</button>
+            </div>
+            <p class="text-xs text-muted">重複を確認します。語尾や縛りへの適合は参加者で判定してください。</p>
+            <div class="text-sm" id="wordchain-used-list" aria-live="polite">
+              ${state.usedWords.length ? state.usedWords.map((word, index) =>
+                '<span class="badge badge-info mr-1">' + (index + 1) + '. ' + escapeHTML(word) + '</span>'
+              ).join(' ') : 'まだ記録はありません'}
+            </div>
+            <button type="button" class="btn btn-xs btn-outline mt-2" id="btn-wordchain-undo"
+              ${state.usedWords.length ? '' : 'disabled'}>最後の1件を取り消す</button>
+          </div>
+
           <div class="flex gap-2 mt-3">
             <button class="btn btn-danger flex-1 font-bold" id="btn-chain-foul">
               💥 詰まり・アウト判定！
@@ -5283,10 +5399,12 @@ const GameTools = {
       `;
 
       container.querySelector("#btn-next-rule").addEventListener("click", () => {
+        stopTimer();
         Sound.playDrumRoll(0.8);
         safeSetTimeout(() => {
           Sound.playJajan();
           state.currentRule = extractTopicText(drawShuffledTopic(game.id || "word-chain", state.rules)) || "3文字固定";
+          state.usedWords = [];
           render();
         }, 800);
       });
@@ -5299,6 +5417,28 @@ const GameTools = {
           if (state.timerRunning) startTimer();
           render();
         });
+      });
+
+
+      container.querySelector("#btn-wordchain-add").addEventListener("click", () => {
+        const value = container.querySelector("#input-wordchain-word").value.trim().slice(0, 30);
+        if (!value) { Toast.warning("言葉を入力してください。"); return; }
+        if (state.usedWords.some(word => normalizeWord(word) === normalizeWord(value))) {
+          Toast.warning("その言葉はすでに使われています！");
+          return;
+        }
+        if (state.usedWords.length >= 100) {
+          Toast.warning("記録は100語までです。ルールを変えるとリセットできます。");
+          return;
+        }
+        state.usedWords.push(value);
+        Sound.playClick();
+        render();
+      });
+      container.querySelector("#btn-wordchain-undo").addEventListener("click", () => {
+        if (!state.usedWords.length) return;
+        state.usedWords.pop();
+        render();
       });
 
       container.querySelector("#btn-timer-toggle").addEventListener("click", () => {
@@ -5336,7 +5476,6 @@ const GameTools = {
       ep1: "",
       ep2: "",
       ep3: "",
-      shuffled: [],
       suggestedPrompt: null
     };
 
@@ -5358,9 +5497,9 @@ const GameTools = {
           ` : ''}
 
           <div class="setting-group">
-            <input type="text" class="input-player-name mb-2" id="input-ep1" placeholder="本当のエピソード 1" value="${escapeHTML(state.ep1)}">
-            <input type="text" class="input-player-name mb-2" id="input-ep2" placeholder="本当のエピソード 2" value="${escapeHTML(state.ep2)}">
-            <input type="text" class="input-player-name mb-2" id="input-ep3" placeholder="真っ赤な嘘のエピソード" value="${escapeHTML(state.ep3)}">
+            <input type="text" class="input-player-name mb-2" id="input-ep1" maxlength="160" autocomplete="off" placeholder="本当のエピソード 1" value="${escapeHTML(state.ep1)}">
+            <input type="text" class="input-player-name mb-2" id="input-ep2" maxlength="160" autocomplete="off" placeholder="本当のエピソード 2" value="${escapeHTML(state.ep2)}">
+            <input type="text" class="input-player-name mb-2" id="input-ep3" maxlength="160" autocomplete="off" placeholder="真っ赤な嘘のエピソード" value="${escapeHTML(state.ep3)}">
           </div>
 
           <button class="btn btn-primary btn-block btn-lg" id="btn-shuffle-truths">
@@ -5381,15 +5520,23 @@ const GameTools = {
       }
 
       container.querySelector("#btn-shuffle-truths").addEventListener("click", () => {
-        state.ep1 = container.querySelector("#input-ep1").value.trim() || "本当のエピソードA";
-        state.ep2 = container.querySelector("#input-ep2").value.trim() || "本当のエピソードB";
-        state.ep3 = container.querySelector("#input-ep3").value.trim() || "嘘のエピソード";
+        state.ep1 = container.querySelector("#input-ep1").value.trim().slice(0, 160);
+        state.ep2 = container.querySelector("#input-ep2").value.trim().slice(0, 160);
+        state.ep3 = container.querySelector("#input-ep3").value.trim().slice(0, 160);
+        if (!state.ep1 || !state.ep2 || !state.ep3) {
+          Toast.warning("本当の話2つと嘘1つを入力してください。");
+          return;
+        }
 
         const arr = [
           { text: state.ep1, isLie: false },
           { text: state.ep2, isLie: false },
           { text: state.ep3, isLie: true }
-        ].sort(() => Math.random() - 0.5);
+        ];
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
 
         Sound.playSelect();
         showRevealed(arr);
@@ -5427,10 +5574,16 @@ const GameTools = {
             Sound.playFanfare();
             Sound.playJajan();
             btn.parentElement.classList.add("card-error");
-            btn.parentElement.innerHTML += '<div class="text-danger font-black mt-1">💥 これが真っ赤な嘘でした！</div>';
+            const notice = document.createElement("div");
+            notice.className = "text-danger font-black mt-1";
+            notice.textContent = "💥 これが真っ赤な嘘でした！";
+            btn.parentElement.appendChild(notice);
           } else {
             Sound.playWrong();
-            btn.parentElement.innerHTML += '<div class="text-success font-bold mt-1">⭕ これは本当の話です！</div>';
+            const notice = document.createElement("div");
+            notice.className = "text-success font-bold mt-1";
+            notice.textContent = "⭕ これは本当の話です！";
+            btn.parentElement.appendChild(notice);
           }
           btn.remove();
         });
