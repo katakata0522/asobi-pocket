@@ -50,7 +50,7 @@ body.is-tool-active .btn-floating-score{display:flex!important}.custom-topic-car
 .recent-game-link{display:flex;align-items:center;gap:7px;flex-shrink:0;background:var(--card-bg);color:var(--text-main);padding:10px 12px;border:1px solid var(--border);border-radius:9px;text-decoration:none;font-size:.77rem;min-height:44px;max-width:100%;white-space:nowrap}
 #view-home .grid-heading{order:4}
 #view-home .games-grid,#view-home .empty-state{order:5}
-#games-grid{align-items:stretch}
+#games-grid{align-items:stretch;grid-auto-rows:1fr}
 #games-grid>.game-card{display:flex;flex-direction:column;width:100%;min-width:0;content-visibility:visible;contain-intrinsic-size:none}
 #games-grid .card-top{flex:0 0 auto;min-height:74px}
 #games-grid .card-body{display:flex;flex-direction:column;flex:1;min-width:0}
