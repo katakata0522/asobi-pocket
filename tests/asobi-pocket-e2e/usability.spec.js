@@ -1,13 +1,14 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './playwright-runtime.js';
 test.beforeEach(async ({ page }) => {
   await page.route('https://www.googletagmanager.com/**', route => route.fulfill({ body: '', contentType: 'application/javascript' }));
 });
 
-test('folded discovery shows games first and retains removable conditions', async ({ page }) => {
+test('folded discovery follows quick recommendations and retains removable conditions', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#games-grid .game-card').first()).toBeVisible();
   expect(await page.locator('#discovery-filters').evaluate(el => el.open)).toBe(false);
-  expect((await page.locator('#games-grid .game-card').first().boundingBox()).y).toBeLessThan(400);
+  await expect(page.locator('#quick-pick-results .quick-pick-card')).toHaveCount(3);
+  expect((await page.locator('#quick-pick-results').boundingBox()).y).toBeLessThan((await page.locator('#games-grid').boundingBox()).y);
   await page.locator('#discovery-filters > summary').click();
   await page.locator('#fit-players').selectOption('2');
   await page.locator('#fit-duration').selectOption('3');

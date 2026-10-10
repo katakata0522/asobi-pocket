@@ -513,15 +513,14 @@
     }
   }, true);
 
-  if (typeof globalThis.AFFILIATE_CONFIG === "undefined") {
-    globalThis.AFFILIATE_CONFIG = Object.freeze({
-      isAffiliateEnabled: false,
-      getAmazonUrl(keyword) {
-        return `https://www.amazon.co.jp/s?k=${encodeURIComponent(String(keyword ?? ""))}`;
-      },
-      getRakutenUrl(keyword) {
-        return `https://search.rakuten.co.jp/search/mall/${encodeURIComponent(String(keyword ?? ""))}/`;
-      }
-    });
-  }
+  // 提携状況が未確認の間は通常の検索URLだけを表示する単一設定。
+  globalThis.AFFILIATE_CONFIG = Object.freeze({
+    isAffiliateEnabled: false,
+    getAmazonUrl(keyword) {
+      return `https://www.amazon.co.jp/s?k=${encodeURIComponent(String(keyword ?? ""))}`;
+    },
+    getRakutenUrl(keyword) {
+      return `https://search.rakuten.co.jp/search/mall/${encodeURIComponent(String(keyword ?? ""))}/`;
+    }
+  });
 })();

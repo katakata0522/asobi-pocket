@@ -37,42 +37,7 @@
   <link rel="stylesheet" href="style.css?v=20261001">
 
   <!-- Google Analytics: KatakataLab共通プロパティ。SPAのhash遷移もpage_viewとして送信 -->
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
-    gtag('js', new Date());
-    gtag('config', 'G-FYFPS7L9X9', { anonymize_ip: true, send_page_view: false });
-    (function () {
-      let loaded = false;
-      const loadAnalytics = function () {
-        if (loaded) return;
-        loaded = true;
-        const script = document.createElement('script');
-        script.async = true;
-        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-FYFPS7L9X9';
-        document.head.appendChild(script);
-      };
-      const trackPageView = function () {
-        const hash = window.location.hash || '#home';
-        gtag('event', 'page_view', {
-          page_title: document.title,
-          page_location: window.location.href,
-          page_path: window.location.pathname + window.location.search + hash
-        });
-        if (hash.startsWith('#game/')) {
-          gtag('event', 'asobi_game_view', { game_id: hash.slice('#game/'.length) });
-        }
-      };
-      ['pointerdown', 'keydown', 'scroll'].forEach(function (eventName) {
-        window.addEventListener(eventName, loadAnalytics, { once: true, passive: true });
-      });
-      window.addEventListener('load', function () {
-        window.setTimeout(loadAnalytics, 2500);
-        trackPageView();
-      }, { once: true });
-      window.addEventListener('hashchange', trackPageView);
-    }());
-  </script>
+  <script defer src="js/bootstrap.js"></script>
   <link rel="stylesheet" href="quality-ui.css">
   <link rel="stylesheet" href="evolution.css?v=20261001-ux1">
 </head>
@@ -133,6 +98,28 @@
     <!-- メインコンテンツ (コンテンツファースト設計) -->
     <main class="main-container">
       <div class="discovery-heading" id="discovery" tabindex="-1"><div><p class="section-kicker">FIND YOUR PLAY</p><h1>今日は、何して遊ぶ？</h1></div><p>気になる遊びをタップ。迷ったら、人数や時間で絞れます。</p></div>
+      <!-- 迷ったときの3候補。詳細検索と従来の全ゲーム一覧は維持する。 -->
+      <section class="pocket-quick-picker" id="pocket-quick-picker" aria-labelledby="quick-pick-title">
+        <div class="quick-pick-intro">
+          <p class="quick-pick-eyebrow">PLAY TOGETHER</p>
+          <h2 id="quick-pick-title">今のメンバーに合う遊びを探す</h2>
+          <p>人数と時間を選ぶだけ。おすすめ3つからすぐ遊べます。</p>
+        </div>
+        <div class="quick-pick-form">
+          <label for="quick-pick-players">何人で？
+            <select id="quick-pick-players"><option value="all">指定しない</option><option value="2">2人</option><option value="3">3人</option><option value="4">4人</option><option value="5">5人</option><option value="6">6人</option><option value="8">8人</option><option value="10">10人</option></select>
+          </label>
+          <label for="quick-pick-minutes">どのくらい？
+            <select id="quick-pick-minutes"><option value="all">指定しない</option><option value="3">3分まで</option><option value="5">5分まで</option><option value="10">10分まで</option></select>
+          </label>
+          <label for="quick-pick-mood">どんな気分？
+            <select id="quick-pick-mood"><option value="all">指定しない</option><option value="laugh">盛り上がりたい</option><option value="talk">話したい</option><option value="mind">考えたい</option></select>
+          </label>
+          <button type="button" id="quick-pick-submit" class="quick-pick-submit">おすすめを探す <span aria-hidden="true">→</span></button>
+        </div>
+        <div class="quick-pick-results" id="quick-pick-results" aria-live="polite"></div>
+        <a class="quick-pick-all" href="#all-games">すべての遊びから探す ↓</a>
+      </section>
       <!-- 🔍 検索 ＆ 厳選スマートタグコントロール (ファーストビュー直結) -->
       <details class="filter-disclosure" id="discovery-filters">
         <summary><span>遊びを絞る</span><span class="filter-hint">人数・時間・気分</span><span class="disclosure-arrow" aria-hidden="true">⌄</span></summary>
@@ -165,7 +152,7 @@
               <option value="players-few">👥 少人数向き (2人〜)</option>
               <option value="players-many">🎪 大人数向き (5人〜)</option>
               <option value="has-tool">📱 ツール付き優先</option>
-              <option value="popular">⭐ 人気・評価順</option>
+              <option value="popular">⭐ 編集部おすすめ順</option>
             </select>
           </div>
         </div>
@@ -174,7 +161,7 @@
       </details>
       <div class="filter-overview"><div id="active-filter-summary" class="active-filter-summary" role="group" aria-label="選択中の条件"></div><div class="filter-count-label" id="filter-result-count">全19件</div><button id="btn-clear-filters" class="fit-reset hidden" type="button">条件をクリア</button></div>
       <section class="recent-games hidden" id="recent-games" aria-labelledby="recent-games-title"><h2 id="recent-games-title">最近開いた遊び</h2><div id="recent-games-list"></div></section>
-      <h2 class="grid-heading">遊びを選ぶ <span>気になるカードをタップ</span></h2>
+      <h2 class="grid-heading" id="all-games">遊びを選ぶ <span>気になるカードをタップ</span></h2>
       <!-- ゲームカードタイル一覧 -->
       <section class="games-grid" id="games-grid" aria-label="ゲーム一覧"></section>
       <div class="pocket-decisions" aria-label="遊び選びのお手伝い"><button class="btn-roulette-inline btn-quick-finger" id="btn-quick-finger" title="親決めルーレット" aria-label="親決めルーレットを開く">
@@ -598,12 +585,7 @@
     "operatingSystem": "All",
     "inLanguage": "ja",
     "isAccessibleForFree": true,
-    "offers": {"@type": "Offer", "price": "0", "priceCurrency": "JPY"},
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.9",
-      "ratingCount": "128"
-    }
+    "offers": {"@type": "Offer", "price": "0", "priceCurrency": "JPY"}
   }
   </script>
 
@@ -620,12 +602,6 @@
   <script defer src="js/evolution.js"></script>
 
   <!-- Service Worker 登録 -->
-  <script>
-    if ("serviceWorker" in navigator) {
-      const registerPwa = () => navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).catch(() => {});
-      if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", registerPwa, { once: true });
-      else registerPwa();
-    }
-  </script>
+  
 </body>
 </html>

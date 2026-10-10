@@ -3,27 +3,8 @@
  * メインアプリケーション制御（堅牢・ライフサイクル管理版）
  */
 
-// アフィリエイト・検索URLマネージャー (グローバル・防御的定義)
-const AFFILIATE_CONFIG = {
-  amazonTag: "katakatalab-22",
-  getAmazonUrl(keyword) {
-    try {
-      const q = encodeURIComponent(keyword || "ボードゲーム パーティーゲーム");
-      return `https://www.amazon.co.jp/s?k=${q}&tag=${this.amazonTag}`;
-    } catch (e) {
-      return "https://www.amazon.co.jp/";
-    }
-  },
-  getRakutenUrl(keyword) {
-    try {
-      const q = encodeURIComponent(keyword || "ボードゲーム パーティーゲーム");
-      return `https://search.rakuten.co.jp/search/mall/${q}/`;
-    } catch (e) {
-      return "https://search.rakuten.co.jp/";
-    }
-  }
-};
-window.AFFILIATE_CONFIG = AFFILIATE_CONFIG;
+// 関連商品リンクの設定は data-contract.js が一元管理する。
+const AFFILIATE_CONFIG = window.AFFILIATE_CONFIG;
 
 // GA4 イベントトラッカー（防御的）
 const Analytics = {
@@ -49,9 +30,8 @@ window.Analytics = Analytics;
 
 document.addEventListener("DOMContentLoaded", () => {
   // HTMLエスケープ（tools.jsと安全に共有・フォールバック付き）
-  const escapeHTML = window.escapeHTML || function (str) {
-    if (typeof str !== "string") return String(str || "");
-    return str
+  const escapeHTML = window.escapeHTML || function (value) {
+    return String(value ?? "")
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
@@ -63,8 +43,29 @@ document.addEventListener("DOMContentLoaded", () => {
   const Storage = {
     get(key, defaultVal) {
       try {
-        const val = localStorage.getItem(key);
-        return val ? JSON.parse(val) : defaultVal;
+        const raw = localStorage.getItem(key);
+        if (raw == null) return defaultVal;
+        const value = JSON.parse(raw);
+        // JSON may be valid but its shape can be incompatible with a newer release.
+        if (Array.isArray(defaultVal)) {
+          if (!Array.isArray(value)) return defaultVal;
+          if (key === "asobi_scoreboard_players") {
+            const rows = value.slice(0, 20)
+              .filter(row => row && typeof row === "object" && !Array.isArray(row))
+              .map((row, index) => ({
+                name: typeof row.name === "string" && row.name.trim()
+                  ? row.name.trim().slice(0, 40) : `プレイヤー${index + 1}`,
+                score: Number.isFinite(Number(row.score))
+                  ? Math.max(-999999, Math.min(999999, Number(row.score))) : 0
+              }));
+            return rows.length ? rows : defaultVal;
+          }
+          return value.filter(item => typeof item === "string" && item.length <= 128).slice(0, 128);
+        }
+        if (defaultVal !== null && typeof defaultVal === "object") {
+          return value && typeof value === "object" && !Array.isArray(value) ? value : defaultVal;
+        }
+        return typeof value === typeof defaultVal ? value : defaultVal;
       } catch (e) {
         return defaultVal;
       }
@@ -290,60 +291,84 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.addEventListener("keydown", (e) => ModalManager.handleKeyDown(e));
 
-  // カスタムお題 ＆ スキップ除外マネージャー
+  // ユーザー入力と保存済みデータは信用しない。古い保存形式・破損値を吸収する。
   const TopicManager = {
+    validGameId(gameId) {
+      return typeof gameId === "string" && /^[a-z0-9-]+$/.test(gameId)
+        && GAMES_DATA.some(game => game.id === gameId);
+    },
+    loadMap(key) {
+      const raw = Storage.get(key, {});
+      return raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+    },
     getCustomTopics(gameId) {
-      const data = Storage.get("asobi_custom_topics", {});
-      return data[gameId] || [];
+      if (!this.validGameId(gameId)) return [];
+      const raw = this.loadMap("asobi_custom_topics")[gameId];
+      return Array.isArray(raw)
+        ? raw.filter(topic => typeof topic === "string" && topic.trim().length > 0)
+          .map(topic => topic.trim().slice(0, 160)).slice(0, 100)
+        : [];
     },
     addCustomTopic(gameId, topic) {
-      if (!topic || !topic.trim()) return false;
-      const data = Storage.get("asobi_custom_topics", {});
-      if (!data[gameId]) data[gameId] = [];
-      data[gameId].push(topic.trim());
+      if (!this.validGameId(gameId) || typeof topic !== "string") return false;
+      const value = topic.trim().slice(0, 160);
+      if (!value) return false;
+      const list = this.getCustomTopics(gameId);
+      if (list.length >= 100 || list.includes(value)) return false;
+      const data = this.loadMap("asobi_custom_topics");
+      data[gameId] = [...list, value];
       Storage.set("asobi_custom_topics", data);
       return true;
     },
     removeCustomTopic(gameId, index) {
-      const data = Storage.get("asobi_custom_topics", {});
-      if (data[gameId]) {
-        data[gameId].splice(index, 1);
-        Storage.set("asobi_custom_topics", data);
-      }
+      if (!this.validGameId(gameId) || !Number.isInteger(index) || index < 0) return;
+      const data = this.loadMap("asobi_custom_topics");
+      const list = this.getCustomTopics(gameId);
+      if (index >= list.length) return;
+      list.splice(index, 1);
+      data[gameId] = list;
+      Storage.set("asobi_custom_topics", data);
     },
     getExcludedTopics(gameId) {
-      const data = Storage.get("asobi_excluded_topics", {});
-      return data[gameId] || [];
+      if (!this.validGameId(gameId)) return [];
+      const raw = this.loadMap("asobi_excluded_topics")[gameId];
+      return Array.isArray(raw)
+        ? raw.filter(topic => typeof topic === "string" && topic.length > 0).slice(0, 100)
+        : [];
     },
     excludeTopic(gameId, topic) {
-      const data = Storage.get("asobi_excluded_topics", {});
-      if (!data[gameId]) data[gameId] = [];
-      if (!data[gameId].includes(topic)) {
-        data[gameId].push(topic);
+      if (!this.validGameId(gameId) || typeof topic !== "string") return;
+      const value = topic.trim().slice(0, 160);
+      if (!value) return;
+      const data = this.loadMap("asobi_excluded_topics");
+      const list = this.getExcludedTopics(gameId);
+      if (!list.includes(value) && list.length < 100) {
+        data[gameId] = [...list, value];
         Storage.set("asobi_excluded_topics", data);
       }
     },
     unexcludeTopic(gameId, topic) {
-      const data = Storage.get("asobi_excluded_topics", {});
-      if (data[gameId]) {
-        data[gameId] = data[gameId].filter(t => t !== topic);
-        Storage.set("asobi_excluded_topics", data);
-      }
+      if (!this.validGameId(gameId)) return;
+      const data = this.loadMap("asobi_excluded_topics");
+      data[gameId] = this.getExcludedTopics(gameId).filter(value => value !== topic);
+      Storage.set("asobi_excluded_topics", data);
     },
     clearExcludedTopics(gameId) {
-      const data = Storage.get("asobi_excluded_topics", {});
-      if (data[gameId]) {
-        delete data[gameId];
-        Storage.set("asobi_excluded_topics", data);
-      }
+      if (!this.validGameId(gameId)) return;
+      const data = this.loadMap("asobi_excluded_topics");
+      delete data[gameId];
+      Storage.set("asobi_excluded_topics", data);
     },
     getActiveTopics(gameId, presetTopics = []) {
       const custom = this.getCustomTopics(gameId);
       const excluded = this.getExcludedTopics(gameId);
-      const combined = [...presetTopics, ...custom];
-      const filtered = combined.filter(t => {
-        const str = typeof t === "string" ? t : (t.text || t.title || t.question || t.q || t.word || t.citizen || t.common || JSON.stringify(t));
-        return !excluded.includes(str);
+      const combined = [...(Array.isArray(presetTopics) ? presetTopics : []), ...custom];
+      const filtered = combined.filter(item => {
+        const text = typeof item === "string" ? item
+          : item && typeof item === "object"
+            ? (item.text || item.title || item.question || item.q || item.word || item.citizen || item.common || JSON.stringify(item))
+            : "";
+        return !excluded.includes(text);
       });
       return filtered.length > 0 ? filtered : combined;
     }
@@ -776,6 +801,111 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   updateFavBadge();
 
+
+  // メインの19ゲームから3件に絞る。フィルター状態や個人的なお題は送信しない。
+  let requestedGameTab = null;
+  const quickPicker = {
+    results: document.getElementById("quick-pick-results"),
+    players: document.getElementById("quick-pick-players"),
+    minutes: document.getElementById("quick-pick-minutes"),
+    mood: document.getElementById("quick-pick-mood")
+  };
+
+  function quickPickDurationMax(game) {
+    const duration = String(game.duration || "").normalize("NFKC");
+    const minutes = [...duration.matchAll(/(\d+(?:\.\d+)?)\s*分/g)].map(part => Number(part[1]));
+    if (minutes.length) return Math.max(...minutes);
+    const seconds = [...duration.matchAll(/(\d+(?:\.\d+)?)\s*秒/g)].map(part => Number(part[1]));
+    if (seconds.length) return Math.max(...seconds) / 60;
+    return Number.isFinite(game.durationMin) ? game.durationMin : Infinity;
+  }
+
+  function quickPickMatchesMood(game, mood) {
+    if (mood === "all") return true;
+    const tags = new Set(Array.isArray(game.tags) ? game.tags : []);
+    if (mood === "talk") return game.genre === "talk" || tags.has("トーク") || tags.has("協力");
+    if (mood === "laugh") return game.genre === "laugh" || game.genre === "speed" || tags.has("大喜利") || tags.has("アクション");
+    if (mood === "mind") return game.genre === "mystery" || game.genre === "quiz" || tags.has("推理") || tags.has("心理戦");
+    return false;
+  }
+
+  function findQuickPicks() {
+    const rawPlayers = quickPicker.players?.value || "all";
+    const rawMinutes = quickPicker.minutes?.value || "all";
+    const mood = quickPicker.mood?.value || "all";
+    const count = rawPlayers === "all" ? null : Number(rawPlayers);
+    const limit = rawMinutes === "all" ? null : Number(rawMinutes);
+    const games = state.games.filter(game =>
+      game.section === "main" && /^[a-z0-9-]+$/.test(game.id)
+      && (count === null || (game.minPlayers <= count && game.maxPlayers >= count))
+      && (limit === null || quickPickDurationMax(game) <= limit)
+      && quickPickMatchesMood(game, mood)
+    ).sort((a, b) => (Number(b.recommendScore || 0) - Number(a.recommendScore || 0))
+      || a.id.localeCompare(b.id));
+    return { count: games.length, top: games.slice(0, 3) };
+  }
+
+  function renderQuickPicks() {
+    const root = quickPicker.results;
+    if (!root) return;
+    const chosen = findQuickPicks();
+    root.replaceChildren();
+    const status = document.createElement("p");
+    status.className = chosen.count ? "quick-pick-count" : "quick-pick-empty";
+    status.textContent = chosen.count === 0
+      ? "該当する遊びがありません。時間を延ばすか、気分の指定を外してみてください。"
+      : "該当" + chosen.count + "件から、おすすめ" + chosen.top.length + "件を表示";
+    root.appendChild(status);
+    if (!chosen.top.length) return;
+
+    const grid = document.createElement("div");
+    grid.className = "quick-pick-cards";
+    for (const game of chosen.top) {
+      const card = document.createElement("article");
+      card.className = "quick-pick-card";
+      const heading = document.createElement("div");
+      heading.className = "quick-pick-card-top";
+      const icon = document.createElement("span");
+      icon.setAttribute("aria-hidden", "true");
+      icon.textContent = game.icon || "🎲";
+      const name = document.createElement("h3");
+      name.textContent = game.title;
+      heading.append(icon, name);
+
+      const description = document.createElement("p");
+      description.className = "quick-pick-description";
+      description.textContent = game.catchphrase || game.overview || "";
+
+      const meta = document.createElement("p");
+      meta.className = "quick-pick-meta";
+      const playerLabel = game.minPlayers === game.maxPlayers
+        ? game.minPlayers + "人"
+        : game.minPlayers + "〜" + (game.maxPlayers === 99 ? "大人数" : game.maxPlayers + "人");
+      meta.textContent = "👥 " + playerLabel + "　⏱ " + (game.duration || "時間未設定");
+
+      const buttons = document.createElement("div");
+      buttons.className = "quick-pick-actions";
+      const play = document.createElement("a");
+      play.className = "quick-pick-play";
+      play.href = "#game/" + game.id;
+      play.textContent = "すぐ遊ぶ →";
+      const rules = document.createElement("button");
+      rules.type = "button";
+      rules.className = "quick-pick-rules";
+      rules.textContent = "ルールを見る";
+      rules.addEventListener("click", () => {
+        requestedGameTab = { gameId: game.id, tab: "rules" };
+        navigateToGame(game.id);
+      });
+      buttons.append(play, rules);
+      card.append(heading, description, meta, buttons);
+      grid.appendChild(card);
+    }
+    root.appendChild(grid);
+  }
+  document.getElementById("quick-pick-submit")?.addEventListener("click", renderQuickPicks);
+  renderQuickPicks();
+
   // ==========================================
   // フィルタリング ＆ ソート（高速化版）
   // ==========================================
@@ -1000,9 +1130,10 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         </div>
         <div class="card-footer">
-          <span class="card-play-btn ${hasTool ? 'btn-tool' : 'btn-guide'}">
-            ${hasTool ? '遊ぶ' : 'ルールを見る'} <span aria-hidden="true">↗</span>
-          </span>
+          <button type="button" class="card-rules-btn" data-action="rules" data-id="${game.id}">ルール</button>
+          <a class="card-play-btn ${hasTool ? 'btn-tool' : 'btn-guide'}" href="#game/${game.id}">
+            ${hasTool ? '遊ぶ' : '詳しく見る'} <span aria-hidden="true">↗</span>
+          </a>
         </div>
       `;
 
@@ -1020,6 +1151,18 @@ document.addEventListener("DOMContentLoaded", () => {
     if (favBtn) {
       e.stopPropagation();
       toggleFavorite(favBtn.dataset.id, e);
+      return;
+    }
+
+    const rulesButton = e.target.closest('[data-action="rules"]');
+    if (rulesButton) {
+      e.preventDefault();
+      e.stopPropagation();
+      const gameId = rulesButton.dataset.id;
+      if (state.games.some(g => g.id === gameId)) {
+        requestedGameTab = { gameId, tab: "rules" };
+        navigateToGame(gameId);
+      }
       return;
     }
 
@@ -1411,7 +1554,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const gameId = ALIAS_MAP[rawId] || rawId;
       const game = state.games.find(g => g.id === gameId);
       if (game) {
-        showGameDetail(game);
+        const tab = requestedGameTab?.gameId === gameId ? requestedGameTab.tab : null;
+        requestedGameTab = null;
+        showGameDetail(game, tab);
         return;
       }
     }
@@ -1480,7 +1625,10 @@ document.addEventListener("DOMContentLoaded", () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
 
     const hasTool = game.toolType && game.toolType !== "guide-only";
-    state.activeTab = requestedTab === 'presets' && game.presets?.length ? 'presets' : (hasTool ? "tool" : "rules");
+    // Article destinations come from our packaged catalog, not arbitrary schemes.
+    const seoSlug = typeof game.seoSlug === "string" && /^seo\/[a-z0-9-]+\.html$/.test(game.seoSlug)
+      ? game.seoSlug : null;
+    state.activeTab = requestedTab === "rules" ? "rules" : (requestedTab === 'presets' && game.presets?.length ? 'presets' : (hasTool ? "tool" : "rules"));
 
     // アフィリエイト商品紹介HTMLの生成
     const prod = game.officialProduct;
@@ -1714,14 +1862,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     return text ? `<div class="preset-item-card">${text}</div>` : '';
                   }).join('')}
                 </div>
-                ${game.seoSlug ? `
+                ${seoSlug ? `
                   <div class="section-box mt-4 seo-link-banner">
                     <div class="seo-banner-header">
                       <span class="seo-banner-tag">📖 完全版WEB記事</span>
                       <h4 class="seo-banner-title">『${escapeHTML(game.title)}』の厳選お題＆ルールまとめを見る</h4>
                     </div>
                     <p class="seo-banner-desc">遊び方と自作お題、シーン別のコツを詳しく紹介しています。</p>
-                    <a href="${game.seoSlug}" target="_blank" class="btn btn-outline btn-block mt-2">
+                    <a href="${escapeHTML(seoSlug)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-block mt-2">
                       お題まとめ記事を開く ➔
                     </a>
                   </div>
@@ -1781,7 +1929,15 @@ document.addEventListener("DOMContentLoaded", () => {
     if (markRulesBtn) {
       markRulesBtn.addEventListener("click", () => {
         Sound.playFanfare();
-        StampRally.markPlayed(game.id);
+        // 本人が「実際に遊んだ」と申告した場合だけ制覇を記録する。
+        if (window.AsobiPlayLifecycle?.start) {
+          window.AsobiPlayLifecycle.start(game.id);
+        } else {
+          StampRally.markPlayed(game.id);
+        }
+        window.dispatchEvent(new CustomEvent("asobi:round-complete", {
+          detail: { gameId: game.id, completionMethod: "self_reported" }
+        }));
         markRulesBtn.textContent = '👑 制覇スタンプ獲得済み！';
         markRulesBtn.className = 'btn btn-sm btn-secondary';
         markRulesBtn.disabled = true;
@@ -1812,7 +1968,7 @@ document.addEventListener("DOMContentLoaded", () => {
           Toast.success("🔗 リンクをクリップボードにコピーしました！");
         } catch (e) {
           const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareData.text)}&url=${encodeURIComponent(shareData.url)}`;
-          window.open(xUrl, "_blank");
+          window.open(xUrl, "_blank", "noopener,noreferrer");
         }
       }
     });
@@ -1823,7 +1979,7 @@ document.addEventListener("DOMContentLoaded", () => {
       detailLineBtn.addEventListener("click", () => {
         Sound.playClick();
         const lineText = `スマホ1台・手ぶらですぐ遊べる「${game.title}」をみんなで遊ぼう！\n${window.location.href}`;
-        window.open(`https://line.me/R/msg/text/?${encodeURIComponent(lineText)}`, "_blank");
+        window.open(`https://line.me/R/msg/text/?${encodeURIComponent(lineText)}`, "_blank", "noopener,noreferrer");
       });
     }
 

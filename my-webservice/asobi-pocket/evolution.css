@@ -124,3 +124,37 @@ body.pocket-in-game .btn-floating-score{display:none!important}
 /* 後から読み込まれる共通品質スタイルより、ホームの情報順を優先する。 */
 #view-home .main-container>.games-grid,#view-home .main-container>.empty-state{order:5}
 #view-home .main-container>.stamp-rally-section{order:9}
+
+/* 競合ベンチマーク：選ぶ→比較→遊ぶ。色は主操作・状態・補助で役割を固定する。 */
+#view-home .main-container>.pocket-quick-picker{order:1}
+.pocket-quick-picker{margin:10px 0 22px;padding:22px 24px;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);min-width:0}
+.quick-pick-intro{margin-bottom:15px}
+.quick-pick-eyebrow{font-size:.69rem;letter-spacing:.1em;font-weight:800;color:var(--primary);margin:0 0 6px}
+.quick-pick-intro h2{color:var(--text-main);font-size:clamp(1.12rem,2vw,1.46rem);letter-spacing:-.03em;line-height:1.35;margin:0 0 5px}
+.quick-pick-intro p:last-child{font-size:.83rem;color:var(--text-muted);margin:0}
+.quick-pick-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:10px;align-items:end}
+.quick-pick-form label{display:grid;gap:5px;color:var(--text-main);font-size:.76rem;font-weight:800;min-width:0}
+.quick-pick-form select{width:100%;min-width:0;min-height:46px;padding:9px 12px;color:var(--text-main);border:1px solid var(--border);background:var(--input-bg);border-radius:10px;font-size:.86rem}
+.quick-pick-submit{min-height:46px;border:0;border-radius:10px;padding:10px 16px;background:var(--primary);color:#fff;font-weight:800;white-space:nowrap}
+.quick-pick-submit:hover{background:var(--primary-hover)}
+.quick-pick-count{font-size:.78rem;color:var(--text-muted);font-weight:700;margin:18px 0 9px}
+.quick-pick-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.quick-pick-card{min-width:0;padding:14px 15px 13px;border:1px solid var(--border);background:var(--bg);border-radius:12px;display:flex;flex-direction:column;gap:8px}
+.quick-pick-card-top{display:flex;align-items:center;gap:8px;min-width:0}
+.quick-pick-card-top>span{font-size:1.3rem;flex:0 0 auto}
+.quick-pick-card h3{font-size:.94rem;line-height:1.4;margin:0;min-width:0;overflow-wrap:anywhere;color:var(--text-main)}
+.quick-pick-description{font-size:.78rem;line-height:1.55;color:var(--text-muted);margin:0;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.quick-pick-card .quick-pick-meta{font-size:.73rem;color:var(--text-main);margin:0}
+.quick-pick-actions{display:flex;gap:8px;align-items:stretch;margin-top:auto}
+.quick-pick-actions a,.quick-pick-actions button{flex:1;display:inline-flex;align-items:center;justify-content:center;min-height:44px;border-radius:9px;font-size:.78rem;font-weight:800;line-height:1.2;text-align:center;text-decoration:none;padding:9px 6px;white-space:nowrap}
+.quick-pick-play{background:var(--primary);color:#fff!important}
+.quick-pick-rules{background:var(--card-bg);border:1px solid var(--border);color:var(--text-main)}
+.quick-pick-empty{padding:15px;border:1px dashed var(--border);border-radius:9px;color:var(--text-muted);font-size:.86rem}
+.quick-pick-all{display:inline-flex;margin-top:12px;color:var(--text-muted);font-size:.79rem;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+#all-games{scroll-margin-top:95px}
+#games-grid .card-footer{display:flex;gap:7px;align-items:center}
+#games-grid .card-rules-btn{min-height:44px;padding:7px 8px;background:transparent;border:1px solid var(--border);color:var(--text-main);border-radius:9px;font-size:.73rem;font-weight:800}
+#games-grid .card-play-btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:none;padding:7px 10px}
+@media(max-width:900px){.quick-pick-form{grid-template-columns:repeat(3,minmax(0,1fr))}.quick-pick-submit{grid-column:1/-1}.quick-pick-cards{grid-template-columns:1fr}.quick-pick-card{gap:7px}.quick-pick-actions{max-width:340px}}
+@media(max-width:540px){.pocket-quick-picker{margin:10px 0 17px;padding:16px 13px}.quick-pick-form{grid-template-columns:1fr 1fr}.quick-pick-form label:nth-child(3),.quick-pick-submit{grid-column:1/-1}.quick-pick-cards{gap:8px}.quick-pick-card{padding:13px}.quick-pick-card-top h3{font-size:.92rem}.quick-pick-intro h2{font-size:1.16rem}#games-grid .card-footer{gap:4px;padding-left:9px;padding-right:9px}#games-grid .card-rules-btn{font-size:.7rem;padding:7px 5px;flex:0 1 45%}#games-grid .card-play-btn{font-size:.73rem;padding:7px 5px;flex:1}}
+@media(prefers-reduced-motion:reduce){.quick-pick-play,.quick-pick-submit,#games-grid .card-play-btn{transition:none}}
