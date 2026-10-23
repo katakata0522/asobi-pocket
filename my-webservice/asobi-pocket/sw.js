@@ -1,4 +1,4 @@
-const CACHE_NAME = "asobi-pocket-cbe31ec260dd1d8b4e1e";
+const CACHE_NAME = "asobi-pocket-fd3002f6437973435eb7";
 
 // 起動に必要な資産を一括で保存し、欠けた版を有効化しない。
 const CORE_ASSETS = [
@@ -18,6 +18,7 @@ const CORE_ASSETS = [
   "./js/toast.js",
   "./js/tools.js",
   "./js/app.js",
+  "./js/bootstrap.js",
   "./seo/ito-odai.html",
   "./seo/wordwolf-odai.html",
   "./seo/asa-sore-odai.html",
