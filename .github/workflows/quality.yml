@@ -11,11 +11,18 @@ concurrency:
   # pushの配信合格記録を手動検証で取り消さず、Draft通知も実検証から分離する。
   group: asobi-qa-${{ github.event_name }}-${{ github.ref }}-${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.draft)) && github.run_id || 'active' }}
   cancel-in-progress: true
+defaults:
+  run:
+    shell: bash
 jobs:
   quality:
     name: ${{ (github.event_name != 'pull_request' || !github.event.pull_request.draft) && format('quality ({0})', matrix.device) || format('Draft quality ({0})', matrix.device) }}
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
+    # lockfileと同版の公式イメージ。ブラウザと日本語font/OS依存を毎回取得しない。
+    container:
+      image: mcr.microsoft.com/playwright:v1.60.0-noble@sha256:9bd26ad900bb5e0f4dee75839e957a89ae89c2b7ab1e76050e559790e946b948
+      options: --ipc=host
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -25,6 +32,14 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
+      - name: Prepare command-line tools and checkout identity
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          test "$(git rev-parse --is-inside-work-tree)" = true
+          if ! command -v python3 >/dev/null; then
+            apt-get update
+            apt-get install -y --no-install-recommends python3
+          fi
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: '22'
@@ -40,7 +55,7 @@ jobs:
           npm ci --ignore-scripts --no-audit --no-fund
           npx playwright test --list
       - name: Install Chromium headless shell
-        run: npx playwright install --with-deps chromium --only-shell
+        run: node .github/scripts/verify-playwright-runtime.cjs
       - name: Game browser regression
         env:
           CI: 'true'
