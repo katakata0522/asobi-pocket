@@ -8,10 +8,12 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: asobi-qa-${{ github.ref }}
+  # pushの配信合格記録を手動検証で取り消さず、Draft通知も実検証から分離する。
+  group: asobi-qa-${{ github.event_name }}-${{ github.ref }}-${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.draft)) && github.run_id || 'active' }}
   cancel-in-progress: true
 jobs:
   quality:
+    name: ${{ (github.event_name != 'pull_request' || !github.event.pull_request.draft) && format('quality ({0})', matrix.device) || format('Draft quality ({0})', matrix.device) }}
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
