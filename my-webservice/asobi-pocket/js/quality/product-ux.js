@@ -116,6 +116,43 @@
     rally.render();
   };
 
+  // プレイ開始はゲーム画面の表示と分け、同一訪問中に一度だけ計測する。
+  // 氏名・回答・お題本文は送信しない。
+  const setupPlayAnalytics = () => {
+    let activeId = null;
+    let started = false;
+    const sync = () => {
+      const match = location.hash.match(/^#game\/([a-z0-9-]+)$/);
+      const nextId = match ? match[1] : null;
+      if (nextId !== activeId) { activeId = nextId; started = false; }
+    };
+    const isPublished = (id) => typeof GAMES_DATA !== "undefined"
+      && GAMES_DATA.some((game) => game.id === id && game.section !== "merged");
+    const track = (event, params) => globalThis.Analytics?.track?.(event, params);
+    sync();
+    window.addEventListener("hashchange", sync);
+    window.addEventListener("asobi:play-start", (event) => {
+      sync();
+      const gameId = event.detail?.gameId;
+      if (!gameId || gameId !== activeId || !isPublished(gameId) || started) return;
+      started = true;
+      track("asobi_game_start", { game_id: gameId });
+    });
+    // 完了イベントは、現段階では利用者の明示的な自己申告に限定。
+    window.addEventListener("asobi:round-complete", (event) => {
+      sync();
+      const gameId = event.detail?.gameId;
+      if (!gameId || gameId !== activeId || !started || !isPublished(gameId)) return;
+      if (event.detail?.completionMethod !== "self_reported") return;
+      track("asobi_round_complete", { game_id: gameId, completion_method: "self_reported" });
+    });
+    document.addEventListener("click", (event) => {
+      if (!started || !activeId) return;
+      const retry = event.target.closest("#btn-ito-retry,#btn-restart-wolf,#btn-restart-ww,#btn-duel-restart,#btn-mash-retry,#btn-color-retry,#btn-restart-truths");
+      if (retry) track("asobi_replay", { game_id: activeId });
+    });
+  };
+
   const recommendationScore = (current, candidate) => {
     let score = Number(candidate.rating || 0);
     if (current.category && candidate.category === current.category) score += 6;
@@ -159,7 +196,10 @@
           <strong class="rec-title">${esc(game.title)}</strong>
           <span class="rec-meta">👥 ${game.minPlayers}〜${Number(game.maxPlayers) === 99 ? "大人数" : `${game.maxPlayers}人`} / ⏱️ ${esc(game.duration)}</span>
         </div>`;
-      const open = () => { location.hash = `game/${game.id}`; };
+      const open = () => {
+        globalThis.Analytics?.track?.("asobi_next_game", { from_game_id: current.id, to_game_id: game.id });
+        location.hash = `game/${game.id}`;
+      };
       card.addEventListener("click", open);
       card.addEventListener("keydown", (event) => {
         if (event.key === "Enter" || event.key === " ") {
@@ -177,8 +217,17 @@
 
   const decorateMonetization = () => {
     if (globalThis.AFFILIATE_CONFIG?.isAffiliateEnabled !== false) return;
-    document.querySelectorAll(".product-badge-pr").forEach((badge) => { badge.textContent = "関連商品"; });
-    document.querySelectorAll(".product-disclaimer").forEach((item) => { item.hidden = true; });
+    // React only to the current detail view. Do not rescan unrelated DOM nodes
+    // when timers or scores update inside an active game.
+    const detail = document.getElementById("view-detail");
+    if (!detail) return;
+    // Avoid writing identical values: observer callbacks must be idempotent.
+    detail.querySelectorAll(".product-badge-pr").forEach((badge) => {
+      if (badge.textContent !== "関連商品") badge.textContent = "関連商品";
+    });
+    detail.querySelectorAll(".product-disclaimer").forEach((item) => {
+      if (!item.hidden) item.hidden = true;
+    });
   };
 
   const setupDetailObserver = () => {
@@ -405,13 +454,16 @@
 
   const setupScoreboard = () => {
     const KEY = "asobi_scoreboard_players";
+    const MAX_PLAYERS = 20;
     const normalize = (players) => {
       if (!Array.isArray(players) || players.length === 0) {
         return [{ name: "プレイヤー1", score: 0 }, { name: "プレイヤー2", score: 0 }];
       }
-      return players.slice(0, 20).map((player, index) => ({
-        name: String(player?.name || `プレイヤー${index + 1}`).slice(0, 40),
-        score: Number.isFinite(Number(player?.score)) ? Number(player.score) : 0
+      return players.slice(0, MAX_PLAYERS).map((player, index) => ({
+        name: typeof player?.name === "string" && player.name.trim()
+          ? player.name.trim().slice(0, 40) : `プレイヤー${index + 1}`,
+        score: Number.isFinite(Number(player?.score))
+          ? Math.max(-999999, Math.min(999999, Math.trunc(Number(player.score)))) : 0
       }));
     };
 
@@ -419,20 +471,59 @@
     const drawer = document.getElementById("scoreboard-drawer");
     const list = document.getElementById("scoreboard-players-list");
     const toggleButton = document.getElementById("btn-toggle-scoreboard");
+    const addButton = document.getElementById("btn-add-player");
 
     const save = () => storageSet(KEY, players);
     const render = () => {
       if (!list) return;
-      list.innerHTML = players.map((player, index) => `
-        <div class="scoreboard-row">
-          <input type="text" class="score-player-name" value="${esc(player.name)}" data-idx="${index}" placeholder="名前" maxlength="40">
-          <div class="score-controls">
-            <button class="btn-score-ctrl btn-score-minus" data-quality-score="minus" data-idx="${index}" aria-label="1点減点">−</button>
-            <span class="score-value ${player.score > 0 ? "score-pos" : player.score < 0 ? "score-neg" : ""}">${player.score}</span>
-            <button class="btn-score-ctrl btn-score-plus" data-quality-score="plus" data-idx="${index}" aria-label="1点加点">＋</button>
-            ${players.length > 1 ? `<button class="btn-score-del" data-quality-score="del" data-idx="${index}" title="削除">✕</button>` : ""}
-          </div>
-        </div>`).join("");
+      // User-controlled player names are always DOM text/value, never HTML.
+      // Rendering into one fragment avoids multiple layout/reflow cycles.
+      const fragment = document.createDocumentFragment();
+      players.forEach((player, index) => {
+        const row = document.createElement("div");
+        row.className = "scoreboard-row";
+
+        const name = document.createElement("input");
+        name.type = "text";
+        name.className = "score-player-name";
+        name.value = player.name;
+        name.dataset.idx = String(index);
+        name.placeholder = "名前";
+        name.maxLength = 40;
+        row.appendChild(name);
+
+        const controls = document.createElement("div");
+        controls.className = "score-controls";
+        const action = (kind, glyph, label, css) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = css;
+          button.dataset.qualityScore = kind;
+          button.dataset.idx = String(index);
+          button.setAttribute("aria-label", label);
+          button.textContent = glyph;
+          return button;
+        };
+
+        const score = document.createElement("span");
+        score.className = "score-value" + (player.score > 0 ? " score-pos" : player.score < 0 ? " score-neg" : "");
+        score.textContent = String(player.score);
+        controls.appendChild(action("minus", "−", "1点減点", "btn-score-ctrl btn-score-minus"));
+        controls.appendChild(score);
+        controls.appendChild(action("plus", "＋", "1点加点", "btn-score-ctrl btn-score-plus"));
+        if (players.length > 1) {
+          controls.appendChild(action("del", "✕", "プレイヤーを削除", "btn-score-del"));
+        }
+        row.appendChild(controls);
+        fragment.appendChild(row);
+      });
+      list.replaceChildren(fragment);
+      // The persisted list is bounded; live additions must enforce the same cap.
+      if (addButton) {
+        const atCapacity = players.length >= MAX_PLAYERS;
+        addButton.disabled = atCapacity;
+        addButton.title = atCapacity ? "上限20人です" : "プレイヤーを追加";
+      }
     };
 
     const interceptClick = (event) => {
@@ -457,6 +548,7 @@
           render();
         }
       } else if (id === "btn-add-player") {
+        if (players.length >= MAX_PLAYERS) return;
         players.push({ name: `プレイヤー${players.length + 1}`, score: 0 });
         save();
         render();
@@ -464,8 +556,8 @@
         const index = Number(scoreAction.dataset.idx);
         if (!players[index]) return;
         const action = scoreAction.dataset.qualityScore;
-        if (action === "plus") players[index].score += 1;
-        if (action === "minus") players[index].score -= 1;
+        if (action === "plus") players[index].score = Math.min(999999, players[index].score + 1);
+        if (action === "minus") players[index].score = Math.max(-999999, players[index].score - 1);
         if (action === "del" && players.length > 1) players.splice(index, 1);
         save();
         render();
@@ -480,7 +572,7 @@
       event.stopImmediatePropagation();
       const index = Number(input.dataset.idx);
       if (!players[index]) return;
-      players[index].name = input.value.trim() || `プレイヤー${index + 1}`;
+      players[index].name = input.value.trim().slice(0, 40) || `プレイヤー${index + 1}`;
       save();
       render();
     }, true);
@@ -499,6 +591,7 @@
   document.addEventListener("DOMContentLoaded", () => {
     setupHomeIntent();
     setupStampRally();
+    setupPlayAnalytics();
     setupScoreboard();
     setupGridHierarchy();
     setupContextAwareRoulette();

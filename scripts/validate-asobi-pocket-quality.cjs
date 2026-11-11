@@ -37,22 +37,6 @@ const qualityCss = read('my-webservice/asobi-pocket/quality-ui.css');
 const privacySource = read('my-webservice/asobi-pocket/privacy.html');
 const manifestSource = read('my-webservice/asobi-pocket/manifest.json');
 
-// Stubbed audio can hide missing methods that stop the real game before rendering.
-try {
-  const audioContext = vm.createContext({});
-  vm.runInContext(read('my-webservice/asobi-pocket/js/audio.js'), audioContext);
-  const sound = vm.runInContext('Sound', audioContext);
-  for (const source of [toolsSource, toolFixSource]) {
-    for (const match of source.matchAll(/\bSound\.(\w+)\s*\(/g)) {
-      if (typeof sound[match[1]] !== 'function') fail(`missing game audio method: Sound.${match[1]}`);
-    }
-  }
-  sound.playWrong();
-  if (sound.ctx !== null) fail('muted game feedback must not initialize audio');
-} catch (error) {
-  fail(`game audio contract failed: ${error.message}`);
-}
-
 for (const [name, source] of [
   ['games.js', gamesSource],
   ['app.js', appSource],
@@ -466,6 +450,63 @@ for (const signal of ['setAttribute("role", "status")', 'setAttribute("aria-live
 
 for (const signal of ['LocalStorage', 'Cache Storage', 'スコアボード', '最近遊んだゲーム', '追加したお題', '除外したお題']) {
   if (!privacySource.includes(signal)) fail(`privacy.html is missing storage disclosure signal: ${signal}`);
+}
+
+// ベンチマークP0: 根拠のない評価・計測漏れ・未確認紹介IDの再発を防ぐ。
+if (/AggregateRating|"ratingCount"\s*:\s*"128"/.test(index)) fail('unsupported user rating statistics');
+if (!index.includes('編集部おすすめ順')) fail('sorting must be labeled editorial');
+if (!uxSource.includes('asobi_game_start') || !uxSource.includes('asobi_round_complete')) fail('play measurement missing');
+if (!appSource.includes('AsobiPlayLifecycle.start(game.id)')) fail('manual stamp lifecycle missing');
+if (appSource.includes('amazonTag:') || /tag=katakatalab-22/.test(appSource)) fail('unverified affiliate tag in app');
+if (!contractSource.includes('isAffiliateEnabled: false')) fail('affiliate must be disabled until confirmed');
+// 未確認の提携IDが静的SEO記事に復活しないようにする。
+const asobiSeoDirectory = path.join(ROOT, 'my-webservice/asobi-pocket/seo');
+for (const filename of fs.readdirSync(asobiSeoDirectory).filter(name => name.endsWith('.html'))) {
+  const source = fs.readFileSync(path.join(asobiSeoDirectory, filename), 'utf8');
+  if (source.includes('tag=katakatalab-22')) fail('unverified affiliate tag in SEO: ' + filename);
+}
+if (privacySource.includes('Amazonのアソシエイトとして、あそびポケットは適格販売により収入を得ています')) {
+  fail('privacy policy must not claim unverified affiliate earnings');
+}
+
+// 人数・時間・気分から候補を選び、ルールと開始を分けるUX契約。
+const quickCss = read('my-webservice/asobi-pocket/evolution.css');
+for (const id of ['quick-pick-players','quick-pick-minutes','quick-pick-mood','quick-pick-submit','quick-pick-results','all-games']) {
+  if (!index.includes('id="' + id + '"')) fail('missing quick-pick UI control: ' + id);
+}
+for (const signal of ['function quickPickDurationMax(game)', 'function quickPickMatchesMood(game, mood)', 'function findQuickPicks()', 'function renderQuickPicks()', 'requestedTab === "rules"', 'data-action="rules"']) {
+  if (!appSource.includes(signal)) fail('quick-pick product contract missing: ' + signal);
+}
+for (const signal of ['.pocket-quick-picker', '.quick-pick-cards', '.quick-pick-empty', '.card-rules-btn']) {
+  if (!quickCss.includes(signal)) fail('quick-pick CSS missing: ' + signal);
+}
+if (!appSource.includes('root.replaceChildren()')) fail('quick-pick rerender must handle empty results safely');
+
+// Security & game initialization regression tests run with the regular required checks.
+const { spawnSync } = require('node:child_process');
+const gameSecurity = spawnSync(process.execPath, ['--test', 'tests/asobi-pocket-game-security.test.cjs', 'tests/asobi-pocket-action-smoke.test.cjs'], {
+  cwd: ROOT, encoding: 'utf8', timeout: 15000
+});
+if (gameSecurity.status !== 0) {
+  fail('game security regressions: ' + (gameSecurity.stdout || '') + (gameSecurity.stderr || ''));
+} else note('game security and 32-game initialization regressions passed');
+
+
+// Browser bootstrap must remain external for a future enforcement-grade CSP.
+const bootstrapSource = read('my-webservice/asobi-pocket/js/bootstrap.js');
+const apachePolicy = read('my-webservice/asobi-pocket/.htaccess');
+if (bootstrapSource) {
+  try { new vm.Script(bootstrapSource, { filename: 'bootstrap.js' }); }
+  catch (error) { fail('bootstrap.js syntax error: ' + error.message); }
+}
+if (!index.includes('src="js/bootstrap.js"')) fail('bootstrap script is not referenced by index');
+if (/<script>([\s\S]*?)<\/script>/i.test(index)) fail('inline executable JavaScript remains on the homepage');
+for (const expected of [
+  'Content-Security-Policy "', 'Content-Security-Policy-Report-Only "',
+  'X-Content-Type-Options', 'X-Frame-Options', 'Permissions-Policy'
+]) if (!apachePolicy.includes(expected)) fail('Asobi .htaccess missing ' + expected);
+if (!read('my-webservice/asobi-pocket/sw.js').includes('"./js/bootstrap.js"')) {
+  fail('PWA bootstrap script missing from offline assets');
 }
 
 if (errors.length > 0) {

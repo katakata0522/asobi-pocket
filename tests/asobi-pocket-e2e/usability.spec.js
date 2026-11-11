@@ -1,13 +1,14 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './playwright-runtime.js';
 test.beforeEach(async ({ page }) => {
   await page.route('https://www.googletagmanager.com/**', route => route.fulfill({ body: '', contentType: 'application/javascript' }));
 });
 
-test('folded discovery shows games first and retains removable conditions', async ({ page }) => {
+test('folded discovery follows quick recommendations and retains removable conditions', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#games-grid .game-card').first()).toBeVisible();
   expect(await page.locator('#discovery-filters').evaluate(el => el.open)).toBe(false);
-  expect((await page.locator('#games-grid .game-card').first().boundingBox()).y).toBeLessThan(400);
+  await expect(page.locator('#quick-pick-results .quick-pick-card')).toHaveCount(3);
+  expect((await page.locator('#quick-pick-results').boundingBox()).y).toBeLessThan((await page.locator('#games-grid').boundingBox()).y);
   await page.locator('#discovery-filters > summary').click();
   await page.locator('#fit-players').selectOption('2');
   await page.locator('#fit-duration').selectOption('3');
@@ -92,9 +93,13 @@ test('favorites teach first-time use and labels match the selected view', async 
 
 test('card widths and heights match and support controls do not cover the play button', async ({ page }) => {
   await page.goto('/');
-  const rects = await page.locator('#games-grid .game-card').evaluateAll(cards => cards.map(card => { const r = card.getBoundingClientRect(); return { w: r.width, h: r.height }; }));
-  expect(Math.max(...rects.map(r => r.w)) - Math.min(...rects.map(r => r.w))).toBeLessThan(1);
-  expect(Math.max(...rects.map(r => r.h)) - Math.min(...rects.map(r => r.h))).toBeLessThan(1);
+  await page.evaluate(() => document.fonts.ready);
+  const spread = dimension => page.locator('#games-grid .game-card').evaluateAll((cards, dimension) => {
+    const sizes = cards.map(card => card.getBoundingClientRect()[dimension]);
+    return Math.max(...sizes) - Math.min(...sizes);
+  }, dimension);
+  await expect.poll(() => spread('width')).toBeLessThan(1);
+  await expect.poll(() => spread('height')).toBeLessThan(1);
   await page.locator('.game-card[data-id="ito"] .card-title-link').click();
   await expect(page.locator('#btn-detail-scoreboard')).toBeVisible();
   await expect(page.locator('#btn-toggle-scoreboard')).not.toBeVisible();

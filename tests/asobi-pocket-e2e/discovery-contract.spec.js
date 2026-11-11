@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './playwright-runtime.js';
 
 // 本番計測へ自動テストを混ぜず、ゲーム自身の処理だけを検証する。
 test.beforeEach(async ({ page }) => {

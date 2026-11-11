@@ -25,5 +25,11 @@
       "bytes": 503,
       "url": "https://katakatalab.com/asobi-pocket/assets/pocket-mark.svg"
     }
+  ],
+  "server_fixtures": [
+    {
+      "path": "my-webservice/asobi-pocket/.htaccess",
+      "content": "Header always set X-Content-Type-Options \"nosniff\"\nHeader always set Referrer-Policy \"strict-origin-when-cross-origin\"\nHeader always set X-Frame-Options \"SAMEORIGIN\"\nHeader always set Permissions-Policy \"camera=(), microphone=(), geolocation=(), payment=()\"\nHeader always set Content-Security-Policy \"object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'; upgrade-insecure-requests\"\nHeader always set Content-Security-Policy-Report-Only \"default-src 'self'; script-src 'self' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://www.google-analytics.com https://www.googletagmanager.com; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://stats.g.doubleclick.net https://www.googletagmanager.com; font-src 'self' data:; media-src 'self' blob:; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'\"\n"
+    }
   ]
 }
