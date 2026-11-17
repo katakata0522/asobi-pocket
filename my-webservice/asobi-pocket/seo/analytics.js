@@ -1,11 +1,22 @@
 (() => {
   const measurementId = 'G-FYFPS7L9X9';
+  const testMode = new URLSearchParams(window.location.search).get('asobi_test');
+  let analyticsTest = testMode === '1';
+  try {
+    if (testMode === '1') window.sessionStorage.setItem('asobi-pocket:analytics-test', '1');
+    if (testMode === '0') window.sessionStorage.removeItem('asobi-pocket:analytics-test');
+    if (testMode !== '0') analyticsTest = analyticsTest || window.sessionStorage.getItem('asobi-pocket:analytics-test') === '1';
+  } catch { /* 保存不可でも明示したテスト指定は適用する。 */ }
+  analyticsTest = analyticsTest || window.location.protocol === 'file:' || ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
+  // 記事からゲームへ移動しても、同じタブのテスト操作は送信しない。
+  if (analyticsTest) window['ga-disable-' + measurementId] = true;
   const articleSlug = window.location.pathname.split('/').filter(Boolean).pop() || 'seo-index';
   const seoHubUrl = 'https://katakatalab.com/asobi-pocket/seo/';
+  const analyticsOnly = document.currentScript?.hasAttribute('data-analytics-only') === true;
   window.dataLayer = window.dataLayer || [];
   window.gtag = window.gtag || function gtag(){ window.dataLayer.push(arguments); };
   window.gtag('js', new Date());
-  window.gtag('config', measurementId, { anonymize_ip: true });
+  window.gtag('config', measurementId, { anonymize_ip: true, content_group: 'Asobi Pocket' });
 
   const isSeoHub =
     window.location.pathname.endsWith('/seo/') ||
@@ -62,7 +73,7 @@
     hero.appendChild(byline);
   };
 
-  if (!isSeoHub) {
+  if (!isSeoHub && !analyticsOnly) {
     const breadcrumb = document.querySelector('.seo-breadcrumbs');
     const rootLink = breadcrumb && breadcrumb.querySelector('a[href="../"]');
     const heading = document.querySelector('h1');
@@ -112,11 +123,11 @@
     }
   }
 
-  ensureVisibleArticleMetadata();
+  if (!analyticsOnly) ensureVisibleArticleMetadata();
 
   let loaded = false;
   const loadAnalytics = () => {
-    if (loaded) return;
+    if (loaded || analyticsTest || window['ga-disable-' + measurementId]) return;
     loaded = true;
     const script = document.createElement('script');
     script.async = true;

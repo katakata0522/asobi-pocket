@@ -38,14 +38,26 @@
 
   <!-- Google Analytics: KatakataLab共通プロパティ。SPAのhash遷移もpage_viewとして送信 -->
   <script>
+    const asobiAnalyticsTest = (function () {
+      const mode = new URLSearchParams(window.location.search).get('asobi_test');
+      let testing = mode === '1';
+      try {
+        if (mode === '1') window.sessionStorage.setItem('asobi-pocket:analytics-test', '1');
+        if (mode === '0') window.sessionStorage.removeItem('asobi-pocket:analytics-test');
+        if (mode !== '0') testing = testing || window.sessionStorage.getItem('asobi-pocket:analytics-test') === '1';
+      } catch { /* 保存不可でも明示したテスト指定は適用する。 */ }
+      return testing || window.location.protocol === 'file:' || ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
+    }());
+    // Google公式の送信停止フラグは、最初のgtag呼び出しより前に設定する。
+    if (asobiAnalyticsTest) window['ga-disable-G-FYFPS7L9X9'] = true;
     window.dataLayer = window.dataLayer || [];
     function gtag() { dataLayer.push(arguments); }
     gtag('js', new Date());
-    gtag('config', 'G-FYFPS7L9X9', { anonymize_ip: true, send_page_view: false });
+    gtag('config', 'G-FYFPS7L9X9', { anonymize_ip: true, send_page_view: false, content_group: 'Asobi Pocket' });
     (function () {
       let loaded = false;
       const loadAnalytics = function () {
-        if (loaded) return;
+        if (loaded || asobiAnalyticsTest || window['ga-disable-G-FYFPS7L9X9']) return;
         loaded = true;
         const script = document.createElement('script');
         script.async = true;
