@@ -641,6 +641,8 @@ document.addEventListener("DOMContentLoaded", () => {
       sort: "recommended"
     },
     activeGameId: null,
+    activeGameRoute: "",
+    articleTopic: null,
     toolHasProgress: false,
     leaveApproved: false,
     homeScrollY: 0,
@@ -1387,16 +1389,16 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function handleRoute() {
-    if (state.activeGameId && window.location.hash !== `#game/${state.activeGameId}` && !state.leaveApproved && !canLeaveGame()) {
-      history.replaceState(null, "", location.pathname + location.search + `#game/${state.activeGameId}`);
+    const hash = window.location.hash;
+    if (state.activeGameId && hash !== state.activeGameRoute && !state.leaveApproved && !canLeaveGame()) {
+      history.replaceState(null, "", location.pathname + location.search + state.activeGameRoute);
       return;
     }
     state.leaveApproved = false;
-    if (!state.activeGameId && window.location.hash.startsWith("#game/")) state.homeScrollY = window.scrollY;
+    if (!state.activeGameId && hash.startsWith("#game/")) state.homeScrollY = window.scrollY;
     cleanupActiveTool(); // 前のツールを確実に破棄
-    const hash = window.location.hash;
     if (hash.startsWith("#game/")) {
-      const rawId = hash.replace("#game/", "").trim();
+      const [rawId, options] = hash.slice("#game/".length).trim().split("?", 2);
       const ALIAS_MAP = {
         "seo/ito": "ito",
         "seo/asa-sore": "asa-sore",
@@ -1411,6 +1413,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const gameId = ALIAS_MAP[rawId] || rawId;
       const game = state.games.find(g => g.id === gameId);
       if (game) {
+        if (state.activeGameRoute !== hash) state.toolHasProgress = false;
+        state.activeGameRoute = hash;
+        const topicNumber = new URLSearchParams(options).get("topic");
+        state.articleTopic = typeof ASOBI_ARTICLE_TOPICS !== "undefined" && /^[1-9]\d{0,2}$/.test(topicNumber)
+          ? ASOBI_ARTICLE_TOPICS[gameId]?.[Number(topicNumber) - 1] || null
+          : null;
         showGameDetail(game);
         return;
       }
@@ -1444,6 +1452,8 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.classList.remove("is-tool-active");
     WakeLockManager.release(); // ホームに戻ったらスリープ防止解除
     state.activeGameId = null;
+    state.activeGameRoute = "";
+    state.articleTopic = null;
     state.toolHasProgress = false;
     viewHome.classList.remove("hidden");
     viewDetail.classList.add("hidden");
@@ -1903,7 +1913,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const renderFn = TOOL_RENDERERS[game.toolType];
       if (typeof renderFn === "function") {
         try {
-          currentToolCleanup = renderFn(mount, game);
+          const toolGame = state.articleTopic ? { ...game, articleTopic: state.articleTopic } : game;
+          currentToolCleanup = renderFn(mount, toolGame);
         } catch (err) {
           console.error(`[AsobiPocket] Error mounting tool "${game.toolType}":`, err);
         }

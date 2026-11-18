@@ -58,7 +58,7 @@
     const originalMarkPlayed = rally.markPlayed.bind(rally);
     const originalRender = rally.render.bind(rally);
 
-    const initialMatch = location.hash.match(/^#game\/(.+)$/);
+    const initialMatch = location.hash.match(/^#game\/([^?]+)/);
     if (initialMatch && !playedBeforeInit.has(initialMatch[1]) && rally.played.includes(initialMatch[1])) {
       rally.played = rally.played.filter((gameId) => gameId !== initialMatch[1]);
       storageSet("asobi_played_games", rally.played);
@@ -76,7 +76,7 @@
     };
 
     const awardCurrent = () => {
-      const match = location.hash.match(/^#game\/(.+)$/);
+      const match = location.hash.match(/^#game\/([^?]+)/);
       if (match) globalThis.AsobiPlayLifecycle.start(match[1]);
     };
 
@@ -133,7 +133,7 @@
   };
 
   const enhanceRecommendations = () => {
-    const match = location.hash.match(/^#game\/(.+)$/);
+    const match = location.hash.match(/^#game\/([^?]+)/);
     const grid = document.getElementById("recommend-grid");
     if (!match || !grid || typeof GAMES_DATA === "undefined") return;
     const current = GAMES_DATA.find((game) => game.id === match[1]);

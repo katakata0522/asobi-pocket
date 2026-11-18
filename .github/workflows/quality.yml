@@ -49,6 +49,7 @@ jobs:
       - name: Source contracts and regression tests
         run: |
           npm run test:source
+          python3 scripts/sync-asobi-article-topics.py --check
           if ls tests/*.test.cjs >/dev/null 2>&1; then node --test tests/*.test.cjs; fi
       - name: Install locked browser tools and discover tests
         run: |

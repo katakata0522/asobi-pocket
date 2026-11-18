@@ -42,6 +42,7 @@
   // Word Wolf: keep the actual majority/minority words in round state so
   // result judging never falls back to the unswapped preset values.
   GameTools.renderWordWolf = function renderWordWolfFixed(container, game) {
+    let articlePreset = game.articleTopic;
     const state = {
       playerCount: 4,
       wolfCount: 1,
@@ -53,7 +54,8 @@
       selectedPreset: null,
       citizenWord: "",
       wolfWord: "",
-      selectedVoteId: null
+      selectedVoteId: null,
+      guessCorrect: null
     };
 
     const clearTimer = () => {
@@ -72,6 +74,7 @@
       state.citizenWord = "";
       state.wolfWord = "";
       state.selectedVoteId = null;
+      state.guessCorrect = null;
       render();
     };
 
@@ -82,6 +85,7 @@
         container.innerHTML = `
           <div class="tool-card">
             <h3 class="tool-title">🐺 ワードウルフ設定</h3>
+            ${articlePreset ? '<p class="text-sm text-sub mb-3">記事で選んだペアを使います。</p>' : ''}
             <div class="setting-group">
               <label class="setting-label">参加人数: <span id="val-player-count" class="badge-num">${state.playerCount}人</span></label>
               <input type="range" class="range-slider" min="3" max="8" value="${state.playerCount}" id="range-player-count">
@@ -125,13 +129,14 @@
         });
         container.querySelector("#btn-start-wolf").addEventListener("click", () => {
           const presets = Array.isArray(game.presets) ? game.presets : [];
-          if (!presets.length) {
+          if (!articlePreset && !presets.length) {
             toast("warning", "ワードウルフのお題がありません");
             return;
           }
 
           play("playSelect");
-          state.selectedPreset = presets[Math.floor(Math.random() * presets.length)];
+          state.selectedPreset = articlePreset || presets[Math.floor(Math.random() * presets.length)];
+          articlePreset = null;
           const swapped = Math.random() < 0.5;
           state.citizenWord = swapped ? state.selectedPreset.citizen : state.selectedPreset.wolf;
           state.wolfWord = swapped ? state.selectedPreset.wolf : state.selectedPreset.citizen;
@@ -272,64 +277,70 @@
           celebrate(80);
           state.step = "result";
           render();
+          container.querySelector("#wolf-result-title").focus();
         });
         return;
       }
 
       const votedPlayer = state.players.find((player) => player.id === state.selectedVoteId);
       const caughtWolf = votedPlayer?.role === "wolf";
+      const waitingForGuess = caughtWolf && state.guessCorrect === null;
       container.innerHTML = `
         <div class="tool-card text-center">
-          <h3 class="tool-title">🎉 正解 ＆ 役職オープン！</h3>
-          <div class="roles-list my-3">
+          <h3 class="mb-2" id="wolf-result-title" tabindex="-1">${waitingForGuess ? "🐺 ウルフの逆転チャンス" : "🎉 正解 ＆ 役職オープン！"}</h3>
+          ${waitingForGuess ? "" : `<div class="roles-list my-3">
             ${state.players.map((player) => `
               <div class="role-item ${player.role === "wolf" ? "is-wolf" : "is-citizen"}">
                 <span class="role-icon">${player.role === "wolf" ? "🐺 ウルフ" : "👤 市民"}</span>
                 <span class="role-player">${esc(player.name)}</span>
                 <span class="role-word">お題: <strong>${esc(player.word)}</strong></span>
               </div>`).join("")}
-          </div>
+          </div>`}
           <div class="topic-box my-3 text-left">
             <span class="topic-tag">🗳️ 投票結果</span>
             <p class="mt-1 font-bold">${esc(votedPlayer?.name || "未選択")} は ${caughtWolf ? "🐺 ウルフでした。市民側が少数派を発見！" : "👤 市民でした。ウルフ側の勝利！"}</p>
           </div>
-          ${caughtWolf ? `
-            <div class="topic-box my-3 text-left wolf-guess-box">
-              <span class="topic-tag">🐺 ウルフの逆転チャンス</span>
+          ${waitingForGuess ? `
+            <form class="topic-box my-3 text-left wolf-guess-box" id="wolf-guess-form">
               <p class="text-xs text-sub mt-1">市民に実際に配られた多数派ワードを当てれば逆転です。</p>
               <div class="decision-input-row mt-2">
-                <input type="text" class="decision-input" id="input-wolf-guess" placeholder="市民のお題を入力...">
-                <button class="btn btn-danger" id="btn-judge-wolf-guess">判定！ 🎯</button>
+                <input type="text" class="decision-input" id="input-wolf-guess" aria-label="市民のお題" placeholder="市民のお題を入力..." autocomplete="off">
+                <button type="submit" class="btn btn-danger" id="btn-judge-wolf-guess">判定！ 🎯</button>
               </div>
-              <div id="wolf-guess-result-msg" class="mt-2 font-bold text-center"></div>
+              <button type="button" class="btn btn-sm btn-outline mt-2" id="btn-skip-wolf-guess">パスしてお題を公開</button>
+            </form>` : ""}
+          ${caughtWolf && !waitingForGuess ? `
+            <div id="wolf-guess-result-msg" class="topic-box my-3 font-bold">
+              ${state.guessCorrect
+                ? `🎉 大正解！【${esc(state.citizenWord)}】<br>🐺 ウルフ側の逆転勝利！`
+                : `⭕ 市民のお題は【${esc(state.citizenWord)}】でした。市民側の勝利！`}
             </div>` : ""}
           <button class="btn btn-primary btn-block mt-4" id="btn-restart-wolf">もう一度遊ぶ 🔄</button>
         </div>`;
 
-      if (caughtWolf) {
+      if (waitingForGuess) {
+        const form = container.querySelector("#wolf-guess-form");
         const input = container.querySelector("#input-wolf-guess");
-        const judge = container.querySelector("#btn-judge-wolf-guess");
-        const result = container.querySelector("#wolf-guess-result-msg");
-        judge.addEventListener("click", () => {
-          const guess = input.value.trim();
+        const finishGuess = (correct) => {
+          if (state.guessCorrect !== null) return;
+          state.guessCorrect = correct;
+          if (correct) celebrate(100);
+          else play("playWrong");
+          render();
+          container.querySelector("#wolf-result-title").focus();
+        };
+        form.addEventListener("submit", (event) => {
+          event.preventDefault();
+          const normalize = (value) => String(value).normalize("NFKC").trim().toLowerCase();
+          const guess = normalize(input.value);
           if (!guess) {
             toast("warning", "お題を入力してください");
+            input.focus();
             return;
           }
-          const expected = String(state.citizenWord);
-          const normalizedGuess = guess.normalize("NFKC").toLowerCase();
-          const normalizedExpected = expected.normalize("NFKC").toLowerCase();
-          const correct = normalizedGuess === normalizedExpected || normalizedExpected.includes(normalizedGuess) || normalizedGuess.includes(normalizedExpected);
-          if (correct) {
-            celebrate(100);
-            result.innerHTML = `<span class="text-danger font-bold text-lg">🎉 大正解！【${esc(expected)}】<br>🐺 ウルフ側の逆転勝利！</span>`;
-          } else {
-            play("playWrong");
-            result.innerHTML = `<span class="text-success font-bold">⭕ 市民のお題は【${esc(expected)}】でした。市民側の勝利！</span>`;
-          }
-          input.disabled = true;
-          judge.disabled = true;
+          finishGuess(guess === normalize(state.citizenWord));
         });
+        container.querySelector("#btn-skip-wolf-guess").addEventListener("click", () => finishGuess(false));
       }
       container.querySelector("#btn-restart-wolf").addEventListener("click", restart);
     }

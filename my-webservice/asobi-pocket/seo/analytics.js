@@ -160,7 +160,7 @@
     if (href.startsWith('../#game/')) {
       trackNavigation(link, 'asobi_seo_game_click', {
         article_slug: articleSlug,
-        game_id: href.slice('../#game/'.length),
+        game_id: href.slice('../#game/'.length).split('?')[0],
         link_text: linkText
       });
       return;

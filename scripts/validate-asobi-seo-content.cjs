@@ -21,13 +21,6 @@ const LEGACY_ALIASES = new Map(Object.entries({
   "ng-word.html": "ng-word-game-odai.html", "shiritori-rule.html": "restricted-shiritori-rules.html"
 }));
 
-const LEGACY_CTA_FIXED_BY_PR58 = new Set([
-  'ito-odai.html',
-  'wordwolf-odai.html',
-  'asa-sore-odai.html',
-  'sea-turtle-quiz.html'
-]);
-
 const DEPTH_PAGES = new Set([
   'two-player-games.html',
   'three-player-games.html',
@@ -131,7 +124,7 @@ function extractLocalHtmlLinks(source) {
 
 function extractGameIds(source) {
   const ids = [];
-  const regex = /href=["']\.\.\/#game\/([^"'#?]+)["']/gi;
+  const regex = /href=["']\.\.\/#game\/([^"'#?]+)(?:\?topic=[1-9]\d{0,2})?["']/gi;
   let match;
   while ((match = regex.exec(source)) !== null) ids.push(decodeURIComponent(match[1]));
   return ids;
@@ -247,10 +240,8 @@ try {
       if (!target.startsWith(SEO_ROOT + path.sep) || !fs.existsSync(target)) fail(`${file}: broken local article link -> ${href}`);
     }
 
-    if (!LEGACY_CTA_FIXED_BY_PR58.has(file)) {
-      for (const gameId of pageGameIds) {
-        if (!gameIds.has(gameId)) fail(`${file}: unknown game CTA id -> ${gameId}`);
-      }
+    for (const gameId of pageGameIds) {
+      if (!gameIds.has(gameId)) fail(`${file}: unknown game CTA id -> ${gameId}`);
     }
 
     if (PLAYER_GUIDE_COUNTS.has(file)) {
@@ -318,7 +309,6 @@ try {
   if (!sitemap.includes('<loc>https://katakatalab.com/asobi-pocket/seo/</loc>')) fail('SEO hub missing from sitemap');
 
   for (const noteMessage of notes) console.log(`OK: ${noteMessage}`);
-  console.log(`NOTE: legacy CTA validation is deferred to PR #58 for ${[...LEGACY_CTA_FIXED_BY_PR58].join(', ')}`);
 
   if (errors.length) {
     for (const error of errors) console.error(`ERROR: ${error}`);

@@ -65,7 +65,7 @@
         document.head.appendChild(script);
       };
       const trackPageView = function () {
-        const hash = window.location.hash || '#home';
+        const hash = (window.location.hash || '#home').split('?')[0];
         gtag('event', 'page_view', {
           page_title: document.title,
           page_location: window.location.href,
@@ -616,6 +616,7 @@
 
   <!-- スクリプト群 -->
   <script defer src="data/games.js"></script>
+  <script defer src="data/article-topics.js"></script>
   <script defer src="js/audio.js"></script>
   <script defer src="js/confetti.js"></script>
   <script defer src="js/toast.js"></script>

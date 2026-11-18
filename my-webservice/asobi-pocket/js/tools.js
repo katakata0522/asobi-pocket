@@ -208,7 +208,7 @@ const GameTools = {
       return extractTopicText(item) || "人気の食べ物 (1: 不人気 〜 100: 国民的大人気)";
     }
 
-    state.selectedTopic = getRandomTopic();
+    state.selectedTopic = game.articleTopic?.text || getRandomTopic();
 
     function update() {
       if (state.step === "setup") {
@@ -337,6 +337,7 @@ const GameTools = {
           state.currentPlayerIdx = 0;
           state.step = "passing";
           update();
+          container.querySelector("#secret-card-box").focus();
         });
       } else if (state.step === "passing") {
         const curPlayer = state.players[state.currentPlayerIdx];
@@ -355,19 +356,16 @@ const GameTools = {
             </div>
 
             <div class="secret-card-container">
-              <div class="secret-card-box" id="secret-card-box">
-                <div class="secret-card-closed">
-                  <div class="lock-icon">🔒</div>
-                  <p class="font-bold">ここを長押し または タップして<br>自分の数字をこっそり確認</p>
-                  <small class="text-muted">（他の人に見られないように注意！）</small>
+              <button type="button" class="btn btn-outline btn-block btn-lg secret-card-box" id="secret-card-box" aria-controls="ito-card-revealed" aria-describedby="ito-card-secrecy-note">
+                <span aria-hidden="true">🔒</span> 自分の数字をこっそり確認
+              </button>
+              <div class="secret-card-revealed hidden" id="ito-card-revealed" tabindex="-1">
+                <div class="card-num-badge-group">
+                  ${curPlayer.numbers.map(num => `<div class="card-large-number">${num}</div>`).join('')}
                 </div>
-                <div class="secret-card-revealed hidden">
-                  <div class="card-num-badge-group">
-                    ${curPlayer.numbers.map(num => `<div class="card-large-number">${num}</div>`).join('')}
-                  </div>
-                  <p class="mt-2 text-warning font-bold">数字そのものは言わずに、お題の例えで伝えよう！</p>
-                </div>
+                <p class="mt-2 text-warning font-bold">数字そのものは言わずに、お題の例えで伝えよう！</p>
               </div>
+              <small id="ito-card-secrecy-note" class="text-muted">他の人に見えないように確認してください。</small>
             </div>
 
             <button class="btn btn-primary btn-block btn-lg mt-4 hidden" id="btn-ito-next-person">
@@ -377,32 +375,29 @@ const GameTools = {
         `;
 
         const box = container.querySelector("#secret-card-box");
-        const closed = box.querySelector(".secret-card-closed");
-        const revealed = box.querySelector(".secret-card-revealed");
+        const revealed = container.querySelector("#ito-card-revealed");
         const nextBtn = container.querySelector("#btn-ito-next-person");
 
-        let isRevealed = false;
-        function revealCard() {
-          if (isRevealed) return;
-          isRevealed = true;
+        box.addEventListener("click", () => {
           Sound.playSelect();
           Sound.hapticMedium();
-          closed.classList.add("hidden");
+          box.classList.add("hidden");
           revealed.classList.remove("hidden");
-          box.classList.add("revealed");
+          container.querySelector("#ito-card-secrecy-note").classList.add("hidden");
           nextBtn.classList.remove("hidden");
-        }
-
-        box.addEventListener("click", revealCard);
+          revealed.focus();
+        });
 
         nextBtn.addEventListener("click", () => {
           Sound.playClick();
           if (state.currentPlayerIdx + 1 < state.playerCount) {
             state.currentPlayerIdx++;
             update();
+            container.querySelector("#secret-card-box").focus();
           } else {
             state.step = "talk";
             update();
+            container.querySelector("#ito-talk-topic").focus();
           }
         });
       } else if (state.step === "talk") {
@@ -431,7 +426,7 @@ const GameTools = {
           <div class="tool-card">
             <div class="text-center mb-3">
               <span class="badge badge-success">話し合いタイム ＆ カード並べ替え</span>
-              <h3 class="tool-title mt-1">🎯 ${escapeHTML(state.selectedTopic)}</h3>
+              <h3 class="topic-text mt-1" id="ito-talk-topic" tabindex="-1">🎯 ${escapeHTML(state.selectedTopic)}</h3>
               <p class="text-sm text-muted">例え合いながら、数字が小さいと思う順にカードをドラッグまたは上下移動して並べよう！</p>
             </div>
 
@@ -492,6 +487,13 @@ const GameTools = {
           btn.addEventListener("touchstart", showNum, { passive: false });
           btn.addEventListener("touchend", hideNum);
           btn.addEventListener("touchcancel", hideNum);
+          btn.addEventListener("keydown", (event) => {
+            if (event.key === " " || event.key === "Enter") showNum(event);
+          });
+          btn.addEventListener("keyup", (event) => {
+            if (event.key === " " || event.key === "Enter") hideNum();
+          });
+          btn.addEventListener("blur", hideNum);
         });
 
         const focusBtn = container.querySelector("#btn-ito-focus-mode");
@@ -638,7 +640,7 @@ const GameTools = {
     }
 
     let currentKana = DeckManager.getNext('asa-sore-kana', KANA_LIST);
-    let currentTopic = getRandomTopic();
+    let currentTopic = game.articleTopic?.text || getRandomTopic();
     let answersLog = [];
 
     const asaTimer = new GameTimer({
@@ -660,10 +662,15 @@ const GameTools = {
       }
     });
 
+    function timerButtonText() {
+      if (asaTimer.isRunning) return "一時停止";
+      return `タイマースタート (${asaTimer.remaining || asaTimer.totalSeconds}秒)`;
+    }
+
     function updateTimerBtns() {
       const btn = container.querySelector("#btn-toggle-asa-timer");
       if (btn) {
-        btn.textContent = asaTimer.isRunning ? '一時停止' : `タイマースタート (${asaTimer.remaining}秒)`;
+        btn.textContent = timerButtonText();
         btn.className = `btn ${asaTimer.isRunning ? 'btn-secondary' : 'btn-primary'} btn-sm`;
       }
       const numEl = container.querySelector(".asa-timer-num");
@@ -699,7 +706,7 @@ const GameTools = {
             </div>
             <div class="asa-timer-btns">
               <button class="btn ${asaTimer.isRunning ? 'btn-secondary' : 'btn-primary'} btn-sm" id="btn-toggle-asa-timer">
-                ${asaTimer.isRunning ? '一時停止' : `タイマースタート (${asaTimer.remaining}秒)`}
+                ${timerButtonText()}
               </button>
               <button class="btn btn-outline btn-sm" id="btn-reset-asa-timer">リセット</button>
             </div>
@@ -761,6 +768,7 @@ const GameTools = {
 
       container.querySelector("#btn-toggle-asa-timer").addEventListener("click", () => {
         Sound.playClick();
+        if (asaTimer.remaining === 0) asaTimer.reset();
         asaTimer.toggle();
         updateTimerBtns();
       });
@@ -1959,7 +1967,8 @@ const GameTools = {
   // 6. ウミガメのスープ (水平思考クイズ)
   // ===================================================
   renderSeaTurtle(container, game) {
-    let presets = getActiveTopicsForGame(game.id, game.presets);
+    const builtInTopics = getActiveTopicsForGame(game.id, game.presets);
+    const presets = game.articleTopic ? [game.articleTopic, ...builtInTopics] : builtInTopics;
     let currentIndex = 0;
     let showAnswer = false;
     let openedHints = new Set(); // 開いたヒントのインデックス
@@ -2028,6 +2037,7 @@ const GameTools = {
           <div class="puzzle-answer-box ${showAnswer ? '' : 'hidden'}" id="answer-box">
             <span class="answer-label">【真相】</span>
             <p>${escapeHTML(q.answer)}</p>
+            ${q.hostNote ? `<p class="text-sm text-sub mt-2">${escapeHTML(q.hostNote)}</p>` : ''}
           </div>
         </div>
       `;
@@ -2524,7 +2534,7 @@ const GameTools = {
                 <div class="text-xs font-bold text-danger mb-1">PLAYER 2 (相手)</div>
                 <div class="text-xs text-muted mb-1">相手(P1)に言わせるNGワード:</div>
                 <div class="ng-p-word font-black text-xl text-primary my-1">${escapeHTML(state.p1Word)}</div>
-                <button class="btn btn-sm btn-danger btn-block mt-2 font-bold" id="btn-p1-said">
+                <button class="btn btn-sm btn-danger btn-block mt-2 font-bold" id="btn-p1-said" ${state.winner ? 'disabled' : ''}>
                   💥 P1が言った！ (P2勝利)
                 </button>
               </div>
@@ -2556,7 +2566,7 @@ const GameTools = {
                 <div class="text-xs font-bold text-primary mb-1">PLAYER 1 (あなた)</div>
                 <div class="text-xs text-muted mb-1">相手(P2)に言わせるNGワード:</div>
                 <div class="ng-p-word font-black text-xl text-danger my-1">${escapeHTML(state.p2Word)}</div>
-                <button class="btn btn-sm btn-primary btn-block mt-2 font-bold" id="btn-p2-said">
+                <button class="btn btn-sm btn-primary btn-block mt-2 font-bold" id="btn-p2-said" ${state.winner ? 'disabled' : ''}>
                   💥 P2が言った！ (P1勝利)
                 </button>
               </div>
@@ -2624,6 +2634,7 @@ const GameTools = {
         const btnP1Said = container.querySelector("#btn-p1-said");
         if (btnP1Said) {
           btnP1Said.onclick = () => {
+            if (state.winner !== null) return;
             stopDuelTimer();
             Sound.playExplosion();
             Sound.hapticExplosion();
@@ -2638,6 +2649,7 @@ const GameTools = {
         const btnP2Said = container.querySelector("#btn-p2-said");
         if (btnP2Said) {
           btnP2Said.onclick = () => {
+            if (state.winner !== null) return;
             stopDuelTimer();
             Sound.playExplosion();
             Sound.hapticExplosion();
