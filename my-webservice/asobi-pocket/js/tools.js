@@ -28,6 +28,173 @@ function toHiragana(str) {
     .replace(/[\u30a1-\u30f6]/g, m => String.fromCharCode(m.charCodeAt(0) - 0x60));
 }
 
+// お題単位の別表記。分類名や部分一致から他のお題へは広げない。
+const answerNames = [
+  ["ビール", "麦酒"],
+  ["シャンパン", "シャンペン", "シャンパーニュ"],
+  ["トンボ", "蜻蛉"],
+  ["うどん", "饂飩"],
+  ["そば", "蕎麦"],
+  ["コーヒー", "珈琲"],
+  ["紅茶", "こうちゃ"],
+  ["X (Twitter)", "X", "エックス", "Twitter", "ツイッター"],
+  ["カッパ（レインコート）", "カッパ", "合羽", "レインコート"],
+  ["LINE", "ライン"],
+  ["YouTube", "ユーチューブ"],
+  ["TikTok", "ティックトック"],
+  ["Netflix", "ネットフリックス"],
+  ["りんご", "林檎"],
+  ["なし", "梨"],
+  ["いちご", "苺"],
+  ["さくらんぼ", "サクランボウ", "桜桃"],
+  ["餃子", "ぎょうざ", "ギョーザ"],
+  ["からあげ", "唐揚げ", "から揚げ", "唐揚"],
+  ["焼肉", "焼き肉", "やきにく"],
+  ["すき焼き", "すきやき", "鋤焼き"],
+  ["おにぎり", "お握り", "おむすび"],
+  ["牛乳", "ぎゅうにゅう"],
+  ["豆乳", "とうにゅう"],
+  ["お好み焼き", "おこのみやき"],
+  ["犬", "いぬ"],
+  ["猫", "ねこ"],
+  ["雨", "あめ"],
+  ["雪", "ゆき"],
+  ["海", "うみ"],
+  ["山", "やま"],
+  ["朝", "あさ"],
+  ["夜", "よる"],
+  ["水族館", "すいぞくかん"],
+  ["動物園", "どうぶつえん"],
+  ["映画館", "えいがかん"],
+  ["遊園地", "ゆうえんち"],
+  ["電車", "でんしゃ"],
+  ["鉛筆", "えんぴつ"],
+  ["シャープペン", "シャープペンシル", "シャーペン"],
+  ["リュック", "リュックサック"],
+  ["ポテトチップス", "ポテチ"],
+  ["会議", "かいぎ"],
+  ["授業", "じゅぎょう"],
+  ["昼休み", "ひるやすみ"],
+  ["放課後", "ほうかご"],
+  ["コピー機", "こぴーき", "複写機"],
+  ["先輩", "せんぱい"],
+  ["上司", "じょうし"],
+  ["宿題", "しゅくだい"],
+  ["在宅", "ざいたく"],
+  ["出社", "しゅっしゃ"],
+  ["温泉", "おんせん"],
+  ["旅館", "りょかん"],
+  ["高原", "こうげん"],
+  ["新幹線", "しんかんせん"],
+  ["飛行機", "ひこうき"],
+  ["お土産", "おみやげ"],
+  ["美術館", "びじゅつかん"],
+  ["博物館", "はくぶつかん"],
+  ["地図", "ちず"],
+  ["海外旅行", "かいがいりょこう"],
+  ["国内旅行", "こくないりょこう"],
+  ["誕生日会", "たんじょうびかい"],
+  ["忘年会", "ぼうねんかい"],
+  ["写真", "しゃしん"],
+  ["動画", "どうが"],
+  ["電話", "でんわ"],
+  ["ビデオ通話", "びでおつうわ"],
+  ["朝食", "ちょうしょく", "朝ご飯", "朝ごはん", "あさごはん"],
+  ["夜食", "やしょく"],
+  ["推理小説", "すいりしょうせつ"],
+  ["ホラー小説", "ほらーしょうせつ"],
+  ["スポーツ観戦", "すぽーつかんせん"],
+  ["早起き", "はやおき"],
+  ["夜更かし", "夜ふかし", "よふかし"],
+  ["手料理", "てりょうり"],
+  ["外食", "がいしょく"],
+  ["事前相談", "じぜんそうだん"],
+  ["予約", "よやく"],
+  ["約束", "やくそく"],
+  ["趣味", "しゅみ"],
+  ["特技", "とくぎ"],
+  ["応援", "おうえん"],
+  ["励まし", "はげまし"],
+  ["休憩", "きゅうけい"],
+  ["気分転換", "きぶんてんかん"],
+  ["憧れ", "あこがれ"],
+  ["尊敬", "そんけい"],
+  ["予定", "よてい"],
+  ["目標", "もくひょう"],
+  ["相談", "そうだん"],
+  ["報告", "ほうこく"],
+  ["緊張", "きんちょう"],
+  ["集中", "しゅうちゅう"],
+  ["安心", "あんしん"],
+  ["満足", "まんぞく"],
+  ["経験", "けいけん"],
+  ["思い出", "おもいで", "想い出"],
+  ["居酒屋", "いざかや"],
+  ["ファミレス", "ファミリーレストラン"],
+  ["合コン", "ごうこん", "合同コンパ"],
+  ["街コン", "まちこん"],
+  ["スマホ", "スマートフォン"],
+  ["ノートパソコン", "ノートPC", "ノートピーシー"],
+  ["マクドナルド", "マック", "マクド"],
+  ["初デート", "はつでーと"],
+  ["記念日デート", "きねんびでーと"],
+  ["告白", "こくはく"],
+  ["カレーライス", "カレー"],
+  ["歯ブラシ", "はぶらし"],
+  ["電動歯ブラシ", "でんどうはぶらし"],
+  ["革靴", "かわぐつ"],
+  ["焼き鳥", "焼鳥", "やきとり"],
+  ["串カツ", "串かつ", "くしかつ"],
+  ["朝寝坊", "あさねぼう"],
+  ["有給休暇", "ゆうきゅうきゅうか", "有休", "有給"],
+  ["休日出勤", "きゅうじつしゅっきん"],
+  ["昇給", "しょうきゅう"],
+  ["別れ話", "わかればなし"],
+  ["ケンカ", "喧嘩"],
+  ["一目惚れ", "一目ぼれ", "ひとめぼれ"],
+  ["運命の出会い", "うんめいのであい"],
+  ["同棲", "どうせい"],
+  ["お化け屋敷", "おばけやしき"],
+  ["富士山", "ふじさん"],
+  ["花火大会", "はなびたいかい"],
+  ["夏祭り", "なつまつり"],
+  ["お正月", "おしょうがつ", "正月", "しょうがつ"],
+  ["大晦日", "おおみそか"],
+  ["自転車", "じてんしゃ"],
+  ["電動キックボード", "でんどうきっくぼーど"],
+  ["小説", "しょうせつ"],
+  ["漫画", "まんが"],
+  ["傘", "かさ"],
+];
+const namesByTopic = new Map();
+for (const variants of answerNames) {
+  const names = variants.map(toHiragana);
+  for (const name of names) namesByTopic.set(name, names);
+}
+
+function customWolfPair(value) {
+  if (typeof value !== "string") return null;
+  const pair = value.split(/\s*[／/＆&]\s*/).map(word => word.trim());
+  if (pair.length !== 2 || !pair.every(Boolean) || matchesTopicAnswer(pair[0], pair[1]) || matchesTopicAnswer(pair[1], pair[0])) return null;
+  return {citizen: pair[0], wolf: pair[1], category: "自作のお題"};
+}
+
+function matchesTopicAnswer(topic, answer) {
+  const expected = toHiragana(topic);
+  const input = toHiragana(answer);
+  if (!input) return false;
+  const names = namesByTopic.get(expected) || [expected];
+  // このお題について認める呼び方。分類全体への相互置換にはしない。
+  if (names.includes("とんぼ") && input === "やんま") return true;
+  return names.includes(input);
+}
+
+function topicSearchText(value) {
+  const text = toHiragana(value);
+  const entries = text.split(/\s+(?:&|vs|\/)\s+/i);
+  return [text, ...entries.flatMap(entry => namesByTopic.get(entry.trim()) || [])].join(" ");
+}
+
 // 山札（デッキ）マネージャー：同じお題の連続出現を100%防止（全件引ききったら再シャッフル＆境界重複防止）
 const DeckManager = {
   decks: new Map(),
@@ -639,7 +806,10 @@ const GameTools = {
       return extractTopicText(item) || "コンビニで思わず買ってしまうもの";
     }
 
-    let currentKana = DeckManager.getNext('asa-sore-kana', KANA_LIST);
+    let allKana = false;
+    const commonKana = ["あ","い","う","お","か","き","く","こ","さ","し","す","た","ち","つ","て","と","な","は","ひ","ふ","ま","み","や","ゆ"];
+    const drawKana = () => DeckManager.getNext(allKana ? "asa-kana-all" : "asa-kana-common", allKana ? KANA_LIST : commonKana);
+    let currentKana = drawKana();
     let currentTopic = game.articleTopic?.text || getRandomTopic();
     let answersLog = [];
 
@@ -692,6 +862,7 @@ const GameTools = {
             <div class="asa-sore-suffix">…といえば？</div>
           </div>
 
+          <label><input type="checkbox" id="asa-all-kana" ${allKana ? "checked" : ""}> 難しい頭文字も使う</label>
           <div class="asa-controls-grid">
             <button class="btn btn-outline btn-sm" id="btn-shuffle-both">お題を全抽選 🎲</button>
             <button class="btn btn-outline btn-sm" id="btn-shuffle-kana">文字だけ変える (「${escapeHTML(currentKana)}」➔)</button>
@@ -715,10 +886,10 @@ const GameTools = {
           <!-- 正解決定メモ機能 -->
           <div class="asa-decision-box">
             <label class="decision-label">🏆 全員で議論して決まった「今日のそれ正解」:</label>
-            <div class="decision-input-row">
-              <input type="text" class="decision-input" id="input-asa-answer" placeholder="例: 「${escapeHTML(currentKana)}」から始まる正解を入力...">
+            <form class="decision-input-row" id="asa-answer-form">
+              <input type="text" required class="decision-input" id="input-asa-answer" placeholder="例: 「${escapeHTML(currentKana)}」から始まる正解を入力...">
               <button class="btn btn-success" id="btn-save-asa-answer">決定！ 🎉</button>
-            </div>
+            </form>
           </div>
 
           <!-- 履歴 ＆ Xシェア -->
@@ -746,9 +917,14 @@ const GameTools = {
         </div>
       `;
 
+      container.querySelector("#asa-all-kana").addEventListener("change", event => {
+        allKana = event.target.checked;
+        currentKana = drawKana();
+        render();
+      });
       container.querySelector("#btn-shuffle-both").addEventListener("click", () => {
         Sound.playClick();
-        currentKana = DeckManager.getNext('asa-sore-kana', KANA_LIST);
+        currentKana = drawKana();
         currentTopic = getRandomTopic();
         asaTimer.reset(60);
         render();
@@ -756,7 +932,7 @@ const GameTools = {
 
       container.querySelector("#btn-shuffle-kana").addEventListener("click", () => {
         Sound.playClick();
-        currentKana = DeckManager.getNext('asa-sore-kana', KANA_LIST);
+        currentKana = drawKana();
         render();
       });
 
@@ -780,7 +956,8 @@ const GameTools = {
       });
 
       const inputAns = container.querySelector("#input-asa-answer");
-      container.querySelector("#btn-save-asa-answer").addEventListener("click", () => {
+      container.querySelector("#asa-answer-form").addEventListener("submit", event => {
+        event.preventDefault();
         const val = inputAns.value.trim();
         if (val) {
           Sound.playFanfare();
@@ -1967,7 +2144,7 @@ const GameTools = {
   // 6. ウミガメのスープ (水平思考クイズ)
   // ===================================================
   renderSeaTurtle(container, game) {
-    const builtInTopics = getActiveTopicsForGame(game.id, game.presets);
+    const builtInTopics = getActiveTopicsForGame(game.id, game.presets).filter(q => q?.question && q?.answer);
     const presets = game.articleTopic ? [game.articleTopic, ...builtInTopics] : builtInTopics;
     let currentIndex = 0;
     let showAnswer = false;
@@ -1987,7 +2164,8 @@ const GameTools = {
             </div>
           </div>
 
-          <h3 class="puzzle-title">${escapeHTML(q.title || "謎のスープ")}</h3>
+          ${!game.articleTopic && currentIndex === 0 ? '<p><a href="seo/sea-turtle-quiz.html#quiz-beginner">初めての方へ：身近な出来事から解く問題を選ぶ</a></p>' : ''}
+          <h3 class="puzzle-title">${escapeHTML(q.title || "自作問題")}</h3>
           <div class="puzzle-question-box">
             <p>${escapeHTML(q.question)}</p>
           </div>
@@ -2381,6 +2559,7 @@ const GameTools = {
           b.onclick = () => {
             Sound.playClick();
             selectedCat = b.dataset.cat;
+            currentItem = drawGachaItem(selectedCat);
             render();
           };
         });
@@ -2432,6 +2611,8 @@ const GameTools = {
     let presets = game.presets || [];
     let state = {
       mode: "duel",
+      reader: 1,
+      showingWord: false,
       p1Word: "",
       p2Word: "",
       duelTimerSec: 180,
@@ -2448,6 +2629,8 @@ const GameTools = {
     }
 
     function initDuel() {
+      state.reader = 1;
+      state.showingWord = false;
       state.p1Word = pickRandomWord();
       state.p2Word = pickRandomWord();
       while (state.p2Word === state.p1Word && presets.length > 1) {
@@ -2528,12 +2711,16 @@ const GameTools = {
             </div>
           </div>
 
-          ${state.mode === 'duel' ? `
+          ${state.mode === 'duel' && state.reader <= 2 ? `
+            <div class="topic-box my-3 text-center">
+              <h4>プレイヤー ${state.reader} に渡してください</h4>
+              ${state.showingWord ? `<p>相手に言わせる言葉</p><p class="ng-p-word font-bold">${escapeHTML(state.reader === 1 ? state.p2Word : state.p1Word)}</p>
+                <button class="btn btn-primary" id="ng-hide">伏せて${state.reader === 1 ? "次の人へ" : "会話を始める"}</button>` :
+                '<button class="btn btn-primary" id="ng-reveal">自分だけで確認する</button>'}
+            </div>` : state.mode === 'duel' ? `
             <div class="ng-duel-wrapper border rounded p-2" style="background: rgba(0,0,0,0.02); min-height: 440px; display: flex; flex-direction: column; justify-content: space-between;">
-              <div class="poker-p2-zone border rounded p-3 text-center" style="background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.3);">
+              <div class="border rounded p-3 text-center" style="background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.3);">
                 <div class="text-xs font-bold text-danger mb-1">PLAYER 2 (相手)</div>
-                <div class="text-xs text-muted mb-1">相手(P1)に言わせるNGワード:</div>
-                <div class="ng-p-word font-black text-xl text-primary my-1">${escapeHTML(state.p1Word)}</div>
                 <button class="btn btn-sm btn-danger btn-block mt-2 font-bold" id="btn-p1-said" ${state.winner ? 'disabled' : ''}>
                   💥 P1が言った！ (P2勝利)
                 </button>
@@ -2564,8 +2751,6 @@ const GameTools = {
 
               <div class="border rounded p-3 text-center" style="background: rgba(59,130,246,0.06); border-color: rgba(59,130,246,0.3);">
                 <div class="text-xs font-bold text-primary mb-1">PLAYER 1 (あなた)</div>
-                <div class="text-xs text-muted mb-1">相手(P2)に言わせるNGワード:</div>
-                <div class="ng-p-word font-black text-xl text-danger my-1">${escapeHTML(state.p2Word)}</div>
                 <button class="btn btn-sm btn-primary btn-block mt-2 font-bold" id="btn-p2-said" ${state.winner ? 'disabled' : ''}>
                   💥 P2が言った！ (P1勝利)
                 </button>
@@ -2598,11 +2783,23 @@ const GameTools = {
         </div>
       `;
 
+      container.querySelector("#ng-reveal")?.addEventListener("click", () => {
+        state.showingWord = true;
+        render();
+        container.querySelector("#ng-hide")?.focus();
+      });
+      container.querySelector("#ng-hide")?.addEventListener("click", () => {
+        state.showingWord = false;
+        state.reader++;
+        render();
+        container.querySelector("#ng-reveal, #btn-duel-timer-toggle")?.focus();
+      });
       container.querySelectorAll("[data-ngmode]").forEach(btn => {
         btn.onclick = () => {
           Sound.playClick();
           stopDuelTimer();
           state.mode = btn.dataset.ngmode;
+          state.showingWord = false;
           render();
         };
       });
@@ -2726,6 +2923,9 @@ const GameTools = {
       p2Card: Math.floor(Math.random() * 13) + 1,
       p1Suit: ["♠️", "♥️", "♦️", "♣️"][Math.floor(Math.random() * 4)],
       p2Suit: ["♠️", "♥️", "♦️", "♣️"][Math.floor(Math.random() * 4)],
+      reader: 1,
+      revealing: false,
+      choosing: false,
       p1Action: null,
       p2Action: null,
       isDuelRevealed: false
@@ -2737,6 +2937,9 @@ const GameTools = {
       state.p2Card = Math.floor(Math.random() * 13) + 1;
       state.p1Suit = suits[Math.floor(Math.random() * 4)];
       state.p2Suit = suits[Math.floor(Math.random() * 4)];
+      state.reader = 1;
+      state.revealing = false;
+      state.choosing = false;
       state.p1Action = null;
       state.p2Action = null;
       state.isDuelRevealed = false;
@@ -2752,16 +2955,7 @@ const GameTools = {
 
     const getCardScore = (num) => (num === 1 ? 14 : num);
 
-    function renderCard(suit, num, isVisible) {
-      if (!isVisible) {
-        return `
-          <div class="playing-card card-back">
-            <div style="font-size:1.2rem; margin-bottom:2px;">👀</div>
-            <div style="font-weight:900;">相手にだけ</div>
-            <div style="font-size:0.7rem; opacity:0.9;">見えています</div>
-          </div>
-        `;
-      }
+    function renderCard(suit, num) {
       const isRed = suit === "♥️" || suit === "♦️";
       const rank = getRank(num);
       return `
@@ -2807,109 +3001,55 @@ const GameTools = {
         }
       }
 
-      container.innerHTML = `
-        <div class="tool-card text-center p-2">
-          <div class="flex justify-between items-center mb-1">
-            <h3 class="tool-title text-base" style="margin:0;">🃏 2人対戦：対面インディアンポーカー</h3>
-            <span class="badge badge-primary text-xs font-bold">2人対面特化</span>
-          </div>
-          <p class="text-xs text-muted mb-2">スマホを机の真ん中に置き、相手の額のカードを見ながらブラフ対決！</p>
+      const player = state.reader;
+      const opponentCard = () => player === 1
+        ? renderCard(state.p2Suit, state.p2Card)
+        : renderCard(state.p1Suit, state.p1Card);
+      let panel;
+      if (state.isDuelRevealed) {
+        panel = `<h4>${resultText}</h4><p>P1: ${state.p1Suit}${getRank(state.p1Card)} ／ P2: ${state.p2Suit}${getRank(state.p2Card)}</p>
+          <button class="btn btn-primary" id="btn-poker-next">次のディール</button>
+          ${winner ? '<button class="btn btn-outline" id="btn-poker-batsu">敗者の罰ゲーム</button>' : ''}`;
+      } else if (state.p1Action && state.p2Action) {
+        panel = '<p>2人の選択が決まりました。画面を一緒に見てください。</p><button class="btn btn-primary" id="btn-poker-open">カードオープン判定</button>';
+      } else if (player > 2) {
+        panel = '<p>数字を伏せて話し合いましょう。相談が終わったら順番に手を決めます。</p><button class="btn btn-primary" id="poker-begin-choices">手を決める</button>';
+      } else if (!state.revealing) {
+        panel = `<p>プレイヤー ${player} に渡してください。</p><button class="btn btn-primary" id="poker-reveal">自分だけで確認する</button>`;
+      } else {
+        panel = `<p>プレイヤー ${player} が見る相手のカード</p>${opponentCard()}
+          ${state.choosing ? `<button class="btn btn-primary" id="btn-p${player}-bet">勝負する</button>
+            <button class="btn btn-outline" id="btn-p${player}-fold">降りる</button>` :
+            '<button class="btn btn-primary" id="poker-hide">伏せて進む</button>'}`;
+      }
+      container.innerHTML = `<div class="tool-card text-center"><h3>対面インディアンポーカー</h3>${panel}</div>`;
 
-          <div class="duel-container" style="min-height: 480px; display: flex; flex-direction: column; justify-content: space-between;">
-            <div class="poker-duel-half poker-p2-zone border rounded p-2" style="background: rgba(0,0,0,0.03);">
-              <div class="flex justify-between items-center mb-1">
-                <span class="font-black text-xs text-danger">PLAYER 2 (相手)</span>
-                <span class="badge badge-sm font-mono ${state.p2Action ? 'badge-warning' : 'badge-secondary'}">
-                  ${state.p2Action === 'bet' ? '🔥 コール (勝負)' : state.p2Action === 'fold' ? '🏳️ 降りた (フォールド)' : '🤔 思考中…'}
-                </span>
-              </div>
-              <div class="flex justify-around items-center my-1">
-                <div class="text-center">
-                  <div class="text-xs text-muted mb-1 font-bold">自分(P2)のカード</div>
-                  ${renderCard(state.p2Suit, state.p2Card, state.isDuelRevealed)}
-                </div>
-                <div class="text-center">
-                  <div class="text-xs text-primary mb-1 font-bold">P1のカード(見えてる)</div>
-                  ${renderCard(state.p1Suit, state.p1Card, true)}
-                </div>
-              </div>
-              ${!state.isDuelRevealed ? `
-                <div class="flex gap-1 mt-1">
-                  <button class="btn btn-xs flex-1 ${state.p2Action === 'bet' ? 'btn-success font-bold' : 'btn-outline'}" id="btn-p2-bet" ${state.p2Action ? 'disabled' : ''}>
-                    🔥 勝負 (コール)
-                  </button>
-                  <button class="btn btn-xs flex-1 ${state.p2Action === 'fold' ? 'btn-danger font-bold' : 'btn-outline'}" id="btn-p2-fold" ${state.p2Action ? 'disabled' : ''}>
-                    🏳️ 降りる
-                  </button>
-                </div>
-              ` : ''}
-            </div>
-
-            <div class="poker-duel-center my-2 py-2 border-y text-center" style="background: rgba(255,90,95,0.04);">
-              ${!state.isDuelRevealed ? `
-                <div class="text-xs text-muted font-bold mb-1">二人のアクションが決まったらオープン！</div>
-                <button class="btn btn-primary btn-block btn-lg font-bold pulse-scale" id="btn-poker-open">
-                  🃏 カードオープン判定！ ➔
-                </button>
-              ` : `
-                <div class="animate-scale">
-                  <div class="font-black text-base text-primary">${resultText}</div>
-                  <div class="text-xs text-sub mt-1">P1: [${state.p1Suit}${getRank(state.p1Card)}] vs P2: [${state.p2Suit}${getRank(state.p2Card)}]</div>
-                  <div class="flex gap-2 mt-2">
-                    <button class="btn btn-primary btn-sm flex-1 font-bold" id="btn-poker-next">次のディール 🔄</button>
-                    ${winner > 0 ? `<button class="btn btn-danger btn-sm flex-1 font-bold" id="btn-poker-batsu">🔥 敗者の罰ゲーム！</button>` : ''}
-                  </div>
-                </div>
-              `}
-            </div>
-
-            <div class="poker-duel-half poker-p1-zone border rounded p-2" style="background: rgba(0,0,0,0.03);">
-              <div class="flex justify-between items-center mb-1">
-                <span class="font-black text-xs text-primary">PLAYER 1 (あなた)</span>
-                <span class="badge badge-sm font-mono ${state.p1Action ? 'badge-warning' : 'badge-secondary'}">
-                  ${state.p1Action === 'bet' ? '🔥 コール (勝負)' : state.p1Action === 'fold' ? '🏳️ 降りた (フォールド)' : '🤔 思考中…'}
-                </span>
-              </div>
-              <div class="flex justify-around items-center my-1">
-                <div class="text-center">
-                  <div class="text-xs text-muted mb-1 font-bold">自分(P1)のカード</div>
-                  ${renderCard(state.p1Suit, state.p1Card, state.isDuelRevealed)}
-                </div>
-                <div class="text-center">
-                  <div class="text-xs text-danger mb-1 font-bold">P2のカード(見えてる)</div>
-                  ${renderCard(state.p2Suit, state.p2Card, true)}
-                </div>
-              </div>
-              ${!state.isDuelRevealed ? `
-                <div class="flex gap-1 mt-1">
-                  <button class="btn btn-xs flex-1 ${state.p1Action === 'bet' ? 'btn-success font-bold' : 'btn-outline'}" id="btn-p1-bet" ${state.p1Action ? 'disabled' : ''}>
-                    🔥 勝負 (コール)
-                  </button>
-                  <button class="btn btn-xs flex-1 ${state.p1Action === 'fold' ? 'btn-danger font-bold' : 'btn-outline'}" id="btn-p1-fold" ${state.p1Action ? 'disabled' : ''}>
-                    🏳️ 降りる
-                  </button>
-                </div>
-              ` : ''}
-            </div>
-          </div>
-        </div>
-      `;
-
-      const btnP2Bet = container.querySelector("#btn-p2-bet");
-      if (btnP2Bet) btnP2Bet.onclick = () => { Sound.playClick(); state.p2Action = "bet"; render(); };
-
-      const btnP2Fold = container.querySelector("#btn-p2-fold");
-      if (btnP2Fold) btnP2Fold.onclick = () => { Sound.playClick(); state.p2Action = "fold"; render(); };
-
-      const btnP1Bet = container.querySelector("#btn-p1-bet");
-      if (btnP1Bet) btnP1Bet.onclick = () => { Sound.playClick(); state.p1Action = "bet"; render(); };
-
-      const btnP1Fold = container.querySelector("#btn-p1-fold");
-      if (btnP1Fold) btnP1Fold.onclick = () => { Sound.playClick(); state.p1Action = "fold"; render(); };
+      function advance(action) {
+        if (action) state[player === 1 ? "p1Action" : "p2Action"] = action;
+        state.reader++;
+        state.revealing = false;
+        render();
+        container.querySelector("button")?.focus();
+      }
+      container.querySelector("#poker-reveal")?.addEventListener("click", () => {
+        state.revealing = true;
+        render();
+        container.querySelector("button")?.focus();
+      });
+      container.querySelector("#poker-hide")?.addEventListener("click", () => advance());
+      container.querySelector("#poker-begin-choices")?.addEventListener("click", () => {
+        state.reader = 1;
+        state.choosing = true;
+        render();
+        container.querySelector("button")?.focus();
+      });
+      container.querySelector(`#btn-p${player}-bet`)?.addEventListener("click", () => advance("bet"));
+      container.querySelector(`#btn-p${player}-fold`)?.addEventListener("click", () => advance("fold"));
 
       const btnOpen = container.querySelector("#btn-poker-open");
       if (btnOpen) {
         btnOpen.onclick = () => {
+          if (!state.p1Action || !state.p2Action) return;
           Sound.playFanfare();
           if (typeof Confetti !== "undefined") Confetti.burst(60);
           state.isDuelRevealed = true;
@@ -2972,13 +3112,13 @@ const GameTools = {
             <h3 class="tool-title">🌕 ワンナイト人狼 設定</h3>
             <div class="setting-group">
               <label class="setting-label">参加人数: <span id="val-ww-players" class="badge-num">${state.playerCount}人</span></label>
-              <input type="range" class="range-slider" min="3" max="6" value="${state.playerCount}" id="range-ww-players">
+              <input type="range" class="range-slider" min="3" max="${game.maxPlayers}" value="${state.playerCount}" id="range-ww-players">
             </div>
 
             <div class="topic-box mb-3 text-left">
-              <span class="topic-tag">📋 使用される役職カード (${state.playerCount + 2}枚)</span>
+              <span class="topic-tag">📋 使用される役職カード (<span id="ww-deck-count">${state.playerCount + 2}</span>枚)</span>
               <div class="mt-2 text-sm">
-                🐺 人狼 2枚 / 🔮 占い師 1枚 / 🎭 怪盗 1枚 / 👤 村人 ${state.playerCount - 2}枚<br>
+                🐺 人狼 2枚 / 🔮 占い師 1枚 / 🎭 怪盗 1枚 / 👤 村人 <span id="ww-villagers">${state.playerCount - 2}</span>枚<br>
                 <span class="text-sub">※2枚は「墓地（中央）」に伏せられます。誰も人狼にならない平和村の可能性も！？</span>
               </div>
             </div>
@@ -2993,6 +3133,8 @@ const GameTools = {
         range.addEventListener("input", (e) => {
           state.playerCount = parseInt(e.target.value);
           container.querySelector("#val-ww-players").textContent = `${state.playerCount}人`;
+          container.querySelector("#ww-deck-count").textContent = state.playerCount + 2;
+          container.querySelector("#ww-villagers").textContent = state.playerCount - 2;
         });
 
         container.querySelector("#btn-start-ww").addEventListener("click", () => {
@@ -4785,10 +4927,10 @@ const GameTools = {
           </div>
 
           ${!state.isWon ? `
-            <div class="input-group my-3 flex gap-2 justify-center">
-              <input type="number" class="input-num" id="input-highlow-guess" placeholder="予想数字を入力">
+            <form id="highlow-form" class="input-group my-3 flex gap-2 justify-center">
+              <input type="number" inputmode="numeric" min="${state.min}" max="${state.max}" step="1" required class="input-num" id="input-highlow-guess" aria-label="予想する整数" placeholder="予想数字を入力">
               <button class="btn btn-primary" id="btn-highlow-submit">判定！</button>
-            </div>
+            </form>
           ` : `
             <div class="won-box my-3 animate-bounce">
               <h2 class="text-success">🎉 正解！数字は【${state.target}】でした！</h2>
@@ -4814,10 +4956,10 @@ const GameTools = {
         });
       });
 
-      const submitBtn = container.querySelector("#btn-highlow-submit");
-      if (submitBtn) {
-        submitBtn.addEventListener("click", doGuess);
-      }
+      container.querySelector("#highlow-form")?.addEventListener("submit", (event) => {
+        event.preventDefault();
+        doGuess();
+      });
 
       const restartBtn = container.querySelector("#btn-highlow-restart");
       if (restartBtn) {
@@ -4830,8 +4972,8 @@ const GameTools = {
 
     function doGuess() {
       const inp = container.querySelector("#input-highlow-guess");
-      const val = parseInt(inp.value);
-      if (isNaN(val)) return;
+      const val = inp.valueAsNumber;
+      if (!Number.isInteger(val) || val < state.min || val > state.max) return;
       state.attempts++;
 
       if (val === state.target) {
@@ -5200,6 +5342,7 @@ const GameTools = {
       currentRule: extractTopicText(drawShuffledTopic(game.id || "word-chain", ruleList)) || "3文字固定",
       timerSec: 5,
       timerMax: 5,
+      words: [],
       timerRunning: false,
       timerInterval: null
     };
@@ -5267,6 +5410,13 @@ const GameTools = {
             <button class="btn btn-sm btn-outline mt-1" id="btn-next-rule">ルールを変える 🎲</button>
           </div>
 
+          <details class="tool-optional-settings">
+            <summary>使った言葉を記録</summary>
+            <form id="chain-word-form"><label for="chain-word">今の言葉</label>
+              <input id="chain-word" maxlength="100" required><button class="btn btn-sm btn-outline">記録</button></form>
+            <p id="chain-word-list" aria-live="polite">${escapeHTML(state.words.join(" → "))}</p>
+            <button class="btn btn-sm btn-outline" id="chain-clear">履歴を消す</button>
+          </details>
           <div class="setting-group my-2">
             <label class="setting-label text-xs">制限時間:</label>
             <div class="btn-toggle-group">
@@ -5317,6 +5467,24 @@ const GameTools = {
         startTimer();
       });
 
+      const history = container.querySelector("#chain-word-list");
+      container.querySelector("#chain-word-form").addEventListener("submit", event => {
+        event.preventDefault();
+        const field = container.querySelector("#chain-word");
+        const word = field.value.trim();
+        if (!word) return;
+        if (state.words.some(used => toHiragana(used) === toHiragana(word))) {
+          Toast.warning("もう使った言葉です");
+          return;
+        }
+        state.words.push(word);
+        history.textContent = state.words.join(" → ");
+        field.value = "";
+      });
+      container.querySelector("#chain-clear").addEventListener("click", () => {
+        state.words = [];
+        history.textContent = "";
+      });
       container.querySelector("#btn-chain-foul").addEventListener("click", () => {
         stopTimer();
         Sound.playWrong();
@@ -5370,9 +5538,9 @@ const GameTools = {
           ` : ''}
 
           <div class="setting-group">
-            <input type="text" class="input-player-name mb-2" id="input-ep1" placeholder="本当のエピソード 1" value="${escapeHTML(state.ep1)}">
-            <input type="text" class="input-player-name mb-2" id="input-ep2" placeholder="本当のエピソード 2" value="${escapeHTML(state.ep2)}">
-            <input type="text" class="input-player-name mb-2" id="input-ep3" placeholder="真っ赤な嘘のエピソード" value="${escapeHTML(state.ep3)}">
+            <input type="text" class="input-player-name mb-2" required id="input-ep1" placeholder="本当のエピソード 1" value="${escapeHTML(state.ep1)}">
+            <input type="text" class="input-player-name mb-2" required id="input-ep2" placeholder="本当のエピソード 2" value="${escapeHTML(state.ep2)}">
+            <input type="text" class="input-player-name mb-2" required id="input-ep3" placeholder="真っ赤な嘘のエピソード" value="${escapeHTML(state.ep3)}">
           </div>
 
           <button class="btn btn-primary btn-block btn-lg" id="btn-shuffle-truths">
@@ -5393,10 +5561,17 @@ const GameTools = {
       }
 
       container.querySelector("#btn-shuffle-truths").addEventListener("click", () => {
-        state.ep1 = container.querySelector("#input-ep1").value.trim() || "本当のエピソードA";
-        state.ep2 = container.querySelector("#input-ep2").value.trim() || "本当のエピソードB";
-        state.ep3 = container.querySelector("#input-ep3").value.trim() || "嘘のエピソード";
+        state.ep1 = container.querySelector("#input-ep1").value.trim();
+        state.ep2 = container.querySelector("#input-ep2").value.trim();
+        state.ep3 = container.querySelector("#input-ep3").value.trim();
 
+        const missing = [state.ep1, state.ep2, state.ep3].findIndex(value => !value);
+        if (missing >= 0) {
+          const field = container.querySelector(`#input-ep${missing + 1}`);
+          field.focus();
+          Toast.warning("本当の話を2つ、嘘の話を1つ入力してください");
+          return;
+        }
         const arr = [
           { text: state.ep1, isLie: false },
           { text: state.ep2, isLie: false },

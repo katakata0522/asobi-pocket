@@ -254,6 +254,9 @@ if (gamesSource && contractSource) {
 
     const allowedScenes = new Set(['friends', 'family', 'party', 'work']);
     for (const game of presetAudit) {
+      if (game.toolType === 'katakana-ban' && new Set(game.presets.map(p => p.hint)).size !== game.presets.length) {
+        fail('Each katakana-ban word needs its own clue');
+      }
       for (const [index, preset] of game.presets.entries()) {
         const label = `${game.id} preset #${index + 1}`;
         if (preset.kind === 'string') {
@@ -417,7 +420,6 @@ for (const signal of ['state.citizenWord', 'return clearTimer', 'return cleanup'
 
 for (const signal of [
   'normalizePresetContracts',
-  'KATAKANA_HINTS',
   'splitPair',
   'game.toolType === "wordwolf"',
   'game.toolType === "two-choices"',

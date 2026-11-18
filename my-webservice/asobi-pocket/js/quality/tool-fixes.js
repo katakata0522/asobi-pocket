@@ -55,6 +55,7 @@
       citizenWord: "",
       wolfWord: "",
       selectedVoteId: null,
+      spokenGuess: "",
       guessCorrect: null
     };
 
@@ -75,6 +76,7 @@
       state.wolfWord = "";
       state.selectedVoteId = null;
       state.guessCorrect = null;
+      state.spokenGuess = "";
       render();
     };
 
@@ -88,7 +90,7 @@
             ${articlePreset ? '<p class="text-sm text-sub mb-3">記事で選んだペアを使います。</p>' : ''}
             <div class="setting-group">
               <label class="setting-label">参加人数: <span id="val-player-count" class="badge-num">${state.playerCount}人</span></label>
-              <input type="range" class="range-slider" min="3" max="8" value="${state.playerCount}" id="range-player-count">
+              <input type="range" class="range-slider" min="3" max="${game.maxPlayers}" value="${state.playerCount}" id="range-player-count">
             </div>
             <div class="setting-group">
               <label class="setting-label">ウルフの人数: <span class="badge-num">${state.wolfCount}人</span></label>
@@ -128,7 +130,9 @@
           });
         });
         container.querySelector("#btn-start-wolf").addEventListener("click", () => {
-          const presets = Array.isArray(game.presets) ? game.presets : [];
+          const presets = getActiveTopicsForGame(game.id, game.presets)
+            .map(topic => typeof topic === "string" ? customWolfPair(topic) : topic)
+            .filter(topic => topic?.citizen && topic?.wolf);
           if (!articlePreset && !presets.length) {
             toast("warning", "ワードウルフのお題がありません");
             return;
@@ -300,13 +304,18 @@
             <span class="topic-tag">🗳️ 投票結果</span>
             <p class="mt-1 font-bold">${esc(votedPlayer?.name || "未選択")} は ${caughtWolf ? "🐺 ウルフでした。市民側が少数派を発見！" : "👤 市民でした。ウルフ側の勝利！"}</p>
           </div>
-          ${waitingForGuess ? `
+          ${waitingForGuess && state.spokenGuess ? `<div class="topic-box my-3" id="wolf-host-verdict">
+            <p>確定した回答：${esc(state.spokenGuess)}</p><p>市民のお題：${esc(state.citizenWord)}</p>
+            <p>そのお題と同じものを指す言い方なら正解です。</p>
+            <button class="btn btn-success" id="wolf-host-yes">同じものを指す</button>
+            <button class="btn btn-secondary" id="wolf-host-no">別のものを指す</button></div>` : waitingForGuess ? `
             <form class="topic-box my-3 text-left wolf-guess-box" id="wolf-guess-form">
               <p class="text-xs text-sub mt-1">市民に実際に配られた多数派ワードを当てれば逆転です。</p>
               <div class="decision-input-row mt-2">
                 <input type="text" class="decision-input" id="input-wolf-guess" aria-label="市民のお題" placeholder="市民のお題を入力..." autocomplete="off">
                 <button type="submit" class="btn btn-danger" id="btn-judge-wolf-guess">判定！ 🎯</button>
               </div>
+              <button type="submit" class="btn btn-sm btn-outline mt-2" id="btn-host-wolf-guess">この回答を確定して司会が判定</button>
               <button type="button" class="btn btn-sm btn-outline mt-2" id="btn-skip-wolf-guess">パスしてお題を公開</button>
             </form>` : ""}
           ${caughtWolf && !waitingForGuess ? `
@@ -329,18 +338,25 @@
           render();
           container.querySelector("#wolf-result-title").focus();
         };
-        form.addEventListener("submit", (event) => {
+        container.querySelector("#wolf-host-yes")?.addEventListener("click", () => finishGuess(true));
+        container.querySelector("#wolf-host-no")?.addEventListener("click", () => finishGuess(false));
+        form?.addEventListener("submit", (event) => {
           event.preventDefault();
-          const normalize = (value) => String(value).normalize("NFKC").trim().toLowerCase();
-          const guess = normalize(input.value);
+          const guess = input.value.trim();
           if (!guess) {
             toast("warning", "お題を入力してください");
             input.focus();
             return;
           }
-          finishGuess(guess === normalize(state.citizenWord));
+          if (event.submitter?.id === "btn-host-wolf-guess") {
+            state.spokenGuess = guess;
+            render();
+            container.querySelector("#wolf-host-yes").focus();
+            return;
+          }
+          finishGuess(matchesTopicAnswer(state.citizenWord, guess));
         });
-        container.querySelector("#btn-skip-wolf-guess").addEventListener("click", () => finishGuess(false));
+        container.querySelector("#btn-skip-wolf-guess")?.addEventListener("click", () => finishGuess(false));
       }
       container.querySelector("#btn-restart-wolf").addEventListener("click", restart);
     }
