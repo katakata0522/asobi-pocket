@@ -2582,9 +2582,80 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
-      console.log("[SW] Controller changed: New Service Worker active");
+    const workers = navigator.serviceWorker;
+    let pageRelease = document.documentElement.dataset.asobiRelease;
+    let firstInstall = !workers.controller && !pageRelease;
+    let initialNetworkWorker;
+    let pending = false;
+    let reloading = false;
+    let lastCheck = 0;
+    let nextCheck;
+    const blockers = [...document.querySelectorAll(".modal-backdrop, .modal-overlay, #scoreboard-drawer, #dynamic-island-timer")];
+    const changes = new MutationObserver(applyAtHome);
+
+    function applyAtHome() {
+      if (!pending || reloading || document.hidden || location.hash.startsWith("#game/") ||
+          state.activeGameId || viewHome.classList.contains("hidden")) return;
+      if (blockers.some(element => !element.classList.contains("hidden")) ||
+          document.activeElement?.matches("input, textarea, select, [contenteditable=true]")) return;
+      reloading = true;
+      changes.disconnect();
+      if (state.filter.onlyFavorite) {
+        try { sessionStorage.setItem("asobi_restore_favorites_view", "1"); } catch {}
+      }
+      location.reload();
+    }
+
+    function askRelease() {
+      const worker = workers.controller;
+      if (!worker) return;
+      if (firstInstall) {
+        initialNetworkWorker = worker;
+        firstInstall = false;
+      }
+      worker.postMessage({ type: "ASOBI_GET_RELEASE" });
+    }
+
+    workers.addEventListener("message", event => {
+      if (event.source !== workers.controller || event.data?.type !== "ASOBI_RELEASE") return;
+      const release = event.data.release;
+      if (typeof release !== "string" || !release.startsWith("asobi-pocket-")) return;
+      if (!pageRelease && event.source === initialNetworkWorker) pageRelease = release;
+      pending = pageRelease !== release;
+      changes.disconnect();
+      if (!pending) return;
+      for (const element of [viewHome, ...blockers]) changes.observe(element, { attributes: true, attributeFilter: ["class"] });
+      applyAtHome();
     });
+    workers.addEventListener("controllerchange", askRelease);
+    window.addEventListener("hashchange", applyAtHome);
+    document.addEventListener("focusout", () => { if (pending) setTimeout(applyAtHome, 0); });
+
+    function checkForRelease() {
+      clearTimeout(nextCheck);
+      if (document.hidden || !navigator.onLine) return;
+      applyAtHome();
+      if (reloading) return;
+      const now = Date.now();
+      if (now - lastCheck >= 60000) {
+        lastCheck = now;
+        askRelease();
+        workers.getRegistration().then(reg => reg?.update()).catch(() => {});
+      }
+      nextCheck = setTimeout(checkForRelease, Math.max(1, 60000 - (now - lastCheck)));
+    }
+    document.addEventListener("visibilitychange", checkForRelease);
+    window.addEventListener("pageshow", checkForRelease);
+    window.addEventListener("online", checkForRelease);
+    window.addEventListener("offline", checkForRelease);
+    window.addEventListener("pagehide", () => clearTimeout(nextCheck));
+    try {
+      if (sessionStorage.getItem("asobi_restore_favorites_view") === "1") {
+        state.filter.onlyFavorite = true;
+        sessionStorage.removeItem("asobi_restore_favorites_view");
+      }
+    } catch {}
+    checkForRelease();
   }
 
   // ==========================================
