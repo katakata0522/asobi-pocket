@@ -17,7 +17,8 @@ test('folded discovery shows games first and retains removable conditions', asyn
   await page.getByRole('button', { name: '2人の条件を解除', exact: true }).click();
   await expect(page.locator('#fit-players')).toHaveValue('all');
   await page.locator('#btn-clear-filters').click();
-  await expect(page.locator('#games-grid .game-card')).toHaveCount(19);
+  await expect(page.locator('#games-grid .game-card')).toHaveCount(16);
+  await expect(page.locator('#games-grid .duel-mode-link')).toHaveCount(3);
 });
 
 test('mobile search opens the filters and places the input in view', async ({ page }) => {
@@ -92,7 +93,7 @@ test('favorites teach first-time use and labels match the selected view', async 
 
 test('card widths and heights match and support controls do not cover the play button', async ({ page }) => {
   await page.goto('/');
-  const rects = await page.locator('#games-grid .game-card').evaluateAll(cards => cards.map(card => { const r = card.getBoundingClientRect(); return { w: r.width, h: r.height }; }));
+  const rects = await page.locator('#games-grid .game-card:not(.party-pick)').evaluateAll(cards => cards.map(card => { const r = card.getBoundingClientRect(); return { w: r.width, h: r.height }; }));
   expect(Math.max(...rects.map(r => r.w)) - Math.min(...rects.map(r => r.w))).toBeLessThan(1);
   expect(Math.max(...rects.map(r => r.h)) - Math.min(...rects.map(r => r.h))).toBeLessThan(1);
   await page.locator('.game-card[data-id="ito"] .card-title-link').click();

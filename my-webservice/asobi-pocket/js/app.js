@@ -630,10 +630,42 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   window.TalkFocus = TalkFocus;
 
+  const GAME_ALIASES = {
+    "seo/ito": "ito",
+    "seo/asa-sore": "asa-sore",
+    "seo/wordwolf": "word-wolf",
+    "wordwolf": "word-wolf",
+    "seo/sea-turtle": "sea-turtle",
+    "batsu-game": "batsu-roulette",
+    "shiritori-hard": "word-chain-limit",
+    "stroop-effect": "duel-color",
+    "gem-tap": "duel-reflex"
+  };
+
+  function resolveGameId(id) {
+    return Object.hasOwn(GAME_ALIASES, id) ? GAME_ALIASES[id] : id;
+  }
+
+  const partyPicks = new Map([
+    ["ito", "数字を言わず、みんなの例えを小さい順に。"],
+    ["word-wolf", "会話に紛れた、違うお題の人を探そう。"],
+    ["katakana-ban", "カタカナを使わずに、お題を説明。"],
+    ["bomb-timer", "答えたら次の人へ。爆弾が鳴るのはいつ？"],
+    ["asa-sore", "同じ頭文字から、みんなが納得する答えを選ぼう。"],
+    ["sea-turtle", "「はい」「いいえ」で答えられる質問で謎解き。"],
+    ["silent-gesture", "声を出さずに演じて、チームで当てよう。"]
+  ]);
+  const duelModes = new Map([
+    ["duel-reflex", {label: "反射", description: "合図が出たら先にタップ"}],
+    ["duel-color", {label: "色判断", description: "文字の意味と色は一致する？"}],
+    ["duel-mash", {label: "連打", description: "15秒の連打で押し合い"}]
+  ]);
+  const savedFavorites = Storage.get("asobi_favorites", []);
+
   // 状態管理
   const state = {
     games: [...GAMES_DATA],
-    favorites: Storage.get("asobi_favorites", []),
+    favorites: Array.isArray(savedFavorites) ? [...new Set(savedFavorites.map(resolveGameId))] : [],
     filter: {
       tag: "all",
       player: "all",
@@ -662,7 +694,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (state.kidsMode && game.ruby) {
       return `<ruby>${escapeHTML(game.title)}<rt>${escapeHTML(game.ruby)}</rt></ruby>`;
     }
-    const shortTitles = { "ito": "ito（価値観ゲーム）", "rhythm-box": "リズムボックス", "indian-poker": "インディアンポーカー", "finger-roulette": "指置きルーレット", "duel-reflex": "反射神経対決", "duel-mash": "連打パワーバトル", "duel-color": "カラー早見分け", "bomb-timer": "爆弾タイマー", "ng-word": "NGワードゲーム" };
+    const shortTitles = { "ito": "ito（価値観ゲーム）", "asa-sore": "朝までそれ正解", "rhythm-box": "リズムボックス", "indian-poker": "インディアンポーカー", "finger-roulette": "指置きルーレット", "duel-reflex": "反射神経対決", "duel-mash": "連打パワーバトル", "duel-color": "カラー早見分け", "bomb-timer": "爆弾タイマー", "ng-word": "NGワードゲーム" };
     const title = compact ? (shortTitles[game.id] || game.title.replace(/\s*[（(].*$/u, "").trim()) : game.title;
     return escapeHTML(title);
   }
@@ -673,6 +705,7 @@ document.addEventListener("DOMContentLoaded", () => {
       game.title || "",
       game.ruby || "",
       ...(game.searchAliases || []),
+      ...(duelModes.has(game.id) ? ["2人で対決", duelModes.get(game.id).label] : []),
       game.catchphrase || "",
       game.overview || "",
       game.category || "",
@@ -798,7 +831,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (game.section && game.section !== "main") return false;
       } else {
         // 検索時は統合済み旧エイリアス以外(メイン・定番ルール・ツール)を検索可能に
-        if (game.section === "merged") return false;
+        if (game.section === "merged" && !state.filter.onlyFavorite) return false;
       }
 
       if (state.filter.exactPlayers !== "all") {
@@ -947,14 +980,43 @@ document.addEventListener("DOMContentLoaded", () => {
     return state.leaveApproved;
   }
 
+  function favoriteButton(game) {
+    const active = state.favorites.includes(game.id);
+    return `<button class="btn-card-fav ${active ? "active" : ""}" data-action="fav" data-id="${game.id}"
+      title="お気に入り" aria-pressed="${active}" aria-label="${escapeHTML(game.title)}を${active ? "お気に入りから削除" : "お気に入りに追加"}">${active ? "★" : "☆"}</button>`;
+  }
+
+  function makeDuelHub(games) {
+    const hub = document.createElement("section");
+    hub.className = "duel-hub";
+    hub.setAttribute("aria-labelledby", "duel-hub-title");
+    hub.innerHTML = `<h2 id="duel-hub-title" tabindex="-1">2人で対決</h2>
+      <div class="duel-mode-list">${games.map(game => {
+        const mode = duelModes.get(game.id);
+        return `<div class="duel-mode">
+          <a class="duel-mode-link" href="#game/${game.id}" data-game-id="${game.id}">
+            <span class="duel-mode-icon" aria-hidden="true">${game.icon}</span>
+            <span><strong>${mode.label}</strong><small>${mode.description}${StampRally.played.includes(game.id) ? " · プレイ済" : ""}</small></span>
+          </a>${favoriteButton(game)}</div>`;
+      }).join("")}</div>`;
+    return hub;
+  }
+
   function renderGrid() {
     syncDiscoverySummary();
     const list = getFilteredGames();
+    const f = state.filter;
+    const browse = !f.onlyFavorite && !f.search.trim() && f.sort === "recommended";
+    const featured = browse && f.tag === "all" && f.exactPlayers === "all" && f.maxDuration === "all";
+    const modes = browse ? [...duelModes.keys()].map(id => list.find(g => g.id === id)).filter(Boolean) : [];
+    const groupDuels = modes.length > 1;
+    document.getElementById("games-grid-title").textContent = featured ? "みんなで遊ぶ おすすめ7選" : f.onlyFavorite ? "お気に入りの遊び" : "遊びを選ぶ";
+    document.getElementById("jump-to-duels").hidden = !featured || !groupDuels;
     filterResultCount?.setAttribute("role", "status");
     filterResultCount?.setAttribute("aria-live", "polite");
 
     if (filterResultCount) {
-      filterResultCount.textContent = `${state.filter.onlyFavorite ? 'お気に入り ' : ''}${list.length}件`;
+      filterResultCount.textContent = featured ? `全${list.length}ゲーム` : `${state.filter.onlyFavorite ? 'お気に入り ' : ''}${list.length}件`;
     }
 
     if (list.length === 0) {
@@ -974,14 +1036,24 @@ document.addEventListener("DOMContentLoaded", () => {
     // DocumentFragmentで一括挿入
     const fragment = document.createDocumentFragment();
 
-    list.forEach(game => {
-      const isFav = state.favorites.includes(game.id);
+    // 通常の一覧は7本、対決モード、その他の順。検索・お気に入りはゲーム単位で直接開く。
+    const appendCard = game => {
       const card = document.createElement("div");
       card.className = "game-card";
       card.dataset.id = game.id;
       card.tabIndex = -1;
       card.setAttribute("role", "group");
       card.setAttribute("aria-label", `${game.title}の詳細を見る`);
+
+      if (featured && partyPicks.has(game.id)) {
+        card.classList.add("party-pick");
+        card.innerHTML = `<div class="pick-top"><span class="pick-icon" aria-hidden="true">${game.icon}</span>${favoriteButton(game)}</div>
+          <h3><a class="card-title-link" href="#game/${game.id}">${renderGameTitle(game, true)}</a></h3>
+          <p class="pick-prompt">${partyPicks.get(game.id)}</p>
+          <p class="pick-meta">${game.minPlayers}〜${game.maxPlayers}人 · ${escapeHTML(game.duration)}${StampRally.played.includes(game.id) ? " · プレイ済" : ""}</p>`;
+        fragment.appendChild(card);
+        return;
+      }
 
       // 先頭の殿堂入り神ゲー (ito) の特別装飾
       const isHero = (game.id === "ito" && state.filter.tag === "all" && !state.filter.search && state.filter.sort === "recommended");
@@ -1000,9 +1072,7 @@ document.addEventListener("DOMContentLoaded", () => {
             ${isPlayed ? '<span class="card-badge card-badge-played">👑 プレイ済</span>' : ''}
             ${!isHero && game.badge ? `<span class="card-badge badge-${game.category}">${escapeHTML(game.badge)}</span>` : ''}
           </div>
-          <button class="btn-card-fav ${isFav ? 'active' : ''}" data-action="fav" data-id="${game.id}" title="お気に入り" aria-pressed="${isFav}" aria-label="${escapeHTML(game.title)}を${isFav ? 'お気に入りから削除' : 'お気に入りに追加'}">
-            ${isFav ? '★' : '☆'}
-          </button>
+          ${favoriteButton(game)}
         </div>
         <div class="card-body">
           <h3 class="card-title"><a href="#game/${game.id}" class="card-title-link">${renderGameTitle(game, true)}</a></h3>
@@ -1021,12 +1091,38 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
 
       fragment.appendChild(card);
-    });
+    };
+
+    if (featured) {
+      for (const id of partyPicks.keys()) {
+        const game = list.find(item => item.id === id);
+        if (game) appendCard(game);
+      }
+      if (groupDuels) fragment.appendChild(makeDuelHub(modes));
+      const more = document.createElement("h2");
+      more.className = "more-games-title";
+      more.textContent = "ほかの遊び";
+      fragment.appendChild(more);
+    }
+    for (const game of list) {
+      if (featured && partyPicks.has(game.id)) continue;
+      if (groupDuels && duelModes.has(game.id)) {
+        if (!featured && !fragment.querySelector(".duel-hub")) fragment.appendChild(makeDuelHub(modes));
+        continue;
+      }
+      appendCard(game);
+    }
 
     gamesGrid.innerHTML = "";
     gamesGrid.appendChild(fragment);
 
   }
+
+  document.getElementById("jump-to-duels").addEventListener("click", () => {
+    const title = document.getElementById("duel-hub-title");
+    title?.focus({preventScroll: true});
+    title?.scrollIntoView({block: "start"});
+  });
 
   // イベント委譲（グリッド全体のクリック・キー操作を一元処理）
   gamesGrid.addEventListener("click", (e) => {
@@ -1411,18 +1507,7 @@ document.addEventListener("DOMContentLoaded", () => {
     cleanupActiveTool(); // 前のツールを確実に破棄
     if (hash.startsWith("#game/")) {
       const [rawId, options] = hash.slice("#game/".length).trim().split("?", 2);
-      const ALIAS_MAP = {
-        "seo/ito": "ito",
-        "seo/asa-sore": "asa-sore",
-        "seo/wordwolf": "word-wolf",
-        "wordwolf": "word-wolf",
-        "seo/sea-turtle": "sea-turtle",
-        "batsu-game": "batsu-roulette",
-        "shiritori-hard": "word-chain-limit",
-        "stroop-effect": "duel-color",
-        "gem-tap": "duel-reflex"
-      };
-      const gameId = ALIAS_MAP[rawId] || rawId;
+      const gameId = resolveGameId(rawId);
       const game = state.games.find(g => g.id === gameId);
       if (game) {
         if (state.activeGameRoute !== hash) state.toolHasProgress = false;
