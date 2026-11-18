@@ -3085,7 +3085,7 @@ const GameTools = {
   // ===================================================
   // 11. ワンナイト人狼 (One Night Werewolf)
   // ===================================================
-  renderOneNightWerewolf(container) {
+  renderOneNightWerewolf(container, game) {
     let state = {
       playerCount: 4,
       step: "setup", // setup, confirm, night, talk, vote, result
