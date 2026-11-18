@@ -1,4 +1,4 @@
-const CACHE_NAME = "asobi-pocket-ca729743106e664a77aa";
+const CACHE_NAME = "asobi-pocket-7a252e3dc18fc5a96729";
 
 // 起動に必要な資産を一括で保存し、欠けた版を有効化しない。
 const CORE_ASSETS = [
@@ -21,7 +21,8 @@ const CORE_ASSETS = [
   "./seo/ito-odai.html",
   "./seo/wordwolf-odai.html",
   "./seo/asa-sore-odai.html",
-  "./seo/sea-turtle-quiz.html"
+  "./seo/sea-turtle-quiz.html",
+  "./seo/article-navigation.css?v=20261118"
 ];
 
 const QUALITY_ASSETS = [

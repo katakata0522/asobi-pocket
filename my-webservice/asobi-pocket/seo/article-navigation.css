@@ -1,3 +1,4 @@
+.seo-page-container { min-width: 0; width: 100%; }
 .article-nav {
   margin: 20px 0;
   padding: 18px;
@@ -49,7 +50,7 @@
   margin-top: 12px;
 }
 .seo-section-title[id] { scroll-margin-top: 24px; }
-.article-compare-wrap { overflow-x: auto; }
+.article-compare-wrap { max-width: 100%; overflow-x: auto; }
 .article-compare-wrap:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
 .article-compare { width: 100%; min-width: 480px; border-collapse: collapse; }
 .article-compare caption { padding: 10px 0; text-align: left; font-weight: 700; }
