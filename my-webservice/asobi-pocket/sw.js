@@ -1,4 +1,4 @@
-const CACHE_NAME = "asobi-pocket-ccfa5280320fab3c8835";
+const CACHE_NAME = "asobi-pocket-4f8746d1576d3756b8a7";
 
 // 起動に必要な資産を一括で保存し、欠けた版を有効化しない。
 const CORE_ASSETS = [

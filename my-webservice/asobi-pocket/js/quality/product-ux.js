@@ -199,58 +199,6 @@
     enhance();
   };
 
-  const setupGridHierarchy = () => {
-    const grid = document.getElementById("games-grid");
-    if (!grid) return;
-    let applying = false;
-
-    const isDefaultDiscovery = () => {
-      const search = document.getElementById("search-input")?.value.trim() || "";
-      const player = document.querySelector(".filter-player-btn.active")?.dataset.player || "all";
-      const genre = document.querySelector(".quick-tag-chip.active")?.dataset.genre || "all";
-      const sort = document.getElementById("sort-select")?.value || "recommended";
-      const favoritesOnly = document.getElementById("btn-toggle-fav-filter")?.classList.contains("active");
-      return !search && player === "all" && genre === "all" && sort === "recommended" && !favoritesOnly;
-    };
-
-    const apply = () => {
-      if (applying) return;
-      applying = true;
-      try {
-        const defaultMode = isDefaultDiscovery() && (document.querySelector(".smart-tag-chip.active")?.dataset.filterTag || "all") === "all" && (document.getElementById("fit-players")?.value || "all") === "all" && (document.getElementById("fit-duration")?.value || "all") === "all";
-        const cards = [...grid.querySelectorAll(":scope > .game-card")];
-        cards.forEach((card, index) => card.classList.toggle("quality-featured", defaultMode && index < 8));
-
-        let separator = grid.querySelector(":scope > .quality-grid-separator");
-        if (!defaultMode || cards.length <= 8) {
-          if (separator) separator.remove();
-          return;
-        }
-
-        if (!separator) {
-          separator = document.createElement("div");
-          separator.className = "quality-grid-separator";
-          separator.innerHTML = '<strong>もっと探す</strong><span>ここから先はミニツールや定番ゲームも含めて一覧できます。</span>';
-          cards[7].after(separator);
-          return;
-        }
-
-        if (separator.previousElementSibling !== cards[7]) cards[7].after(separator);
-      } finally {
-        applying = false;
-      }
-    };
-
-    const scheduleApply = () => queueMicrotask(apply);
-    new MutationObserver(scheduleApply).observe(grid, { childList: true });
-    document.getElementById("search-input")?.addEventListener("input", scheduleApply);
-    document.getElementById("sort-select")?.addEventListener("change", scheduleApply);
-    document.querySelectorAll(".filter-player-btn,.quick-tag-chip,.smart-tag-chip,#btn-toggle-fav-filter").forEach((element) => {
-      element.addEventListener("click", scheduleApply);
-    });
-    apply();
-  };
-
   const setupContextAwareRoulette = () => {
     const spinButton = document.getElementById("btn-spin-roulette");
     const modal = document.getElementById("modal-roulette");
@@ -279,8 +227,8 @@
       goButton.classList.add("hidden");
       goButton.onclick = null;
 
-      const visibleIds = [...document.querySelectorAll("#games-grid > .game-card[data-id]")]
-        .map((card) => card.dataset.id)
+      const visibleIds = [...document.querySelectorAll("#games-grid > .game-card[data-id], #games-grid .duel-mode-link")]
+        .map(card => card.dataset.id || card.dataset.gameId)
         .filter(Boolean);
       const byId = new Map((typeof GAMES_DATA !== "undefined" ? GAMES_DATA : []).map((game) => [game.id, game]));
       const candidates = visibleIds.map((id) => byId.get(id)).filter(Boolean);
@@ -500,7 +448,6 @@
     setupHomeIntent();
     setupStampRally();
     setupScoreboard();
-    setupGridHierarchy();
     setupContextAwareRoulette();
     if (!globalThis.ModalManager) setupModalAccessibility();
     setupDetailObserver();

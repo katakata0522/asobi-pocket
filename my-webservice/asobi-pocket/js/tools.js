@@ -4824,6 +4824,7 @@ const GameTools = {
     }
 
     function render() {
+      const optionsOpen = container.querySelector("#pingpong-options")?.open;
       container.innerHTML = `
         <div class="tool-card text-center">
           <div class="flex justify-between items-center mb-1">
@@ -4847,13 +4848,14 @@ const GameTools = {
             <button class="btn btn-primary btn-block btn-lg py-3 font-bold" id="btn-pingpong-auto">
               ${state.isPlaying ? '⏹️ 自動テンポマシン停止' : '⚡ 自動テンポマシン開始！'}
             </button>
-            <button class="btn btn-outline btn-block btn-lg py-3 font-bold" id="btn-pingpong-next">
-              手動で次の合図を刻む！ ➔
-            </button>
             <button class="btn btn-danger btn-sm btn-block mt-1" id="btn-pingpong-reset">
               💥 ミス！リセット (0回に戻す) ✕
             </button>
           </div>
+          <details class="tool-optional-settings" id="pingpong-options" ${optionsOpen ? "open" : ""}>
+            <summary>補助設定</summary>
+            <button class="btn btn-outline btn-block" id="btn-pingpong-next">手動で次の合図へ</button>
+          </details>
         </div>
       `;
 
