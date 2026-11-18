@@ -67,6 +67,9 @@ self.PwaRuntime = {
       })());
     });
     self.addEventListener('message', event => {
+      if (event.data?.type === 'ASOBI_GET_RELEASE' && event.source?.type === 'window') {
+        event.source.postMessage({ type: 'ASOBI_RELEASE', release: cacheName });
+      }
       if (event.data === 'SKIP_WAITING' || event.data?.type === 'SKIP_WAITING') {
         event.waitUntil(self.skipWaiting());
       }
@@ -90,7 +93,7 @@ self.PwaRuntime = {
       const lifetime = new Promise(resolve => { complete = resolve; });
       // 応答後の補助保存もイベントへ結び付けるが、画面表示は保存を待たない。
       event.waitUntil(lifetime);
-      event.respondWith((async () => {
+      const result = (async () => {
         const cache = await safeOpen();
         const cached = await safeMatch(cache, key);
         if (cached) { complete(); return cached; }
@@ -109,7 +112,20 @@ self.PwaRuntime = {
           }
           return Response.error();
         }
-      })());
+      })();
+      // ページの版は実際にこのナビゲーションへ応答したワーカーが付ける。
+      // 更新がHTMLの読み込みと同時に起きても、新旧を区別できる。
+      const appEntry = navigation && (key === scope || key === new URL(fallbackAsset, scope).href);
+      event.respondWith(appEntry ? result.then(async response => {
+        if (!response.ok || !response.headers?.get('Content-Type')?.toLowerCase().includes('text/html')) return response;
+        const html = await response.text();
+        const headers = new Headers(response.headers);
+        headers.delete('Content-Encoding');
+        headers.delete('Content-Length');
+        return new Response(html.replace('<html ', '<html data-asobi-release="' + cacheName + '" '), {
+          status: response.status, statusText: response.statusText, headers
+        });
+      }) : result);
     });
   }
 };
