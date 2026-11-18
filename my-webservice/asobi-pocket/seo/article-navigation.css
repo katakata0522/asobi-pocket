@@ -50,16 +50,57 @@
   margin-top: 12px;
 }
 .seo-section-title[id] { scroll-margin-top: 24px; }
-.article-compare-wrap { max-width: 100%; overflow-x: auto; }
-.article-compare-wrap:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
-.article-compare { width: 100%; min-width: 480px; border-collapse: collapse; }
+.article-topic-link {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--primary);
+  text-underline-offset: .18em;
+  overflow-wrap: anywhere;
+}
+.article-compare { width: 100%; border-collapse: collapse; }
 .article-compare caption { padding: 10px 0; text-align: left; font-weight: 700; }
 .article-compare th, .article-compare td { padding: 12px; border: 1px solid var(--border); text-align: left; vertical-align: top; line-height: 1.7; }
 .article-compare th { background: var(--input-bg); }
-.article-compare a { color: var(--primary); }
-.article-compare-help { color: var(--text-sub); font-size: .85rem; }
+.article-compare a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--primary);
+  text-underline-offset: .18em;
+}
+.article-compare-label { display: none; }
 .article-search-addition > p { line-height: 1.8; }
 @media (min-width: 760px) {
   .article-nav ul { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .article-compare-help { display: none; }
+}
+@media (max-width: 600px) {
+  .article-compare, .article-compare caption { display: block; }
+  .article-compare thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .article-compare tbody { display: grid; gap: 12px; }
+  .article-compare tbody tr {
+    display: grid;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+  }
+  .article-compare tbody th { display: block; padding: 0; border: 0; border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+  .article-compare tbody th a { padding: 8px 12px; }
+  .article-compare tbody td {
+    display: grid;
+    grid-template-columns: 3em minmax(0, 1fr);
+    gap: 12px;
+    padding: 8px 12px;
+    border: 0;
+    border-top: 1px solid var(--border);
+  }
+  .article-compare-label { display: block; color: var(--text-sub); font-size: .9em; font-weight: 700; }
 }

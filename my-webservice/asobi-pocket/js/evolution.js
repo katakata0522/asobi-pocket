@@ -6,7 +6,7 @@
     window.addEventListener('hashchange', () => { interacted = false; });
     document.addEventListener('click', (event) => {
       const link = event.target.closest('a.btn-affiliate');
-      const match = location.hash.match(/^#game\/([a-z0-9-]+)$/);
+      const match = location.hash.match(/^#game\/([a-z0-9-]+)(?:\?|$)/);
       if (link && match && typeof Analytics !== 'undefined') {
         const merchant = new URL(link.href).hostname.includes('amazon') ? 'amazon' : 'rakuten';
         Analytics.track('asobi_product_click', { game_id: match[1], merchant, surface: link.closest('.tab-pane')?.id || 'detail' });

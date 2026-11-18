@@ -487,7 +487,7 @@
     event.stopPropagation();
     event.stopImmediatePropagation();
 
-    const gameId = location.hash.match(/^#game\/(.+)$/)?.[1];
+    const gameId = location.hash.match(/^#game\/([^?]+)/)?.[1];
     const game = (typeof GAMES_DATA !== "undefined" ? GAMES_DATA : []).find((item) => item.id === gameId);
     if (!game) return;
 
