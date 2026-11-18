@@ -42,6 +42,7 @@
   // Word Wolf: keep the actual majority/minority words in round state so
   // result judging never falls back to the unswapped preset values.
   GameTools.renderWordWolf = function renderWordWolfFixed(container, game) {
+    const roster = tableRoster();
     let articlePreset = game.articleTopic;
     const state = {
       playerCount: 4,
@@ -107,9 +108,11 @@
                 <button class="btn-toggle ${state.timerSec === 300 ? "active" : ""}" data-time="300">5分</button>
               </div>
             </div>
+            <details class="player-custom-accordion"><summary>席順と名前を設定（任意）</summary><div class="table-roster"></div></details>
             <button class="btn btn-primary btn-block btn-lg" id="btn-start-wolf">役職とお題を配る ➔</button>
           </div>`;
 
+        roster.mount(container, state.playerCount);
         container.querySelector("#range-player-count").addEventListener("input", (event) => {
           state.playerCount = Number(event.target.value);
           if (state.playerCount < 5 && state.wolfCount === 2) state.wolfCount = 1;
@@ -153,9 +156,10 @@
           }
           wolfIndexes.forEach((index) => { roles[index] = "wolf"; });
 
+          const names = roster.labels(state.playerCount);
           state.players = roles.map((role, index) => ({
             id: index + 1,
-            name: `プレイヤー ${index + 1}`,
+            name: names[index],
             role,
             word: role === "citizen" ? state.citizenWord : state.wolfWord
           }));
@@ -219,7 +223,7 @@
           <div class="tool-card text-center">
             <div class="timer-badge">💬 トークタイム中！</div>
             <div class="timer-display-lg" id="wolf-timer-display">${formatTime(remaining)}</div>
-            <p class="timer-guide">自分のお題を直接言わず、少数派を探ろう。</p>
+            <p class="timer-guide">まず一周、「いつ、どこで見かける？」に一言ずつ答えよう。自分のお題は秘密！</p>
             <div class="btn-group-row">
               <button class="btn btn-secondary" id="btn-toggle-timer">一時停止</button>
               <button class="btn btn-danger" id="btn-finish-talk">トーク終了＆投票 ➔</button>
@@ -263,7 +267,7 @@
         container.innerHTML = `
           <div class="tool-card text-center">
             <h3 class="tool-title">🗳️ 最多票の人を選択</h3>
-            <p class="vote-instruction">みんなの投票で最も怪しかった人を1人タップしてください。</p>
+            <p class="vote-instruction">一斉に指差し、最多票の人を1人選びます。同票なら候補者が一言ずつ話し、その人たちだけでもう一度投票してください。</p>
             <div class="vote-player-grid">
               ${state.players.map((player) => `<button class="btn btn-outline btn-vote-target ${state.selectedVoteId === player.id ? "active" : ""}" data-pid="${player.id}">👤 ${esc(player.name)}</button>`).join("")}
             </div>
@@ -310,7 +314,7 @@
             <button class="btn btn-success" id="wolf-host-yes">同じものを指す</button>
             <button class="btn btn-secondary" id="wolf-host-no">別のものを指す</button></div>` : waitingForGuess ? `
             <form class="topic-box my-3 text-left wolf-guess-box" id="wolf-guess-form">
-              <p class="text-xs text-sub mt-1">市民に実際に配られた多数派ワードを当てれば逆転です。</p>
+              <p class="text-xs text-sub mt-1">最多票になったウルフ本人が1回だけ回答します。市民に配られたお題を当てれば逆転です。</p>
               <div class="decision-input-row mt-2">
                 <input type="text" class="decision-input" id="input-wolf-guess" aria-label="市民のお題" placeholder="市民のお題を入力..." autocomplete="off">
                 <button type="submit" class="btn btn-danger" id="btn-judge-wolf-guess">判定！ 🎯</button>

@@ -4784,3 +4784,18 @@ html.dark-mode .rhythm-display-box {
 .poker-p2-zone {
   transform: rotate(180deg);
 }
+
+.table-roster, .ww-votes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: .5rem;
+  padding: .75rem;
+  text-align: left;
+}
+.table-seat, .ww-votes label {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  min-height: 44px;
+}
+.table-seat input { min-width: 0; width: 65%; font: inherit; }

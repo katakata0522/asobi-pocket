@@ -19,6 +19,40 @@ function escapeHTML(str) {
     .replace(/'/g, "&#039;");
 }
 
+// 得点表に名前がある席はその名前で始める。ゲーム内の変更はその卓で保持する。
+function tableRoster() {
+  const edits = [];
+  function scoreNames() {
+    try {
+      const saved = JSON.parse(localStorage.getItem("asobi_scoreboard_players") || "[]");
+      return Array.isArray(saved) ? saved.map(p => String(p?.name || "").trim()) : [];
+    } catch { return []; }
+  }
+  function nameAt(index, scores) {
+    const name = edits[index] ?? scores[index] ?? "";
+    return name.replace(/\s/g, "") === "プレイヤー" + (index + 1) ? "" : name;
+  }
+  return {
+    mount(container, count) {
+      const holder = container.querySelector(".table-roster");
+      const scores = scoreNames();
+      holder.innerHTML = Array.from({length: count}, (_, i) =>
+        `<label class="table-seat">${i + 1}番 <input maxlength="24" type="text" data-seat="${i}" value="${escapeHTML(nameAt(i, scores))}" placeholder="名前（任意）"></label>`
+      ).join("");
+      holder.oninput = event => {
+        if (event.target.matches("[data-seat]")) edits[Number(event.target.dataset.seat)] = event.target.value;
+      };
+    },
+    labels(count) {
+      const scores = scoreNames();
+      return Array.from({length: count}, (_, i) => {
+        const name = nameAt(i, scores).trim();
+        return name ? `${name}（${i + 1}番）` : `プレイヤー ${i + 1}`;
+      });
+    }
+  };
+}
+
 function toHiragana(str) {
   if (!str) return "";
   return String(str)
@@ -594,7 +628,7 @@ const GameTools = {
             <div class="text-center mb-3">
               <span class="badge badge-success">話し合いタイム ＆ カード並べ替え</span>
               <h3 class="topic-text mt-1" id="ito-talk-topic" tabindex="-1">🎯 ${escapeHTML(state.selectedTopic)}</h3>
-              <p class="text-sm text-muted">例え合いながら、数字が小さいと思う順にカードをドラッグまたは上下移動して並べよう！</p>
+              <p class="text-sm text-muted">例えを聞いて、数字が小さいと思う人から順に▲▼で並べよう。</p>
             </div>
 
             <div class="ito-card-list" id="ito-sortable-list">
@@ -2620,6 +2654,8 @@ const GameTools = {
       duelTimerInterval: null,
       winner: null,
       gachaCount: 4,
+      writer: 0,
+      slipOpen: false,
       gachaWords: []
     };
 
@@ -2633,8 +2669,9 @@ const GameTools = {
       state.showingWord = false;
       state.p1Word = pickRandomWord();
       state.p2Word = pickRandomWord();
-      while (state.p2Word === state.p1Word && presets.length > 1) {
-        state.p2Word = pickRandomWord();
+      if (state.p2Word === state.p1Word) {
+        const others = getActiveTopicsForGame(game.id, presets).map(extractTopicText).filter(word => word && word !== state.p1Word);
+        if (others.length) state.p2Word = others[Math.floor(Math.random() * others.length)];
       }
       state.duelTimerSec = 180;
       state.winner = null;
@@ -2642,13 +2679,14 @@ const GameTools = {
     initDuel();
 
     function initGacha() {
+      state.writer = 0;
+      state.slipOpen = false;
       state.gachaWords = [];
       DeckManager.reset(game.id);
       for (let i = 0; i < state.gachaCount; i++) {
         state.gachaWords.push({
           player: `プレイヤー ${i + 1}`,
-          word: pickRandomWord(),
-          revealed: true
+          word: pickRandomWord()
         });
       }
     }
@@ -2666,7 +2704,9 @@ const GameTools = {
           state.duelTimerInterval = null;
           state.duelTimerRunning = false;
           Sound.playFanfare();
-          Toast.success("⏰ 制限時間終了！生き残ったプレイヤーの引き分け勝利！");
+          state.winner = "draw";
+          render();
+          container.querySelector("#btn-ng-duel-next")?.focus();
           if (typeof window !== "undefined" && window.StampRally) {
             window.StampRally.markPlayed("ng-word");
           }
@@ -2714,7 +2754,7 @@ const GameTools = {
           ${state.mode === 'duel' && state.reader <= 2 ? `
             <div class="topic-box my-3 text-center">
               <h4>プレイヤー ${state.reader} に渡してください</h4>
-              ${state.showingWord ? `<p>相手に言わせる言葉</p><p class="ng-p-word font-bold">${escapeHTML(state.reader === 1 ? state.p2Word : state.p1Word)}</p>
+              ${state.showingWord ? `<p>相手に言わせる言葉（札のどれか1語でアウト）</p><p class="ng-p-word font-bold">${escapeHTML(state.reader === 1 ? state.p2Word : state.p1Word)}</p>
                 <button class="btn btn-primary" id="ng-hide">伏せて${state.reader === 1 ? "次の人へ" : "会話を始める"}</button>` :
                 '<button class="btn btn-primary" id="ng-reveal">自分だけで確認する</button>'}
             </div>` : state.mode === 'duel' ? `
@@ -2729,11 +2769,11 @@ const GameTools = {
               <div class="my-2 py-2 border-y text-center" style="background: rgba(0,0,0,0.03);">
                 ${state.winner ? `
                   <div class="animate-scale my-1">
-                    <div class="font-black text-lg text-danger">🏆 PLAYER ${state.winner} の大勝利！</div>
+                    <div class="font-black text-lg text-danger">${state.winner === "draw" ? "時間切れ！ 引き分け" : `🏆 PLAYER ${state.winner} の大勝利！`}</div>
                     <div class="text-xs text-muted mt-1">P1のNG: [${escapeHTML(state.p1Word)}] / P2のNG: [${escapeHTML(state.p2Word)}]</div>
                     <div class="flex gap-2 mt-2">
                       <button class="btn btn-primary btn-sm flex-1 font-bold" id="btn-ng-duel-next">次の対戦 🔄</button>
-                      <button class="btn btn-danger btn-sm flex-1 font-bold" id="btn-ng-batsu">🔥 敗者の罰ゲーム！</button>
+                      ${state.winner === "draw" ? "" : '<button class="btn btn-danger btn-sm flex-1 font-bold" id="btn-ng-batsu">敗者の罰ゲーム</button>'}
                     </div>
                   </div>
                 ` : `
@@ -2764,16 +2804,16 @@ const GameTools = {
               </div>
               <input type="range" class="range-slider mb-3" min="2" max="8" value="${state.gachaCount}" id="range-ng-gacha-count">
 
-              <p class="text-xs text-muted mb-2">📝 各自のお題を紙や付箋にメモして、額（おでこ）に貼り付けてスタート！</p>
-
-              <div class="gacha-list-grid flex flex-col gap-2">
-                ${state.gachaWords.map((item, idx) => `
-                  <div class="p-2 border rounded flex justify-between items-center" style="background: rgba(0,0,0,0.02);">
-                    <span class="font-bold text-xs">${escapeHTML(item.player)}</span>
-                    <span class="font-black text-danger text-sm">${escapeHTML(item.word)}</span>
-                  </div>
-                `).join('')}
-              </div>
+              <p>紙とペンを用意し、隣の人の札を1枚ずつ書きます。札のどれか1語を言ったらアウトです。</p>
+              ${state.writer < state.gachaCount ? `
+                <div class="topic-box text-center">
+                  <p>プレイヤー ${state.writer + 1} に端末を渡してください。</p>
+                  ${state.slipOpen ? `<p>${state.gachaWords[(state.writer + 1) % state.gachaCount].player} 用の札</p>
+                    <strong class="ng-slip">${escapeHTML(state.gachaWords[(state.writer + 1) % state.gachaCount].word)}</strong>
+                    <p>書いた紙を本人に見せずに置いてください。</p>
+                    <button class="btn btn-primary" id="ng-slip-next">書いたので伏せる</button>` :
+                    '<button class="btn btn-primary" id="ng-slip-open">自分が書く札だけを見る</button>'}
+                </div>` : '<div class="topic-box">全員の札ができました。自分の札だけが見えないように持ち、会話を始めましょう。</div>'}
 
               <div class="flex gap-2 mt-4">
                 <button class="btn btn-secondary flex-1" id="btn-gacha-batsu">⚡ 罰ゲームルーレット</button>
@@ -2799,6 +2839,7 @@ const GameTools = {
           Sound.playClick();
           stopDuelTimer();
           state.mode = btn.dataset.ngmode;
+          state.slipOpen = false;
           state.showingWord = false;
           render();
         };
@@ -2877,6 +2918,15 @@ const GameTools = {
       }
 
       if (state.mode === 'gacha') {
+        container.querySelector("#ng-slip-open")?.addEventListener("click", () => {
+          state.slipOpen = true;
+          render();
+        });
+        container.querySelector("#ng-slip-next")?.addEventListener("click", () => {
+          state.slipOpen = false;
+          state.writer++;
+          render();
+        });
         const range = container.querySelector("#range-ng-gacha-count");
         if (range) {
           range.oninput = (e) => {
@@ -2919,6 +2969,8 @@ const GameTools = {
   // ===================================================
   renderIndianPoker(container, game) {
     let state = {
+      round: 1,
+      balance: 0,
       p1Card: Math.floor(Math.random() * 13) + 1,
       p2Card: Math.floor(Math.random() * 13) + 1,
       p1Suit: ["♠️", "♥️", "♦️", "♣️"][Math.floor(Math.random() * 4)],
@@ -3001,6 +3053,11 @@ const GameTools = {
         }
       }
 
+      const stake = state.p1Action === "bet" && state.p2Action === "bet" ? 2 : 1;
+      const delta = winner === 1 ? stake : winner === 2 ? -stake : 0;
+      const total = state.balance + delta;
+      const matchOver = state.round === 3;
+      const champion = total === 0 ? "引き分け" : (total > 0 ? "PLAYER 1" : "PLAYER 2") + " の優勝！";
       const player = state.reader;
       const opponentCard = () => player === 1
         ? renderCard(state.p2Suit, state.p2Card)
@@ -3008,8 +3065,10 @@ const GameTools = {
       let panel;
       if (state.isDuelRevealed) {
         panel = `<h4>${resultText}</h4><p>P1: ${state.p1Suit}${getRank(state.p1Card)} ／ P2: ${state.p2Suit}${getRank(state.p2Card)}</p>
-          <button class="btn btn-primary" id="btn-poker-next">次のディール</button>
-          ${winner ? '<button class="btn btn-outline" id="btn-poker-batsu">敗者の罰ゲーム</button>' : ''}`;
+          <p>この局：P1 ${delta}点 ／ P2 ${-delta}点</p><p>合計：P1 ${total}点 ／ P2 ${-total}点</p>
+          ${matchOver ? `<strong id="poker-champion">3局の結果：${champion}</strong>` : ""}
+          <button class="btn btn-primary" id="btn-poker-next">${matchOver ? "新しい3局を始める" : "次のディール"}</button>
+          ${matchOver && total !== 0 ? '<button class="btn btn-outline" id="btn-poker-batsu">敗者の罰ゲーム</button>' : ''}`;
       } else if (state.p1Action && state.p2Action) {
         panel = '<p>2人の選択が決まりました。画面を一緒に見てください。</p><button class="btn btn-primary" id="btn-poker-open">カードオープン判定</button>';
       } else if (player > 2) {
@@ -3022,7 +3081,7 @@ const GameTools = {
             <button class="btn btn-outline" id="btn-p${player}-fold">降りる</button>` :
             '<button class="btn btn-primary" id="poker-hide">伏せて進む</button>'}`;
       }
-      container.innerHTML = `<div class="tool-card text-center"><h3>対面インディアンポーカー</h3>${panel}</div>`;
+      container.innerHTML = `<div class="tool-card text-center"><h3>対面インディアンポーカー　第${state.round}局 / 3</h3><p>両者が勝負なら勝者＋2点・敗者−2点。片方が降りれば±1点。引き分けは0点です。</p>${panel}</div>`;
 
       function advance(action) {
         if (action) state[player === 1 ? "p1Action" : "p2Action"] = action;
@@ -3064,6 +3123,8 @@ const GameTools = {
       if (btnNext) {
         btnNext.onclick = () => {
           Sound.playSelect();
+          state.balance = matchOver ? 0 : total;
+          state.round = matchOver ? 1 : state.round + 1;
           resetDuel();
           render();
         };
@@ -3086,6 +3147,7 @@ const GameTools = {
   // 11. ワンナイト人狼 (One Night Werewolf)
   // ===================================================
   renderOneNightWerewolf(container, game) {
+    const roster = tableRoster();
     let state = {
       playerCount: 4,
       step: "setup", // setup, confirm, night, talk, vote, result
@@ -3123,15 +3185,18 @@ const GameTools = {
               </div>
             </div>
 
+            <details class="player-custom-accordion"><summary>席順と名前を設定（任意）</summary><div class="table-roster"></div></details>
             <button class="btn btn-primary btn-block btn-lg" id="btn-start-ww">
               <span>夜の役職を配る</span> ➔
             </button>
           </div>
         `;
 
+        roster.mount(container, state.playerCount);
         const range = container.querySelector("#range-ww-players");
         range.addEventListener("input", (e) => {
           state.playerCount = parseInt(e.target.value);
+          roster.mount(container, state.playerCount);
           container.querySelector("#val-ww-players").textContent = `${state.playerCount}人`;
           container.querySelector("#ww-deck-count").textContent = state.playerCount + 2;
           container.querySelector("#ww-villagers").textContent = state.playerCount - 2;
@@ -3151,10 +3216,13 @@ const GameTools = {
           }
 
           state.players = [];
+          state.executed = [];
+          state.peaceVote = false;
+          const names = roster.labels(state.playerCount);
           for (let i = 0; i < state.playerCount; i++) {
             state.players.push({
               id: i + 1,
-              name: `プレイヤー ${i + 1}`,
+              name: names[i],
               initialRole: deck[i],
               currentRole: deck[i]
             });
@@ -3189,7 +3257,7 @@ const GameTools = {
                 ${p.initialRole === 'werewolf' ? `
                   <div class="mt-2 text-sm font-bold">
                     ${state.players.filter(x => x.id !== p.id && x.initialRole === 'werewolf').length > 0
-                      ? `🐺 仲間の人狼: ${state.players.filter(x => x.id !== p.id && x.initialRole === 'werewolf').map(x => x.name).join(', ')}`
+                      ? `🐺 仲間の人狼: ${state.players.filter(x => x.id !== p.id && x.initialRole === 'werewolf').map(x => escapeHTML(x.name)).join(', ')}`
                       : '🐺 あなたは【孤独な人狼】です（仲間はいません）'}
                   </div>
                 ` : ''}
@@ -3278,7 +3346,7 @@ const GameTools = {
             const targetId = parseInt(btn.dataset.target);
             const chosen = state.players.find(x => x.id === targetId);
             if (chosen) {
-              seerResult.textContent = `🔮 ${chosen.name} の役職は【${ROLE_DEFS[chosen.initialRole].name}】でした！`;
+              seerResult.textContent = `🔮 ${chosen.name} の交換前の役職は【${ROLE_DEFS[chosen.initialRole].name}】でした！`;
               container.querySelectorAll(".btn-seer-target").forEach(b => b.disabled = true);
               const btnC = container.querySelector("#btn-seer-center");
               if (btnC) btnC.disabled = true;
@@ -3396,20 +3464,38 @@ const GameTools = {
             <div class="topic-box mb-3">
               <span class="topic-tag">💡 投票ルール</span>
               <div class="text-sm">
-                ・最多得票の人が処刑されます（同率なら全員処刑）。<br>
+                ・最多票が並んだら該当者を全員選びます。全員が1票ずつなら誰も処刑しません。<br>
                 ・人狼を1人でも処刑できれば【村人チームの勝利】！<br>
-                ・人狼が処刑されなければ【人狼チームの勝利】！<br>
+                ・人狼がいて1人も処刑できなければ【人狼チームの勝利】。人狼のいない村で誰かを処刑すると全員敗北です。<br>
                 ・もし誰も人狼がいない場合、全員が1票ずつになる平和村投票なら【全員勝利】！
               </div>
             </div>
 
-            <button class="btn btn-warning btn-lg btn-block" id="btn-open-ww-result">
+            <fieldset class="ww-votes"><legend>最多票の人を選択（同票は複数可）</legend>
+              ${state.players.map(p => `<label><input type="checkbox" data-voted="${p.id}"> ${escapeHTML(p.name)}</label>`).join("")}
+              <label><input type="checkbox" id="ww-peace"> 全員が1票ずつ（処刑なし）</label>
+            </fieldset>
+            <button class="btn btn-warning btn-lg btn-block" id="btn-open-ww-result" disabled>
               <span>投票完了！結果発表 ＆ 正解オープン</span> 🎉
             </button>
           </div>
         `;
 
-        container.querySelector("#btn-open-ww-result").addEventListener("click", () => {
+        const open = container.querySelector("#btn-open-ww-result");
+        const candidates = [...container.querySelectorAll("[data-voted]")];
+        const peace = container.querySelector("#ww-peace");
+        container.querySelector(".ww-votes").addEventListener("change", event => {
+          if (event.target === peace && peace.checked) candidates.forEach(box => { box.checked = false; });
+          if (event.target !== peace) peace.checked = false;
+          if (candidates.every(box => box.checked)) {
+            candidates.forEach(box => { box.checked = false; });
+            peace.checked = true;
+          }
+          state.peaceVote = peace.checked;
+          state.executed = candidates.filter(box => box.checked).map(box => Number(box.dataset.voted));
+          open.disabled = !state.peaceVote && !state.executed.length;
+        });
+        open.addEventListener("click", () => {
           Sound.playFanfare();
           Confetti.burst(80);
           state.step = "result";
@@ -3422,10 +3508,16 @@ const GameTools = {
         }
         const werewolves = state.players.filter(p => p.currentRole === "werewolf");
         const hasWerewolf = werewolves.length > 0;
+        const executed = state.players.filter(p => state.executed.includes(p.id));
+        const caught = executed.some(p => p.currentRole === "werewolf");
+        let verdict = caught ? "村人チームの勝利！" : "人狼チームの勝利！";
+        if (!hasWerewolf) verdict = state.peaceVote ? "平和村！ 全員の勝利！" : "平和村で仲間を処刑したため、全員敗北";
+        const outcome = state.peaceVote ? "全員1票のため、処刑なし" :
+          "最多票で処刑：" + executed.map(p => p.name + "（" + ROLE_DEFS[p.currentRole].name + "）").join("、");
 
         container.innerHTML = `
           <div class="tool-card text-center">
-            <h3 class="tool-title">🎉 最終役職オープン！</h3>
+            <h3 id="ww-verdict">${verdict}</h3><p>${escapeHTML(outcome)}</p>
 
             <div class="roles-list my-3">
               ${state.players.map(p => `
@@ -3483,6 +3575,7 @@ const GameTools = {
           <div class="tool-card text-center">
             <span class="card-badge badge-talk">📜 詠み人知らず (1人目)</span>
             <h3 class="tool-title mt-2">上の句（5文字）を入力</h3>
+            <p>一句を3人で作ります。4人以上なら、次の句はまだ書いていない人から時計回りに。</p>
             <p class="text-sub text-sm mb-3">例: 「あさおきて」「すきなひと」「ねむれない」</p>
 
             <div class="haiku-input-box mb-3">
@@ -3581,7 +3674,7 @@ const GameTools = {
               <div class="haiku-line shimo">「 ${escapeHTML(state.shimo)} 」</div>
             </div>
 
-            <p class="text-sub text-sm">声に出して風流に詠み上げよう！</p>
+            <p class="text-sub text-sm">全員で声に出して読みましょう。次の句は、下の句を書いた人の隣から。</p>
 
             <div class="btn-group-row mt-3">
               <button class="btn btn-outline flex-1" id="btn-share-haiku">𝕏 でポスト</button>
@@ -4611,65 +4704,49 @@ const GameTools = {
   // 20. 指スマ / いっせーのせ (親番＆コールアシスト)
   // ===================================================
   renderStandUp(container, game) {
-    let state = {
-      playerCount: 4,
-      currentParent: 1,
-      maxFingers: 8
-    };
+    let hands = Array(4).fill(2);
+    let parent = 0;
+    let started = false;
 
-    function update() {
-      state.maxFingers = state.playerCount * 2;
-      container.innerHTML = `
-        <div class="tool-card text-center">
-          <h3 class="tool-title">👍 指スマ / いっせーのせ アシスト</h3>
-
-          <div class="setting-group my-3">
-            <label class="setting-label">参加人数: <span class="badge-num">${state.playerCount}人</span> (最大指本数: ${state.maxFingers}本)</label>
-            <input type="range" class="range-slider" min="2" max="8" value="${state.playerCount}" id="range-standup-players">
-          </div>
-
-          <div class="parent-roulette-box my-4">
-            <span class="badge badge-warning">👑 今の親番</span>
-            <div class="parent-name-display animate-bounce">プレイヤー ${state.currentParent}</div>
-            <p class="text-sm text-muted">「いっせーのーで、0〜${state.maxFingers}」の好きな数字を叫ぼう！</p>
-          </div>
-
-          <div class="flex gap-2 justify-center mt-3">
-            <button class="btn btn-primary btn-lg" id="btn-next-parent">次の親へ交代 ➔</button>
-            <button class="btn btn-outline btn-lg" id="btn-random-parent">ランダム親指名 🎲</button>
-          </div>
-        </div>
-      `;
-
-      container.querySelector("#range-standup-players").addEventListener("input", (e) => {
-        state.playerCount = parseInt(e.target.value);
-        state.currentParent = Math.min(state.currentParent, state.playerCount);
-        update();
-      });
-
-      container.querySelector("#btn-next-parent").addEventListener("click", () => {
+    function render() {
+      const available = hands.map((n, i) => n > 0 ? i : -1).filter(i => i >= 0);
+      const max = hands.reduce((a, b) => a + b, 0);
+      const finished = available.length <= 1;
+      container.innerHTML = `<div class="tool-card text-center">
+        <label>参加人数：${hands.length}人 <input class="range-slider" id="range-standup-players" type="range" min="2" max="8" value="${hands.length}" ${started ? "disabled" : ""}></label>
+        <p>残っている親指：${max}本</p>
+        ${finished ? `<h3>終了！ 最後に残ったのはプレイヤー ${available[0]+1}</h3>` : `
+          <p>今の親番</p><strong class="parent-name-display">プレイヤー ${parent+1}</strong><p>「いっせーのーで、0〜${max}」から予想してコール！</p>
+          <button class="btn btn-success" id="stand-hit">的中！ 片手を抜く</button>
+          <button class="btn btn-primary" id="btn-next-parent">外れ・次の親へ</button>
+          <button class="btn btn-outline" id="btn-random-parent">ランダム親指名</button>`}
+        <p>${hands.map((n,i) => `P${i+1}：${n ? n+"本" : "勝ち抜け"}`).join(" ／ ")}</p>
+        ${started ? '<button class="btn btn-outline" id="stand-restart">新しい対戦</button>' : ''}
+      </div>`;
+      container.querySelector("#range-standup-players").oninput = event => {
+        hands = Array(Number(event.target.value)).fill(2);
+        parent = 0;
+        render();
+      };
+      function next(hit) {
+        started = true;
+        if (hit) hands[parent]--;
+        do { parent = (parent + 1) % hands.length; } while (!hands[parent]);
         Sound.playSelect();
-        state.currentParent = (state.currentParent % state.playerCount) + 1;
-        if (typeof window !== "undefined" && window.StampRally) {
-          window.StampRally.markPlayed("stand-up-game");
-        }
-        update();
+        window.StampRally?.markPlayed("stand-up-game");
+        render();
+      }
+      container.querySelector("#stand-hit")?.addEventListener("click", () => next(true));
+      container.querySelector("#btn-next-parent")?.addEventListener("click", () => next(false));
+      container.querySelector("#btn-random-parent")?.addEventListener("click", () => {
+        parent = available[Math.floor(Math.random() * available.length)];
+        Sound.playSelect(); render();
       });
-
-      container.querySelector("#btn-random-parent").addEventListener("click", () => {
-        Sound.playDrumRoll(1.0);
-        safeSetTimeout(() => {
-          Sound.playJajan();
-          state.currentParent = Math.floor(Math.random() * state.playerCount) + 1;
-          if (typeof window !== "undefined" && window.StampRally) {
-            window.StampRally.markPlayed("stand-up-game");
-          }
-          update();
-        }, 1000);
+      container.querySelector("#stand-restart")?.addEventListener("click", () => {
+        hands.fill(2); parent = 0; started = false; render();
       });
     }
-
-    update();
+    render();
   },
 
   // ===================================================
@@ -5034,7 +5111,7 @@ const GameTools = {
           ${topicList.length > 0 ? `
             <div class="secret-topic-drawer my-3 p-3 bg-light border rounded">
               <div class="flex gap-2 justify-center">
-                <button class="btn btn-sm btn-outline" id="btn-draw-secret">出題者用：お題を引く 🎲</button>
+                <button class="btn btn-sm btn-outline" id="btn-draw-secret">${state.secretTopic || state.logs.length ? "別のお題で新しい局を始める" : "出題者用：お題を引く 🎲"}</button>
                 ${state.secretTopic ? `
                   <button class="btn btn-sm btn-secondary" id="btn-toggle-secret">
                     ${state.showSecret ? 'お題を隠す 🔒' : 'お題を見る 👁️'}
@@ -5050,9 +5127,9 @@ const GameTools = {
           ` : ''}
 
           <div class="flex gap-2 justify-center my-3">
-            <button class="btn btn-success flex-1" id="btn-log-yes">⭕ はい (YES)</button>
-            <button class="btn btn-danger flex-1" id="btn-log-no">❌ いいえ (NO)</button>
-            <button class="btn btn-outline flex-1" id="btn-log-irrelevant">❓ 関係ない</button>
+            <button class="btn btn-success flex-1" id="btn-log-yes" ${state.remaining === 0 ? "disabled" : ""}>⭕ はい (YES)</button>
+            <button class="btn btn-danger flex-1" id="btn-log-no" ${state.remaining === 0 ? "disabled" : ""}>❌ いいえ (NO)</button>
+            <button class="btn btn-outline flex-1" id="btn-log-irrelevant" ${state.remaining === 0 ? "disabled" : ""}>❓ 関係ない</button>
           </div>
 
           <div class="history-list mt-4">
@@ -5071,8 +5148,11 @@ const GameTools = {
       if (container.querySelector("#btn-draw-secret")) {
         container.querySelector("#btn-draw-secret").addEventListener("click", () => {
           Sound.playSelect();
+          if (state.logs.length && !confirm("今の回答履歴を消して、新しいお題で始めますか？")) return;
+          state.logs = [];
+          state.remaining = 20;
           state.secretTopic = drawShuffledTopic(game.id || "twenty-questions", topicList);
-          state.showSecret = true;
+          state.showSecret = false;
           update();
         });
       }
@@ -5614,10 +5694,10 @@ const GameTools = {
             Sound.playFanfare();
             Sound.playJajan();
             btn.parentElement.classList.add("card-error");
-            btn.parentElement.innerHTML += '<div class="text-danger font-black mt-1">💥 これが真っ赤な嘘でした！</div>';
+            btn.insertAdjacentHTML("afterend", '<div class="text-danger font-black mt-1">💥 これが真っ赤な嘘でした！</div>');
           } else {
             Sound.playWrong();
-            btn.parentElement.innerHTML += '<div class="text-success font-bold mt-1">⭕ これは本当の話です！</div>';
+            btn.insertAdjacentHTML("afterend", '<div class="text-success font-bold mt-1">⭕ これは本当の話です！</div>');
           }
           btn.remove();
         });
