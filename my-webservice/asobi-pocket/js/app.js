@@ -2589,6 +2589,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let pending = false;
     let reloading = false;
     let lastCheck = 0;
+    let nextCheck;
     const blockers = [...document.querySelectorAll(".modal-backdrop, .modal-overlay, #scoreboard-drawer, #dynamic-island-timer")];
     const changes = new MutationObserver(applyAtHome);
 
@@ -2631,17 +2632,23 @@ document.addEventListener("DOMContentLoaded", () => {
     document.addEventListener("focusout", () => { if (pending) setTimeout(applyAtHome, 0); });
 
     function checkForRelease() {
+      clearTimeout(nextCheck);
       if (document.hidden || !navigator.onLine) return;
       applyAtHome();
-      if (reloading || Date.now() - lastCheck < 60000) return;
-      lastCheck = Date.now();
-      askRelease();
-      workers.getRegistration().then(reg => reg?.update()).catch(() => {});
+      if (reloading) return;
+      const now = Date.now();
+      if (now - lastCheck >= 60000) {
+        lastCheck = now;
+        askRelease();
+        workers.getRegistration().then(reg => reg?.update()).catch(() => {});
+      }
+      nextCheck = setTimeout(checkForRelease, Math.max(1, 60000 - (now - lastCheck)));
     }
     document.addEventListener("visibilitychange", checkForRelease);
     window.addEventListener("pageshow", checkForRelease);
     window.addEventListener("online", checkForRelease);
-    setInterval(checkForRelease, 60000);
+    window.addEventListener("offline", checkForRelease);
+    window.addEventListener("pagehide", () => clearTimeout(nextCheck));
     try {
       if (sessionStorage.getItem("asobi_restore_favorites_view") === "1") {
         state.filter.onlyFavorite = true;
