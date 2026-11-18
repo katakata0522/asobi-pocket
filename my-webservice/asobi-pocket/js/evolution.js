@@ -51,7 +51,13 @@
         if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
       }
     };
-    window.addEventListener('hashchange', () => requestAnimationFrame(syncRoute));
+    window.addEventListener('hashchange', (event) => {
+      const requestedHash = new URL(event.newURL).hash;
+      requestAnimationFrame(() => {
+        // 離脱を取り消して元の画面に戻った場合は、操作中のフォーカスを保つ。
+        if (location.hash === requestedHash) syncRoute();
+      });
+    });
     syncRoute();
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });

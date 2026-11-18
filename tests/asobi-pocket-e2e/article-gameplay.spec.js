@@ -30,7 +30,10 @@ test('記事のお題でitoを始め、秘密の数字をキーボードで順�
   await page.evaluate(() => { location.hash = '#game/asa-sore'; });
   await leavePrompt;
   await expect(page).toHaveURL(/#game\/ito\?topic=2$/);
-  await expect(page.locator('#ito-talk-topic')).toBeVisible();
+  await page.evaluate(() => new Promise(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  }));
+  await expect(page.locator('#ito-talk-topic')).toBeFocused();
   if (numbers[0] > numbers[1]) await page.locator('.btn-move-up').last().press('Enter');
   await page.locator('#btn-ito-open-cards').press('Enter');
   await expect(page.locator('.result-celebration')).toContainText('完全クリア');
