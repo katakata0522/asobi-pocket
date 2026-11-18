@@ -296,11 +296,16 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = Storage.get("asobi_custom_topics", {});
       return data[gameId] || [];
     },
-    addCustomTopic(gameId, topic) {
-      if (!topic || !topic.trim()) return false;
+    addCustomTopic(gameId, topic, index = null) {
+      const isQuiz = gameId === "sea-turtle" && topic && typeof topic === "object";
+      const value = isQuiz ? {question: topic.question.trim(), answer: topic.answer.trim()} : String(topic || "").trim();
+      if (isQuiz ? !value.question || !value.answer : !value) return false;
+      if (gameId === "word-wolf" && !customWolfPair(value)) return false;
       const data = Storage.get("asobi_custom_topics", {});
       if (!data[gameId]) data[gameId] = [];
-      data[gameId].push(topic.trim());
+      if (index === null) data[gameId].push(value);
+      else if (Number.isInteger(index) && index >= 0 && index < data[gameId].length) data[gameId][index] = value;
+      else return false;
       Storage.set("asobi_custom_topics", data);
       return true;
     },
@@ -667,13 +672,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const tokens = [
       game.title || "",
       game.ruby || "",
+      ...(game.searchAliases || []),
       game.catchphrase || "",
       game.overview || "",
       game.category || "",
       ...(Array.isArray(game.tags) ? game.tags : []),
       ...(Array.isArray(game.presets) ? game.presets.map(p => typeof p === "string" ? p : (p.text || p.title || p.question || "")) : [])
     ];
-    game._searchIndex = tokens.join(" ").toLowerCase();
+    game._searchIndex = tokens.map(topicSearchText).join(" ");
   });
 
   // アクティブなツールのクリーンアップ関数
@@ -782,7 +788,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // フィルタリング ＆ ソート（高速化版）
   // ==========================================
   function getFilteredGames() {
-    const q = state.filter.search.trim().toLowerCase();
+    const q = toHiragana(state.filter.search);
+    const terms = q.split(/\s+/).filter(Boolean);
 
     return state.games.filter(game => {
       // メイン枠スリム化: 検索語がない場合はメインゲーム(19枠)のみ表示。
@@ -833,7 +840,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // 検索キーワード（事前インデックスによる超高速判定）
       if (q !== "") {
-        if (!game._searchIndex || !game._searchIndex.includes(q)) {
+        const matches = terms.every(term => {
+          const count = /^(\d+)人$/.exec(term);
+          if (count) return +count[1] >= game.minPlayers && +count[1] <= game.maxPlayers;
+          return (namesByTopic.get(term) || [term]).some(name => game._searchIndex.includes(name));
+        });
+        if (!matches) {
           return false;
         }
       }
@@ -1682,10 +1694,11 @@ document.addEventListener("DOMContentLoaded", () => {
                   <button class="btn btn-sm btn-outline" id="btn-open-topic-custom" aria-expanded="false" aria-controls="custom-topic-editor">⚙️ お題を追加・管理する</button>
                 </div>
                 <div id="custom-topic-editor" class="section-box mt-3 hidden">
-                  <label for="custom-topic-text">自分たちのお題（この端末に保存）</label>
+                  <label for="custom-topic-text">${game.id === "sea-turtle" ? "自作問題の問題文" : "自分たちのお題"}（この端末に保存）</label>
                   <form id="custom-topic-form" class="mt-2">
-                    <input id="custom-topic-text" class="search-input-field" maxlength="160" required placeholder="例：旅行に持っていきたいもの">
-                    <button class="btn btn-primary mt-2" type="submit">お題を追加</button>
+                    <input id="custom-topic-text" class="search-input-field" maxlength="${game.id === 'sea-turtle' ? 1000 : 160}" required placeholder="${game.id === 'sea-turtle' ? 'みんなに読んでもらう問題文' : game.id === 'word-wolf' ? '例：トンボ / チョウ' : '例：旅行に持っていきたいもの'}">
+                    ${game.id === "sea-turtle" ? '<label for="custom-topic-answer">真相（出題者用）</label><textarea id="custom-topic-answer" class="search-input-field" maxlength="1500" required></textarea>' : ''}
+                    <button class="btn btn-primary mt-2" type="submit">保存</button>
                   </form>
                 </div>
 
@@ -1693,7 +1706,8 @@ document.addEventListener("DOMContentLoaded", () => {
                   ${customTopics.map((c, idx) => `
                     <div class="preset-item-card custom-preset-card">
                       <span class="preset-tag preset-tag-custom">オリジナル</span>
-                      <div class="preset-text">${escapeHTML(c)}</div>
+                      <div class="preset-text">${escapeHTML(typeof c === "string" ? c : c.question)}</div>
+                      ${game.id === "sea-turtle" ? `<button class="btn btn-sm btn-outline" data-edit-quiz="${idx}">${typeof c === "string" ? "真相を追加して出題できるようにする" : "問題を編集"}</button>` : ''}
                       <button class="btn btn-sm btn-outline" data-remove-topic="${idx}" aria-label="追加したお題を削除">削除</button>
                     </div>
                   `).join('')}
@@ -1751,22 +1765,49 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     // 自作お題の追加・削除。端末内だけに保存し、既存の抽選機能と共有する。
+    let editingQuiz = null;
     const topicButton = viewDetail.querySelector('#btn-open-topic-custom');
     topicButton?.addEventListener('click', () => {
+      if (editingQuiz !== null) {
+        editingQuiz = null;
+        viewDetail.querySelector('#custom-topic-form').reset();
+      }
       const editor = viewDetail.querySelector('#custom-topic-editor');
       const expanded = topicButton.getAttribute('aria-expanded') !== 'true';
       topicButton.setAttribute('aria-expanded', String(expanded));
       editor.classList.toggle('hidden', !expanded);
       if (expanded) editor.querySelector('input').focus();
     });
+    viewDetail.querySelectorAll('[data-edit-quiz]').forEach(button => button.addEventListener('click', () => {
+      editingQuiz = Number(button.dataset.editQuiz);
+      const item = customTopics[editingQuiz];
+      const editor = viewDetail.querySelector('#custom-topic-editor');
+      editor.classList.remove('hidden');
+      topicButton.setAttribute('aria-expanded', 'true');
+      editor.querySelector('#custom-topic-text').value = typeof item === 'string' ? item : item.question;
+      editor.querySelector('#custom-topic-answer').value = item.answer || '';
+      editor.querySelector('#custom-topic-answer').focus();
+    }));
     viewDetail.querySelector('#custom-topic-form')?.addEventListener('submit', (event) => {
       event.preventDefault();
       const input = viewDetail.querySelector('#custom-topic-text');
-      if (TopicManager.addCustomTopic(game.id, input.value)) {
+      const answer = viewDetail.querySelector('#custom-topic-answer');
+      const topic = answer ? {question: input.value, answer: answer.value} : input.value;
+      if (game.id === "word-wolf" && !customWolfPair(input.value)) {
+        Toast.warning("異なる2つのお題を「 / 」で区切ってください");
+        input.focus();
+        return;
+      }
+      if (answer && (!input.value.trim() || !answer.value.trim())) {
+        Toast.warning("問題文と真相を入力してください");
+        (input.value.trim() ? answer : input).focus();
+        return;
+      }
+      if (TopicManager.addCustomTopic(game.id, topic, editingQuiz)) {
         state.activeTab = 'presets';
         cleanupActiveTool();
         showGameDetail(game, 'presets');
-        Toast.success('お題を追加しました');
+        Toast.success('お題を保存しました');
         viewDetail.querySelector('#btn-open-topic-custom')?.focus();
       }
     });

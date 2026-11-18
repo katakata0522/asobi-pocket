@@ -379,6 +379,16 @@ rt {
   touch-action: manipulation;
 }
 
+/* Pressed buttons normally scale. Keep the clear control over its hit area. */
+.search-box-row .btn-clear-search,
+.search-box-row .btn-clear-search:active {
+  top: 0;
+  bottom: 0;
+  margin-block: auto;
+  height: 44px;
+  z-index: 1;
+  transform: none !important;
+}
 .btn-clear-search:hover {
   color: var(--text-main);
 }

@@ -34,21 +34,6 @@
     return parts.length === 2 ? parts : null;
   };
 
-  const KATAKANA_HINTS = Object.freeze({
-    "ハンバーガー": "丸い小麦の焼き物で肉や野菜をはさんだ食べ物",
-    "エレベーター": "建物の中で人を上下の階へ運ぶ箱",
-    "スマートフォン": "電話や情報閲覧ができる携帯端末",
-    "チョコレート": "甘くて茶色いことが多いお菓子",
-    "スニーカー": "ひもが付いた歩きやすい運動靴",
-    "インターネット": "世界中の機器をつなぐ通信網",
-    "リモコン": "離れた場所から機械を操作する道具",
-    "カラオケ": "伴奏に合わせて歌を楽しむ遊び",
-    "ハイボール": "蒸留酒を炭酸水で割った飲み物",
-    "タピオカミルクティー": "もちもちした粒が入った甘いお茶",
-    "バーベキュー": "屋外で肉や野菜を焼いて食べる料理",
-    "プレゼンテーション": "人前で資料を見せながら考えを説明すること"
-  });
-
   const SAFE_BATSU_MISSIONS = Object.freeze([
     ...[
       "ニュースキャスター風に今日の出来事を10秒で話す",
@@ -129,7 +114,6 @@
 
       if (game.toolType === "katakana-ban") {
         preset.word = text;
-        preset.hint = KATAKANA_HINTS[text] || "特徴・用途・見た目を日本語だけで説明";
         return;
       }
 
@@ -290,6 +274,7 @@
     const originalTalkGacha = GameTools.renderTalkGacha;
     if (typeof originalTalkGacha === "function") {
       const classifyTalkCategory = (item) => {
+        if (["ライト", "もしも", "本音", "恋愛", "ディープ"].includes(item.category)) return item.category;
         const text = presetText(item);
         if (/異性|恋人|結婚|デート|仕草|ギャップ/.test(text)) return "恋愛";
         if (/もし|宝くじ|世界が終|無人島|100年後/.test(text)) return "もしも";

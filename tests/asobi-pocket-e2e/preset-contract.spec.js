@@ -36,6 +36,7 @@ test('TPO text presets render as text in legacy tools', async ({ page }) => {
   await expectUsefulText(page.locator('#bomb-topic-text'));
 
   await page.goto('/#game/ng-word');
+  await page.locator('#ng-reveal').click();
   await expectUsefulText(page.locator('.ng-p-word').first());
 
   expect(errors).toEqual([]);

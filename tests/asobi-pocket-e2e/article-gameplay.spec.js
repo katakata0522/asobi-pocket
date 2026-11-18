@@ -81,6 +81,16 @@ test('記事のペアをワードウルフに配り、逆転の判定までお�
 
 test('NGワードは勝者を次の対戦まで保持する', async ({ page }) => {
   await page.goto('/#game/ng-word');
+  async function dealWords() {
+    for (let player = 1; player <= 2; player++) {
+      await expect(page.locator('.ng-p-word')).toHaveCount(0);
+      await page.locator('#ng-reveal').click();
+      await expect(page.locator('.ng-p-word')).toHaveCount(1);
+      await page.locator('#ng-hide').click();
+    }
+    await expect(page.locator('.ng-p-word')).toHaveCount(0);
+  }
+  await dealWords();
   const playerOneSaid = page.locator('#btn-p1-said');
   const playerTwoSaid = page.locator('#btn-p2-said');
   await playerTwoSaid.click();
@@ -90,6 +100,7 @@ test('NGワードは勝者を次の対戦まで保持する', async ({ page }) =
   await playerOneSaid.click({ force: true });
   await expect(page.getByText(/PLAYER 1 の大勝利/)).toBeVisible();
   await page.locator('#btn-ng-duel-next').click();
+  await dealWords();
   await playerOneSaid.click();
   await expect(page.getByText(/PLAYER 2 の大勝利/)).toBeVisible();
 });
