@@ -825,14 +825,13 @@
       render();
     };
 
-    state.currentTopic = getTopic();
-
     function render() {
       container.innerHTML = `
         <div class="tool-card text-center">
           <h3 class="tool-title">🤫 サイレント・ジェスチャーゲーム</h3>
           <div class="gesture-score-badge my-2">正解数: <strong class="badge-num font-mono">${state.score}</strong> 問</div>
-          <div class="topic-box my-4"><span class="topic-tag">🎭 ジェスチャーお題</span><div class="topic-text font-black text-xl">${esc(state.currentTopic)}</div></div>
+          ${state.phase === "playing" ? `<div class="topic-box my-4"><span class="topic-tag">演じる人だけが見るお題</span><div class="topic-text font-black text-xl">${esc(state.currentTopic)}</div></div>` : ""}
+          ${state.phase === "ready" ? "<p>演じる人にスマホを渡してください。回答する人に画面を向けずにスタート！</p>" : ""}
           <div class="timer-display font-mono text-2xl ${state.timeLeft <= 10 ? "text-danger animate-pulse" : "text-primary"}">⏱️ 残り: ${state.timeLeft} 秒</div>
           ${state.phase === "ready" ? '<button class="btn btn-primary btn-lg btn-block mt-3" id="btn-gesture-start">スタート！ (60秒)</button>' : ""}
           ${state.phase === "playing" ? '<div class="flex gap-2 justify-center my-3"><button class="btn btn-success btn-lg flex-1" id="btn-gesture-correct">⭕ 正解！次へ</button><button class="btn btn-outline btn-lg" id="btn-gesture-pass">パス ➔</button></div>' : ""}
@@ -863,7 +862,7 @@
       const pass = container.querySelector("#btn-gesture-pass");
       if (pass) pass.addEventListener("click", () => { play("playClick"); nextTopic(); });
       const retry = container.querySelector("#btn-gesture-retry");
-      if (retry) retry.addEventListener("click", () => { state.phase = "ready"; state.timeLeft = 60; state.currentTopic = getTopic(); render(); });
+      if (retry) retry.addEventListener("click", () => { state.phase = "ready"; state.score = 0; state.timeLeft = 60; render(); });
     }
 
     render();

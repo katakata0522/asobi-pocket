@@ -2345,7 +2345,7 @@ const GameTools = {
         } else if (diff <= 0.50) {
           message = "✨ かなり惜しい！グッド感覚！";
         } else {
-          message = "🤣 全然違う！体内時計狂ってます！罰ゲーム確定！";
+          message = `目標より${diff.toFixed(2)}秒${elapsed < targetTime ? "早く" : "遅く"}止まりました。`;
         }
       }
 
@@ -4904,6 +4904,7 @@ const GameTools = {
   renderTakenoko(container, game) {
     let state = {
       currentCount: 0,
+      result: "",
       playerCount: 5
     };
 
@@ -4914,19 +4915,19 @@ const GameTools = {
 
           <div class="setting-group my-3">
             <label class="setting-label">参加人数: <span class="badge-num">${state.playerCount}人</span></label>
-            <input type="range" class="range-slider" min="3" max="10" value="${state.playerCount}" id="range-takenoko">
+            <input type="range" class="range-slider" min="3" max="${game.maxPlayers}" value="${state.playerCount}" id="range-takenoko" ${state.currentCount || state.result ? "disabled" : ""}>
           </div>
 
           <div class="takenoko-display-box my-4">
             <div class="takenoko-count font-black font-mono">${state.currentCount === 0 ? '準備中' : `${state.currentCount} ニョッキ！`}</div>
-            <small class="text-muted">「たけのこたけのこニョッキッキ！」でスタート！</small>
+            <p aria-live="polite">${state.result || "「たけのこたけのこニョッキッキ！」でスタート！"}</p>
           </div>
 
           <div class="flex gap-2 justify-center">
-            <button class="btn btn-success btn-lg flex-1" id="btn-takenoko-next">
-              🌱 次のニョッキ！ (+${state.currentCount + 1})
+            <button class="btn btn-success btn-lg flex-1" id="btn-takenoko-next" ${state.result ? "disabled" : ""}>
+              🌱 ${state.currentCount + 1}ニョッキを記録
             </button>
-            <button class="btn btn-danger btn-lg" id="btn-takenoko-foul">💥 被った！</button>
+            <button class="btn btn-danger btn-lg" id="btn-takenoko-foul" ${state.result ? "disabled" : ""}>💥 被った！</button>
           </div>
 
           <button class="btn btn-outline btn-block mt-3" id="btn-takenoko-reset">ゲームやり直し 🔄</button>
@@ -4940,6 +4941,10 @@ const GameTools = {
 
       container.querySelector("#btn-takenoko-next").addEventListener("click", () => {
         state.currentCount++;
+        if (state.currentCount === state.playerCount - 1) {
+          state.result = "残り1人！ 最後まで残った人の負けです。";
+          window.StampRally?.markPlayed("takenoko-nyokki");
+        }
         Sound.playCountBeep(false);
         update();
       });
@@ -4950,12 +4955,14 @@ const GameTools = {
         if (typeof window !== "undefined" && window.StampRally) {
           window.StampRally.markPlayed("takenoko-nyokki");
         }
-        Toast.warning("💥 被り発生！被った人は罰ゲームです！");
+        state.result = "同時に声を出した人がアウト！ この回は終了です。";
+        update();
       });
 
       container.querySelector("#btn-takenoko-reset").addEventListener("click", () => {
         Sound.playClick();
         state.currentCount = 0;
+        state.result = "";
         update();
       });
     }

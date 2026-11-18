@@ -109,3 +109,25 @@ test('20の扉は別のお題を伏せて新局を開始する',async ({page})=>
   await expect(page.locator('.remaining-count')).toContainText('20 / 20');
   await expect(page.locator('.secret-topic-display')).toHaveCount(0);
 });
+
+test('ジェスチャーのお題は演じる間だけ表示する',async ({page})=>{
+  await open(page,'silent-gesture');await page.clock.install();
+  const topic=page.locator('#tool-mount-point .topic-text');
+  await expect(topic).toHaveCount(0);
+  await button(page,'btn-gesture-start');await expect(topic).toBeVisible();
+  await button(page,'btn-gesture-correct');
+  for(let i=0;i<60;i++) await page.clock.fastForward(1000);
+  await expect(topic).toHaveCount(0);await button(page,'btn-gesture-retry');
+  await expect(page.locator('.gesture-score-badge')).toContainText('0');
+});
+
+test('12人のニョッキが最後の1人で止まり、被りでも結果を保持する',async ({page})=>{
+  await open(page,'takenoko-nyokki');await page.locator('#range-takenoko').press('End');
+  await expect(page.locator('#range-takenoko')).toHaveValue('12');
+  for(let i=0;i<11;i++) await button(page,'btn-takenoko-next');
+  await expect(page.locator('#tool-mount-point')).toContainText('残り1人');
+  await expect(page.locator('#btn-takenoko-next')).toBeDisabled();
+  await button(page,'btn-takenoko-reset');await button(page,'btn-takenoko-foul');
+  await expect(page.locator('#btn-takenoko-next')).toBeDisabled();
+  await expect(page.locator('#tool-mount-point')).toContainText('同時に声を出した人がアウト');
+});
