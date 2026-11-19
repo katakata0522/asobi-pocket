@@ -1016,7 +1016,7 @@ document.addEventListener("DOMContentLoaded", () => {
     filterResultCount?.setAttribute("aria-live", "polite");
 
     if (filterResultCount) {
-      filterResultCount.textContent = featured ? `全${list.length}ゲーム` : `${state.filter.onlyFavorite ? 'お気に入り ' : ''}${list.length}件`;
+      filterResultCount.textContent = featured ? `この一覧：${list.length}件` : `${state.filter.onlyFavorite ? 'お気に入り ' : ''}${list.length}件`;
     }
 
     if (list.length === 0) {
@@ -1159,6 +1159,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const grid = document.getElementById("classic-rules-grid");
     if (!grid) return;
     const classicGames = state.games.filter(g => g.section === "C");
+    const title = document.getElementById("classic-rules-title");
+    if (title) title.textContent = `道具不要！その他の定番ルール集（${classicGames.length}選）`;
     grid.innerHTML = classicGames.map(game => `
       <div class="classic-rule-card" data-id="${game.id}" role="button" tabindex="0" aria-label="${game.title}のルールを見る">
         <div class="classic-rule-card-header">
