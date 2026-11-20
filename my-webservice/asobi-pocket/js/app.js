@@ -243,7 +243,9 @@ document.addEventListener("DOMContentLoaded", () => {
     _setInertBackground(isInert) {
       const bgTargets = [
         document.querySelector(".site-header"),
-        document.getElementById("app-container"),
+        document.getElementById("view-home"),
+        document.getElementById("view-detail"),
+        document.querySelector(".site-footer"),
         document.querySelector(".bottom-nav-bar"),
         document.getElementById("btn-toggle-scoreboard")
       ];
@@ -261,7 +263,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     handleKeyDown(e) {
       if (e.key === "Escape") {
-        this.closeAll();
+        if (this.closeAll()) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         return;
       }
       if (e.key === "Tab" && this.activeModal) {
@@ -646,6 +651,38 @@ document.addEventListener("DOMContentLoaded", () => {
     return Object.hasOwn(GAME_ALIASES, id) ? GAME_ALIASES[id] : id;
   }
 
+  const GAME_SVG_ICONS = {
+    "ito": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20L24 8"/><circle cx="7.5" cy="17.9" r="2.6" fill="var(--card-bg)"/><circle cx="14" cy="14" r="2.6" fill="var(--primary)" stroke="var(--primary)"/><circle cx="20.5" cy="10.1" r="2.6" fill="var(--card-bg)"/></svg>',
+    "word-wolf": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12L8.5 5l5.5 3.5L19.5 5 22 12c0 5.5-3.4 9.5-8 11-4.6-1.5-8-5.5-8-11z"/><circle cx="11" cy="13.5" r="1.1" fill="currentColor"/><circle cx="17" cy="13.5" r="1.1" fill="var(--primary)" stroke="var(--primary)"/><path d="M12.5 18h3"/></svg>',
+    "katakana-ban": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="14" r="9.5"/><path d="M7.5 7.5l13 13" stroke="var(--primary)"/><path d="M11 11.5h6l-1.2 5.5"/></svg>',
+    "bomb-timer": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="16" r="7.5"/><path d="M16.5 9.2l2-2.2"/><path d="M19.5 5.5c1.5-.8 3-.3 3.5 1" stroke="var(--primary)"/><path d="M13 12.5v3.5l2.5 1.5"/></svg>',
+    "asa-sore": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h20"/><path d="M8.5 19a5.5 5.5 0 0111 0"/><path d="M14 6.5v3M7.5 9.5l2 2M20.5 9.5l-2 2" stroke="var(--primary)"/></svg>',
+    "sea-turtle": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="14" r="9.5"/><path d="M11.5 11.2a2.7 2.7 0 015.2.9c0 1.8-2.7 2.1-2.7 3.9"/><circle cx="14" cy="19.2" r="1" fill="var(--primary)" stroke="none"/></svg>',
+    "silent-gesture": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="6" width="18" height="16" rx="3"/><circle cx="14" cy="12" r="2.5"/><path d="M9.5 19c1-2.2 2.7-3.2 4.5-3.2s3.5 1 4.5 3.2"/><path d="M19.5 10l2-2" stroke="var(--primary)"/></svg>',
+    "duel-reflex": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 4L6.5 15.5h7L12.5 24l9-11.5h-7L15.5 4z"/></svg>',
+    "duel-color": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11.2" cy="14" r="6"/><circle cx="16.8" cy="14" r="6" stroke="var(--primary)"/></svg>',
+    "duel-mash": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 14h18"/><path d="M9.5 9.5L5 14l4.5 4.5"/><path d="M18.5 9.5L23 14l-4.5 4.5" stroke="var(--primary)"/></svg>',
+    "rhythm-box": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 17v-6M10 21V7M14 18v-8M18 22V6" /><path d="M22 16v-4" stroke="var(--primary)"/></svg>',
+    "one-night-werewolf": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 17.8A8 8 0 0110.2 8.5a8.5 8.5 0 109.3 9.3z"/><circle cx="19.5" cy="8.5" r="1.3" fill="var(--primary)" stroke="none"/></svg>',
+    "yomibito": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="6" y="4.5" width="16" height="19" rx="2"/><path d="M18 9v10M14 9v8M10 9v6" /><circle cx="10" cy="18.5" r="1.2" fill="var(--primary)" stroke="none"/></svg>',
+    "ng-word": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 7.5h17v11h-9l-4.5 3.5v-3.5h-3.5v-11z"/><path d="M11 10.5l6 5M17 10.5l-6 5" stroke="var(--primary)"/></svg>',
+    "talk-gacha": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="7" width="12" height="15" rx="2"/><path d="M11 5h10a2 2 0 012 2v12"/><path d="M8.5 12h5M8.5 15.5h3.5" stroke="var(--primary)"/></svg>',
+    "ten-seconds": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="15" r="8.5"/><path d="M11.5 4h5M14 4v2.5M14 15V10" /><circle cx="14" cy="15" r="1.3" fill="var(--primary)" stroke="none"/></svg>',
+    "indian-poker": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6.5" y="4.5" width="15" height="19" rx="2.5"/><path d="M14 10l3.2 4-3.2 4-3.2-4 3.2-4z" stroke="var(--primary)"/></svg>',
+    "word-chain-limit": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="11" height="7" rx="3.5"/><rect x="12.5" y="10.5" width="11" height="7" rx="3.5" stroke="var(--primary)"/></svg>',
+    "good-and-bad-news": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="18" height="18" rx="2.5"/><path d="M14 5v18"/><path d="M8.5 14h3M10 12.5v3"/><path d="M16.5 14h3" stroke="var(--primary)"/></svg>',
+    "finger-roulette": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="14" cy="14" r="9"/><circle cx="14" cy="14" r="3" stroke="var(--primary)"/><path d="M14 3.5v3M14 21.5v3M3.5 14h3M21.5 14h3"/></svg>',
+    "batsu-roulette": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 4.5L7 15h6.5l-1 8.5L21 13h-6.5l1-8.5z" stroke="var(--primary)"/></svg>',
+    "twenty-questions": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 9h16M6 14h12M6 19h8"/><circle cx="20.5" cy="18.5" r="2.2" stroke="var(--primary)"/></svg>',
+    "two-choices": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 22V12M14 12L7.5 6.5M14 12l6.5-5.5"/><path d="M7.5 10.5v-4h4M20.5 10.5v-4h-4" stroke="var(--primary)"/></svg>',
+    "two-truths": '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8" cy="14" r="2.2"/><circle cx="14" cy="14" r="2.2"/><circle cx="20" cy="14" r="2.2" fill="var(--primary)" stroke="var(--primary)"/></svg>'
+  };
+
+  function getGameSvgIcon(gameId) {
+    return GAME_SVG_ICONS[gameId] || '<svg class="game-svg" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="18" height="18" rx="3"/><circle cx="10.5" cy="10.5" r="1.2" fill="currentColor"/><circle cx="17.5" cy="17.5" r="1.2" fill="var(--primary)" stroke="none"/><circle cx="14" cy="14" r="1.2" fill="currentColor"/></svg>';
+  }
+  window.getGameSvgIcon = getGameSvgIcon;
+
   const partyPicks = new Map([
     ["ito", "数字を言わず、みんなの例えを小さい順に。"],
     ["word-wolf", "会話に紛れた、違うお題の人を探そう。"],
@@ -657,7 +694,7 @@ document.addEventListener("DOMContentLoaded", () => {
   ]);
   const duelModes = new Map([
     ["duel-reflex", {label: "反射", description: "合図が出たら先にタップ"}],
-    ["duel-color", {label: "色判断", description: "文字の意味と色は一致する？"}],
+    ["duel-color", {label: "色判断", description: "文字と色が一致する？"}],
     ["duel-mash", {label: "連打", description: "15秒の連打で押し合い"}]
   ]);
   const savedFavorites = Storage.get("asobi_favorites", []);
@@ -694,7 +731,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (state.kidsMode && game.ruby) {
       return `<ruby>${escapeHTML(game.title)}<rt>${escapeHTML(game.ruby)}</rt></ruby>`;
     }
-    const shortTitles = { "ito": "ito（価値観ゲーム）", "asa-sore": "朝までそれ正解", "rhythm-box": "リズムボックス", "indian-poker": "インディアンポーカー", "finger-roulette": "指置きルーレット", "duel-reflex": "反射神経対決", "duel-mash": "連打パワーバトル", "duel-color": "カラー早見分け", "bomb-timer": "爆弾タイマー", "ng-word": "NGワードゲーム" };
+    const shortTitles = { "ito": "ito（価値観）", "asa-sore": "朝までそれ正解", "rhythm-box": "リズムボックス", "indian-poker": "インディアンポーカー", "finger-roulette": "指置きルーレット", "duel-reflex": "反射神経対決", "duel-mash": "連打パワーバトル", "duel-color": "カラー早見分け", "bomb-timer": "爆弾タイマー", "ng-word": "NGワードゲーム" };
     const title = compact ? (shortTitles[game.id] || game.title.replace(/\s*[（(].*$/u, "").trim()) : game.title;
     return escapeHTML(title);
   }
@@ -744,41 +781,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const modalRoulette = document.getElementById("modal-roulette");
   const btnCloseRoulette = document.getElementById("btn-close-roulette");
   const btnSpinRoulette = document.getElementById("btn-spin-roulette");
-  const btnThemeToggle = document.getElementById("btn-theme-toggle");
-  const btnSoundToggle = document.getElementById("btn-sound-toggle");
-  const soundIcon = document.getElementById("sound-icon");
-  const themeIcon = document.getElementById("theme-icon");
 
   // ==========================================
-  // テーマ ＆ サウンド初期化
+  // テーマ初期化
   // ==========================================
   function applyTheme() {
     document.documentElement.classList.toggle("dark-mode", state.isDark);
-    if (themeIcon) themeIcon.textContent = state.isDark ? "☀️" : "🌙";
   }
   applyTheme();
-
-  if (btnThemeToggle) {
-    btnThemeToggle.addEventListener("click", () => {
-      Sound.playClick();
-      state.isDark = !state.isDark;
-      Storage.set("asobi_theme_dark", state.isDark);
-      applyTheme();
-    });
-  }
-
-  function updateSoundIcon() {
-    if (soundIcon) soundIcon.textContent = Sound.isMuted ? "🔇" : "🔊";
-  }
-  updateSoundIcon();
-
-  if (btnSoundToggle) {
-    btnSoundToggle.addEventListener("click", () => {
-      Sound.toggleMute();
-      updateSoundIcon();
-      Sound.playClick();
-    });
-  }
 
   // ==========================================
   // お気に入り管理
@@ -955,7 +965,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const games = (Array.isArray(ids) ? ids : []).map(id => state.games.find(game => game.id === id)).filter(Boolean).slice(0, 3);
     const filtered = state.filter.onlyFavorite || state.filter.search || state.filter.tag !== "all" || state.filter.exactPlayers !== "all" || state.filter.maxDuration !== "all";
     section.classList.toggle("hidden", games.length === 0 || Boolean(filtered));
-    list.innerHTML = games.map(game => '<a href="#game/' + game.id + '" class="recent-game-link"><span aria-hidden="true">' + game.icon + '</span>' + renderGameTitle(game, true) + '</a>').join("");
+    list.innerHTML = games.map(game => '<a href="#game/' + game.id + '" class="recent-game-link">' + renderGameTitle(game, true) + '</a>').join("");
   }
 
   function revealSearch() {
@@ -990,12 +1000,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const hub = document.createElement("section");
     hub.className = "duel-hub";
     hub.setAttribute("aria-labelledby", "duel-hub-title");
-    hub.innerHTML = `<h2 id="duel-hub-title" tabindex="-1">2人で対決</h2>
+    hub.innerHTML = `<div class="duel-hub-head">
+        <h2 id="duel-hub-title" tabindex="-1">2人で対決</h2>
+        <span class="duel-hub-note">1台のスマホを挟んで即勝負</span>
+      </div>
       <div class="duel-mode-list">${games.map(game => {
         const mode = duelModes.get(game.id);
         return `<div class="duel-mode">
           <a class="duel-mode-link" href="#game/${game.id}" data-game-id="${game.id}">
-            <span class="duel-mode-icon" aria-hidden="true">${game.icon}</span>
             <span><strong>${mode.label}</strong><small>${mode.description}${StampRally.played.includes(game.id) ? " · プレイ済" : ""}</small></span>
           </a>${favoriteButton(game)}</div>`;
       }).join("")}</div>`;
@@ -1036,6 +1048,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // DocumentFragmentで一括挿入
     const fragment = document.createDocumentFragment();
 
+    const partyPickOrder = [...partyPicks.keys()];
+
     // 通常の一覧は7本、対決モード、その他の順。検索・お気に入りはゲーム単位で直接開く。
     const appendCard = game => {
       const card = document.createElement("div");
@@ -1047,15 +1061,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (featured && partyPicks.has(game.id)) {
         card.classList.add("party-pick");
-        card.innerHTML = `<div class="pick-top"><span class="pick-icon" aria-hidden="true">${game.icon}</span>${favoriteButton(game)}</div>
-          <h3><a class="card-title-link" href="#game/${game.id}">${renderGameTitle(game, true)}</a></h3>
+        card.innerHTML = `<div class="pick-top">
+            <h3><a class="card-title-link" href="#game/${game.id}">${renderGameTitle(game, true)}</a></h3>
+            ${favoriteButton(game)}
+          </div>
           <p class="pick-prompt">${partyPicks.get(game.id)}</p>
-          <p class="pick-meta">${game.minPlayers}〜${game.maxPlayers}人 · ${escapeHTML(game.duration)}${StampRally.played.includes(game.id) ? " · プレイ済" : ""}</p>`;
+          <div class="pick-foot">
+            <p class="pick-meta">${game.minPlayers}〜${game.maxPlayers}人 · ${escapeHTML(game.duration)}${StampRally.played.includes(game.id) ? " · プレイ済" : ""}</p>
+            <span class="pick-arrow" aria-hidden="true">↗</span>
+          </div>`;
         fragment.appendChild(card);
         return;
       }
 
-      // 先頭の殿堂入り神ゲー (ito) の特別装飾
+      // 先頭の殿堂入りゲーム (ito)
       const isHero = (game.id === "ito" && state.filter.tag === "all" && !state.filter.search && state.filter.sort === "recommended");
       if (isHero) {
         card.classList.add("hero-card");
@@ -1063,14 +1082,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const hasTool = game.toolType !== "guide-only";
       const isPlayed = StampRally.played.includes(game.id);
+      const kickerParts = [];
+      if (isHero) kickerParts.push("定番人気");
+      else if (game.badge) kickerParts.push(game.badge);
+      if (isPlayed) kickerParts.push("プレイ済");
 
       card.innerHTML = `
         <div class="card-top">
-          <span class="card-icon" aria-hidden="true">${game.icon}</span>
           <div class="card-badges-row">
-            ${isHero ? '<span class="card-badge card-badge-hero">👑 殿堂入り</span>' : ''}
-            ${isPlayed ? '<span class="card-badge card-badge-played">👑 プレイ済</span>' : ''}
-            ${!isHero && game.badge ? `<span class="card-badge badge-${game.category}">${escapeHTML(game.badge)}</span>` : ''}
+            ${kickerParts.length ? `<span class="card-badge">${escapeHTML(kickerParts.join(" · "))}</span>` : ''}
           </div>
           ${favoriteButton(game)}
         </div>
@@ -1078,14 +1098,14 @@ document.addEventListener("DOMContentLoaded", () => {
           <h3 class="card-title"><a href="#game/${game.id}" class="card-title-link">${renderGameTitle(game, true)}</a></h3>
           <p class="card-catchphrase">${escapeHTML(game.catchphrase)}</p>
           <div class="card-meta">
-            <span class="meta-pill pill-players">👥 ${game.minPlayers === game.maxPlayers ? game.minPlayers : `${game.minPlayers}〜${game.maxPlayers === 99 ? '大人数' : game.maxPlayers}`}人</span>
-            <span class="meta-pill pill-time">⏱️ ${game.duration}</span>
-            <span class="meta-pill pill-props">${hasTool ? '📱 スマホ1台' : '✋ 手ぶら'}</span>
+            <span class="meta-pill pill-players">${game.minPlayers === game.maxPlayers ? game.minPlayers : `${game.minPlayers}〜${game.maxPlayers === 99 ? '大人数' : game.maxPlayers}`}人</span>
+            <span class="meta-pill pill-time">${game.duration}</span>
+            <span class="meta-pill pill-props">${hasTool ? 'スマホ1台' : '手ぶら'}</span>
           </div>
         </div>
         <div class="card-footer">
           <span class="card-play-btn ${hasTool ? 'btn-tool' : 'btn-guide'}">
-            ${hasTool ? '遊ぶ' : 'ルールを見る'} <span aria-hidden="true">↗</span>
+            ${hasTool ? '遊ぶ' : 'ルールを見る'} <span class="play-arrow" aria-hidden="true">↗</span>
           </span>
         </div>
       `;
@@ -1160,20 +1180,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!grid) return;
     const classicGames = state.games.filter(g => g.section === "C");
     const title = document.getElementById("classic-rules-title");
-    if (title) title.textContent = `道具不要！その他の定番ルール集（${classicGames.length}選）`;
+    if (title) title.textContent = `道具不要・その他の定番ルール集（${classicGames.length}選）`;
     grid.innerHTML = classicGames.map(game => `
       <div class="classic-rule-card" data-id="${game.id}" role="button" tabindex="0" aria-label="${game.title}のルールを見る">
         <div class="classic-rule-card-header">
-          <span class="classic-rule-icon" aria-hidden="true">${game.icon}</span>
           <div class="classic-rule-header-info">
             <h4 class="classic-rule-title">${game.title}</h4>
-            <span class="classic-rule-meta">👥 ${game.minPlayers}〜${game.maxPlayers === 99 ? '∞' : game.maxPlayers}人 ｜ ⏱️ ${game.duration}</span>
+            <span class="classic-rule-meta">${game.minPlayers}〜${game.maxPlayers === 99 ? '大人数' : game.maxPlayers}人 · ${game.duration}</span>
           </div>
         </div>
         <p class="classic-rule-desc">${escapeHTML(game.catchphrase || game.overview || "")}</p>
         <div class="classic-rule-action">
           <span class="btn-classic-rule-view">
-            📖 ルールを見る ➔
+            ルールを見る <span aria-hidden="true">↗</span>
           </span>
         </div>
       </div>
@@ -1362,7 +1381,7 @@ document.addEventListener("DOMContentLoaded", () => {
           btnGoGame.classList.remove("hidden");
 
           btnGoGame.onclick = () => {
-            modalRoulette.classList.add("hidden");
+            ModalManager.close(modalRoulette);
             navigateToGame(randomGame.id);
           };
         }
@@ -1450,7 +1469,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function displayConciergeGame(game) {
     if (!game) return;
-    conciergeResIcon.textContent = game.icon;
+    if (conciergeResIcon) conciergeResIcon.textContent = "";
     conciergeResTitle.textContent = game.title;
     conciergeResCatch.textContent = game.catchphrase;
     conciergeResultArea.classList.remove("hidden");
@@ -1636,18 +1655,6 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `;
 
-    // AdSense広告枠（審査対応レディ）
-    const adPlaceholderMarkup = `
-      <div class="ad-placeholder-container mt-4">
-        <span class="ad-label">スポンサーリンク</span>
-        <div class="ad-slot-box">
-          <div class="ad-slot-content">
-            <span class="ad-slot-text">🎲 あそびポケット | 快適なゲーム体験をサポート</span>
-          </div>
-        </div>
-      </div>
-    `;
-
     // お題カスタムマネージャー用のカウント
     const customTopics = TopicManager.getCustomTopics(game.id);
     const totalPresets = (game.presets ? game.presets.length : 0) + customTopics.length;
@@ -1657,16 +1664,15 @@ document.addEventListener("DOMContentLoaded", () => {
         <!-- スリムな詳細ナビバー -->
         <nav class="detail-nav-bar" aria-label="詳細ナビゲーション">
           <button class="btn-nav-back" id="btn-back-home" aria-label="ゲーム一覧に戻る">
-            <span>◀</span> <span>一覧</span>
+            <span aria-hidden="true">←</span> <span>一覧</span>
           </button>
           <div class="detail-nav-title">
-            <span class="nav-icon" aria-hidden="true">${game.icon}</span>
             <span class="nav-name">${renderGameTitle(game)}</span>
           </div>
           <div class="detail-nav-right">
             <button class="btn-compact-share" id="detail-share-btn" aria-label="共有：この遊びを友達に送る" title="この遊びを友達に送る">共有</button>
             <button type="button" class="btn-detail-scoreboard" id="btn-detail-scoreboard" aria-label="得点を記録する">得点</button>
-            <button class="btn-mute-toggle" id="btn-detail-mute" aria-label="音声をミュート切替">🔊</button>
+            <button class="btn-mute-toggle" id="btn-detail-mute" aria-label="音声をミュート切替">音なし</button>
             ${game.isDuo ? '<span class="nav-pill pill-duo">2人用</span>' : ''}
             <span class="nav-pill pill-category">${escapeHTML(game.badge || '定番')}</span>
           </div>
@@ -1675,43 +1681,42 @@ document.addEventListener("DOMContentLoaded", () => {
         <!-- メインカード・ヒーロー -->
         <div class="detail-compact-hero">
           <div class="detail-hero-left">
-            <span class="detail-compact-icon" aria-hidden="true">${game.icon}</span>
             <div class="detail-hero-info">
               <h2 class="detail-compact-title">${renderGameTitle(game)}</h2>
               <p class="detail-compact-catch">${escapeHTML(game.catchphrase)}</p>
               <div class="detail-compact-meta">
-                <span>👥 ${game.minPlayers}〜${game.maxPlayers === 99 ? '大人数' : game.maxPlayers + '人'}</span>
-                <span>⏱️ ${game.duration}</span>
-                <span>🎒 ${escapeHTML(game.preparation)}</span>
+                <span>${game.minPlayers}〜${game.maxPlayers === 99 ? '大人数' : game.maxPlayers + '人'}</span>
+                <span>${game.duration}</span>
+                <span>${escapeHTML(game.preparation)}</span>
               </div>
             </div>
           </div>
           <div class="detail-hero-actions">
             <button class="btn-compact-fav" id="detail-fav-btn" title="お気に入り"></button>
-            <button class="btn-compact-line" id="detail-line-btn" title="LINEで送る">LINE</button>
+            <button class="btn-compact-line" id="detail-line-btn" title="LINEで送る">LINE共有</button>
 
           </div>
         </div>
 
-        <!-- 📢 幹事必見！10秒口頭ルール説明バナー -->
+        <!-- 10秒口頭ルール説明バナー -->
         <div class="speech-banner-box" role="region" aria-label="10秒口頭ルール説明">
-          <div class="speech-banner-badge">📢 幹事の10秒口頭ルール</div>
+          <div class="speech-banner-badge">10秒ルール</div>
           <p class="speech-banner-text">「${escapeHTML(game.catchphrase)}」</p>
         </div>
 
-        <!-- タブ切り替えバー (スリム) -->
+        <!-- タブ切り替えバー -->
         <div class="detail-tabs-bar">
           ${hasTool ? `
             <button class="detail-tab-btn ${state.activeTab === 'tool' ? 'active' : ''}" data-tab="tool">
-              🎮 遊ぶ
+              <span>遊ぶ</span>
             </button>
           ` : ''}
           <button class="detail-tab-btn ${state.activeTab === 'rules' ? 'active' : ''}" data-tab="rules">
-            📖 遊び方
+            <span>遊び方</span>
           </button>
           ${game.presets && game.presets.length > 0 ? `
             <button class="detail-tab-btn ${state.activeTab === 'presets' ? 'active' : ''}" data-tab="presets">
-              💡 お題 (${totalPresets})
+              <span>お題 (${totalPresets})</span>
             </button>
           ` : ''}
         </div>
@@ -1723,7 +1728,6 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="tab-pane ${state.activeTab === 'tool' ? 'active' : ''}" id="pane-tool">
               <div id="tool-mount-point"></div>
               ${affiliateMarkup}
-              ${adPlaceholderMarkup}
             </div>
           ` : ''}
 
@@ -1731,16 +1735,16 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="tab-pane ${state.activeTab === 'rules' ? 'active' : ''}" id="pane-rules">
             <div class="rules-section">
               <div class="section-box">
-                <h3 class="section-title">🌟 ゲームの概要</h3>
+                <h3 class="section-title">ゲームの概要</h3>
                 <p class="section-text">${escapeHTML(game.overview)}</p>
               </div>
 
               <div class="section-box mt-4">
-                <h3 class="section-title">📋 遊び方ステップ（10秒解説）</h3>
+                <h3 class="section-title">遊び方ステップ</h3>
                 <div class="rules-step-list">
                   ${game.rules.map(r => `
                     <div class="rule-step-item">
-                      <div class="step-badge">STEP ${r.step}</div>
+                      <div class="step-badge">0${r.step}</div>
                       <div class="step-content">
                         <h4 class="step-title">${escapeHTML(r.title)}</h4>
                         <p class="step-desc">${escapeHTML(r.desc).replace(/\n/g, '<br>')}</p>
@@ -1752,23 +1756,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
               ${game.tips && game.tips.length > 0 ? `
                 <div class="section-box mt-4 tips-box">
-                  <h3 class="section-title">🔥 盛り上がるコツ ＆ アレンジ</h3>
+                  <h3 class="section-title">盛り上がるコツ・アレンジ</h3>
                   <ul class="tips-list">
                     ${game.tips.map(t => `<li>${escapeHTML(t)}</li>`).join('')}
                   </ul>
                 </div>
               ` : ''}
 
-                <div class="section-box mt-4 p-3 border rounded text-center" style="background: rgba(255,90,95,0.05); border: 1.5px dashed rgba(255,90,95,0.3);">
-                  <p class="text-xs text-muted mb-2 font-bold">実際にこのゲームで遊んだら制覇スタンプを獲得しよう！</p>
+                <div class="section-box mt-4 p-3 border rounded text-center rules-stamp-card">
+                  <p class="text-xs text-muted mb-2 font-bold">このゲームで遊んだらプレイ記録を残せます</p>
                   <button class="btn btn-sm ${StampRally.played.includes(game.id) ? 'btn-secondary' : 'btn-primary'}" id="btn-mark-rules-played" ${StampRally.played.includes(game.id) ? 'disabled' : ''}>
-                    ${StampRally.played.includes(game.id) ? '👑 制覇スタンプ獲得済み！' : '🎉 実際に遊んだ！（スタンプ獲得）'}
+                    ${StampRally.played.includes(game.id) ? 'プレイ済みに記録済み' : '遊んだ記録をつける'}
                   </button>
                 </div>
 
               <!-- 公式アイテム・アフィリエイト枠 -->
               ${affiliateMarkup}
-              ${adPlaceholderMarkup}
             </div>
           </div>
 
@@ -1832,7 +1835,7 @@ document.addEventListener("DOMContentLoaded", () => {
                       <h4 class="seo-banner-title">『${escapeHTML(game.title)}』の厳選お題＆ルールまとめを見る</h4>
                     </div>
                     <p class="seo-banner-desc">遊び方と自作お題、シーン別のコツを詳しく紹介しています。</p>
-                    <a href="${game.seoSlug}" target="_blank" class="btn btn-outline btn-block mt-2">
+                    <a href="${game.seoSlug}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-block mt-2">
                       お題まとめ記事を開く ➔
                     </a>
                   </div>
@@ -1919,7 +1922,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (markRulesBtn) {
       markRulesBtn.addEventListener("click", () => {
         Sound.playFanfare();
-        StampRally.markPlayed(game.id);
+        if (window.AsobiPlayLifecycle && typeof window.AsobiPlayLifecycle.start === "function") {
+          window.AsobiPlayLifecycle.start(game.id);
+        } else {
+          StampRally.markPlayed(game.id);
+        }
         markRulesBtn.textContent = '👑 制覇スタンプ獲得済み！';
         markRulesBtn.className = 'btn btn-sm btn-secondary';
         markRulesBtn.disabled = true;
@@ -1950,7 +1957,7 @@ document.addEventListener("DOMContentLoaded", () => {
           Toast.success("🔗 リンクをクリップボードにコピーしました！");
         } catch (e) {
           const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareData.text)}&url=${encodeURIComponent(shareData.url)}`;
-          window.open(xUrl, "_blank");
+          window.open(xUrl, "_blank", "noopener,noreferrer");
         }
       }
     });
@@ -1961,7 +1968,7 @@ document.addEventListener("DOMContentLoaded", () => {
       detailLineBtn.addEventListener("click", () => {
         Sound.playClick();
         const lineText = `スマホ1台・手ぶらですぐ遊べる「${game.title}」をみんなで遊ぼう！\n${window.location.href}`;
-        window.open(`https://line.me/R/msg/text/?${encodeURIComponent(lineText)}`, "_blank");
+        window.open(`https://line.me/R/msg/text/?${encodeURIComponent(lineText)}`, "_blank", "noopener,noreferrer");
       });
     }
 
@@ -2090,8 +2097,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (btmNavRoulette) {
     btmNavRoulette.addEventListener("click", () => {
-      Sound.playClick();
-      modalRoulette.classList.remove("hidden");
+      if (modalRoulette) ModalManager.open(modalRoulette);
     });
   }
 
@@ -2128,8 +2134,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const isTyping = activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.isContentEditable);
 
     if (e.key === "Escape") {
-      if (!modalRoulette.classList.contains("hidden")) {
-        modalRoulette.classList.add("hidden");
+      if (e.defaultPrevented) return;
+      const anyOpenModal = document.querySelector(".modal-backdrop:not(.hidden), .modal-overlay:not(.hidden)");
+      if (anyOpenModal) {
+        ModalManager.closeAll();
         return;
       }
       if (state.activeGameId) {
@@ -2145,8 +2153,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (searchInput) { revealSearch(); searchInput.select(); }
       } else if (e.key === "r" || e.key === "R") {
         e.preventDefault();
-        Sound.playClick();
-        modalRoulette.classList.remove("hidden");
+        if (modalRoulette) ModalManager.open(modalRoulette);
       } else if (e.key === "f" || e.key === "F") {
         e.preventDefault();
         Sound.playClick();
@@ -2254,12 +2261,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateMuteButtons() {
     const isMuted = Sound.isMuted;
-    const icon = isMuted ? "🔇" : "🔊";
+    const icon = isMuted
+      ? '<svg class="ui-svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8v4h3.2l4.3 3.5V4.5L7.2 8H4z"/><path d="M14 8l4 4M18 8l-4 4"/></svg>'
+      : '<svg class="ui-svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8v4h3.2l4.3 3.5V4.5L7.2 8H4z"/><path d="M14.5 7.5a3.5 3.5 0 010 5"/></svg>';
     const label = isMuted ? "音なし：効果音をオンにする" : "音あり：効果音をオフにする";
 
     const headerMuteBtn = document.getElementById("btn-header-mute");
     if (headerMuteBtn) {
-      headerMuteBtn.innerHTML = `<span aria-hidden="true">${icon}</span><span class="sound-state-label">${isMuted ? '音なし' : '音あり'}</span>`;
+      headerMuteBtn.innerHTML = `<span class="mute-svg-wrap" aria-hidden="true">${icon}</span><span class="sound-state-label">${isMuted ? '音なし' : '音あり'}</span>`;
       headerMuteBtn.setAttribute("aria-pressed", String(isMuted));
       headerMuteBtn.setAttribute("aria-label", label);
       headerMuteBtn.title = label;
@@ -2267,7 +2276,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const detailMuteBtn = document.getElementById("btn-detail-mute");
     if (detailMuteBtn) {
-      detailMuteBtn.innerHTML = `<span aria-hidden="true">${icon}</span><span class="sound-state-label">${isMuted ? '音なし' : '音あり'}</span>`;
+      detailMuteBtn.innerHTML = `<span class="mute-svg-wrap" aria-hidden="true">${icon}</span><span class="sound-state-label">${isMuted ? '音なし' : '音あり'}</span>`;
       detailMuteBtn.setAttribute("aria-pressed", String(isMuted));
       detailMuteBtn.setAttribute("aria-label", label);
       detailMuteBtn.title = label;
