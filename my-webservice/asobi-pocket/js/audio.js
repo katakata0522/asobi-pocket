@@ -1,5 +1,5 @@
 /**
- * あそびばポケット (Asobi Pocket)
+ * あそびポケット (Asobi Pocket)
  * Web Audio API 効果音エンジン（極上プロ版・ピッチランダム化＆リッチシンセ対応）
  */
 

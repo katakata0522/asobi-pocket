@@ -29,7 +29,7 @@
   const playedBeforeInit = new Set(storageGet("asobi_played_games", []));
 
   const addQualityStylesheet = () => {
-    if (document.querySelector('link[data-asobi-quality="true"]')) return;
+    if (document.querySelector('link[href*="quality-ui.css"], link[data-asobi-quality="true"]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = "quality-ui.css";
@@ -154,10 +154,9 @@
       card.setAttribute("role", "button");
       card.setAttribute("aria-label", `${game.title}を開く`);
       card.innerHTML = `
-        <span class="rec-icon">${game.icon || "🎲"}</span>
         <div class="rec-info">
           <strong class="rec-title">${esc(game.title)}</strong>
-          <span class="rec-meta">👥 ${game.minPlayers}〜${Number(game.maxPlayers) === 99 ? "大人数" : `${game.maxPlayers}人`} / ⏱️ ${esc(game.duration)}</span>
+          <span class="rec-meta">${game.minPlayers}〜${Number(game.maxPlayers) === 99 ? "大人数" : `${game.maxPlayers}人`} · ${esc(game.duration)}</span>
         </div>`;
       const open = () => { location.hash = `game/${game.id}`; };
       card.addEventListener("click", open);
@@ -171,7 +170,7 @@
     });
 
     const title = grid.closest(".detail-recommend-section")?.querySelector(".recommend-title");
-    if (title) title.textContent = "🎲 次に遊ぶなら";
+    if (title) title.textContent = "次に遊ぶなら";
     grid.dataset.qualityGame = current.id;
   };
 
@@ -248,7 +247,7 @@
       spinTimer = setInterval(() => {
         count += 1;
         selected = candidates[Math.floor(Math.random() * candidates.length)];
-        resultIcon.textContent = selected.icon;
+        resultIcon.textContent = "";
         resultTitle.textContent = selected.title;
         resultCatch.textContent = selected.catchphrase;
         if (typeof Sound !== "undefined") Sound.playTick(700 + count * 20);
@@ -260,7 +259,11 @@
           if (typeof Toast !== "undefined") Toast.success(`「${selected.title}」が出ました！🎲`);
           goButton.classList.remove("hidden");
           goButton.onclick = () => {
-            modal.classList.add("hidden");
+            if (globalThis.ModalManager && typeof globalThis.ModalManager.close === "function") {
+              globalThis.ModalManager.close(modal);
+            } else {
+              modal.classList.add("hidden");
+            }
             location.hash = `game/${selected.id}`;
           };
         }

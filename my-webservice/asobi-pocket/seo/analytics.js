@@ -1,4 +1,9 @@
 (() => {
+  try {
+    if (window.localStorage && window.localStorage.getItem('asobi_theme_dark') === 'true') {
+      document.documentElement?.classList?.add('dark-mode');
+    }
+  } catch { /* ローカル保存不可でも記事表示を継続する。 */ }
   const measurementId = 'G-FYFPS7L9X9';
   const testMode = new URLSearchParams(window.location.search).get('asobi_test');
   let analyticsTest = testMode === '1';

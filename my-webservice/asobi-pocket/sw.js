@@ -1,4 +1,4 @@
-const CACHE_NAME = "asobi-pocket-20261119-catalog-count";
+const CACHE_NAME = "asobi-pocket-20261119-classic-refined-v4";
 
 // 起動に必要な資産を一括で保存し、欠けた版を有効化しない。
 const CORE_ASSETS = [
@@ -7,7 +7,6 @@ const CORE_ASSETS = [
   "./terms.html",
   "./privacy.html",
   "./style.css",
-  "./style.css?v=20261001",
   "./evolution.css?v=20261001-ux1",
   "./js/evolution.js",
   "./assets/pocket-mark.svg",
