@@ -6,7 +6,7 @@ const CORE_ASSETS = [
   "./index.html",
   "./terms.html",
   "./privacy.html",
-  "./style.css",
+  "./style.css?v=20261121-game-usability",
   "./evolution.css?v=20261001-ux1",
   "./js/evolution.js",
   "./assets/pocket-mark.svg",
@@ -16,8 +16,8 @@ const CORE_ASSETS = [
   "./js/audio.js",
   "./js/confetti.js",
   "./js/toast.js",
-  "./js/tools.js",
-  "./js/app.js",
+  "./js/tools.js?v=20261121-game-usability",
+  "./js/app.js?v=20261121-game-usability",
   "./seo/ito-odai.html",
   "./seo/wordwolf-odai.html",
   "./seo/asa-sore-odai.html",
@@ -29,10 +29,10 @@ const QUALITY_ASSETS = [
   "./quality-ui.css",
   "./js/quality/data-contract.js",
   "./js/quality/tool-fixes.js",
-  "./js/quality/product-ux.js"
+  "./js/quality/product-ux.js?v=20261121-game-usability"
 ];
 
 
 // 自分の範囲だけを扱い、インストール済みの画面を通信待ちで止めない。
-importScripts('./pwa-runtime.js');
+importScripts('./pwa-runtime.js?v=20261121-game-usability');
 self.PwaRuntime.configure({ cacheName: CACHE_NAME, cachePrefix: 'asobi-pocket-', assets: [...CORE_ASSETS, ...QUALITY_ASSETS, "./pwa-runtime.js", "./assets/pocket-192.png", "./assets/pocket-512.png", "./seo/seo-guide.css", "./seo/analytics.js"] });
