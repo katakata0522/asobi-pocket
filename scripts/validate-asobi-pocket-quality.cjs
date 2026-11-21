@@ -93,8 +93,9 @@ if (index) {
     'js/app.js',
     'js/quality/product-ux.js'
   ];
+  const scriptPaths = [...index.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/gi)].map(match => match[1].split(/[?#]/, 1)[0]);
   for (const script of requiredScripts) {
-    if (!index.includes(`src="${script}"`)) fail(`index.html does not load ${script}`);
+    if (!scriptPaths.includes(script)) fail(`index.html does not load ${script}`);
   }
 
   const contractPos = index.indexOf('js/quality/data-contract.js');

@@ -1,4 +1,4 @@
-const CACHE_NAME = "asobi-pocket-20261121-game-usability-v1";
+const CACHE_NAME = "asobi-pocket-20261121-game-usability-v2";
 
 // 起動に必要な資産を一括で保存し、欠けた版を有効化しない。
 const CORE_ASSETS = [
