@@ -156,7 +156,7 @@
       card.innerHTML = `
         <div class="rec-info">
           <strong class="rec-title">${esc(game.title)}</strong>
-          <span class="rec-meta">${game.minPlayers}〜${Number(game.maxPlayers) === 99 ? "大人数" : `${game.maxPlayers}人`} · ${esc(game.duration)}</span>
+          <span class="rec-meta">${formatPlayerRange(game)} · ${esc(game.duration)}</span>
         </div>`;
       const open = () => { location.hash = `game/${game.id}`; };
       card.addEventListener("click", open);

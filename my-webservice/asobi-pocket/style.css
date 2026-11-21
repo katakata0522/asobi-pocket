@@ -3727,6 +3727,10 @@ html.dark-mode .smart-tag-chip.active {
   z-index: 10;
 }
 
+.color-center-card, .color-center-card .text-muted {
+  color: #f7f5ee;
+}
+
 .color-target-word {
   font-size: 2.2rem;
   font-weight: 900;
