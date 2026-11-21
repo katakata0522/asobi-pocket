@@ -105,10 +105,10 @@ document.addEventListener("DOMContentLoaded", () => {
       Storage.set("asobi_wakelock_enabled", enabled);
       if (enabled) {
         this.request();
-        Toast.success("💡 画面常時点灯（スリープ防止）をONにしました");
+        Toast.success("画面常時点灯（スリープ防止）をONにしました");
       } else {
         this.release();
-        Toast.info("💤 画面常時点灯をOFFにしました");
+        Toast.info("画面常時点灯をOFFにしました");
       }
     }
   };
@@ -452,29 +452,24 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!this.played.includes(gameId)) {
         this.played.push(gameId);
         Storage.set("asobi_played_games", this.played);
-        Sound.playFanfare();
         const total = this.getActiveTotal();
         const activeCount = this.getActivePlayedCount();
-        Toast.success(`👑 ゲーム制覇スタンプ獲得！ (${activeCount}/${total})`);
         this.render();
         renderGrid();
 
-        if (activeCount >= total) {
-          if (typeof Confetti !== "undefined") Confetti.launch(200);
-          if (typeof Sound !== "undefined" && typeof Sound.playCelebrate === "function") {
-            Sound.playCelebrate();
-          }
-          Toast.success("🎉 全ゲーム完全制覇！真のパーティーマスター達成！🏆");
+        if (activeCount >= total && total > 0) {
+          if (typeof Confetti !== "undefined") Confetti.launch(56);
+          Toast.success("すべてのゲームをプレイしました");
         }
       }
     },
     getRank(count) {
       const total = this.getActiveTotal();
-      if (count >= total) return "マスター 👑";
-      if (count >= Math.ceil(total * 0.7)) return "エキスパート 🥇";
-      if (count >= Math.ceil(total * 0.4)) return "ベテラン 🥈";
-      if (count >= 2) return "チャレンジャー 🥉";
-      return "ルーキー 🌱";
+      if (count >= total) return "マスター";
+      if (count >= Math.ceil(total * 0.7)) return "エキスパート";
+      if (count >= Math.ceil(total * 0.4)) return "ベテラン";
+      if (count >= 2) return "チャレンジャー";
+      return "ルーキー";
     },
     render() {
       const countEl = document.getElementById("stamp-rally-count");
@@ -540,8 +535,8 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         onFinish: () => {
           this.stop();
-          Sound.playExplosion();
-          Toast.warning(`⏰ 『${this.title}』のタイマーが終了しました！`);
+          if (typeof Sound.playTimeUp === "function") Sound.playTimeUp();
+          Toast.warning(`「${this.title}」のタイマーが終了しました`);
           if (typeof onFinish === "function") onFinish();
         }
       });
@@ -608,8 +603,8 @@ document.addEventListener("DOMContentLoaded", () => {
             this.updateDisplay();
           },
           onFinish: () => {
-            Sound.playExplosion();
-            Toast.warning("⏰ トークタイム終了です！");
+            if (typeof Sound.playTimeUp === "function") Sound.playTimeUp();
+            Toast.warning("トークタイム終了です");
             this.updateDisplay();
           }
         });
@@ -626,7 +621,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!timerEl) return;
       const m = Math.floor(this.secLeft / 60).toString().padStart(2, '0');
       const s = (this.secLeft % 60).toString().padStart(2, '0');
-      timerEl.textContent = `⏱️ ${m}:${s}`;
+      timerEl.textContent = `${m}:${s}`;
       const toggleBtn = document.getElementById("btn-focus-toggle-timer");
       if (toggleBtn) {
         toggleBtn.textContent = (this.timer && this.timer.isRunning) ? "一時停止" : "スタート";
@@ -840,11 +835,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (q === "" && !state.filter.onlyFavorite) {
         if (game.section && game.section !== "main") return false;
       } else {
-        // 関連カードで見た旧モード名でも同じ遊びに戻れるよう、名前検索に限り掲載する。
-        if (game.section === "merged" && !state.filter.onlyFavorite) {
-          const names = [game.title, game.ruby, ...(game.searchAliases || [])].filter(Boolean).map(toHiragana);
-          if (!terms.some(term => names.some(name => name.includes(term)))) return false;
-        }
+        // 検索時は統合済み旧エイリアス以外(メイン・定番ルール・ツール)を検索可能に
+        if (game.section === "merged" && !state.filter.onlyFavorite) return false;
       }
 
       if (state.filter.exactPlayers !== "all") {
@@ -972,25 +964,60 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function revealSearch() {
-    if (state.activeGameId && !canLeaveGame()) return;
-    const reveal = () => {
-      document.getElementById("discovery-filters").open = true;
-      searchInput.focus({ preventScroll: true });
-      searchInput.scrollIntoView({ block: "center", behavior: "smooth" });
+    const proceed = () => {
+      const reveal = () => {
+        document.getElementById("discovery-filters").open = true;
+        searchInput.focus({ preventScroll: true });
+        searchInput.scrollIntoView({ block: "center", behavior: "smooth" });
+      };
+      if (state.activeGameId) {
+        window.location.hash = "";
+        requestAnimationFrame(() => requestAnimationFrame(reveal));
+      } else {
+        reveal();
+      }
     };
-    if (state.activeGameId) { window.location.hash = ""; requestAnimationFrame(() => requestAnimationFrame(reveal)); }
-    else reveal();
+    if (state.activeGameId) {
+      requestLeaveGame(proceed);
+      return;
+    }
+    proceed();
   }
 
   window.addEventListener("asobi:play-start", event => {
     if (!event.detail?.gameId || event.detail.gameId === state.activeGameId) state.toolHasProgress = true;
   });
 
-  function canLeaveGame() {
-    const completed = viewDetail.querySelector("#btn-ito-retry,#btn-restart-wolf,#btn-restart-ww,#btn-duel-restart,#btn-mash-retry,#btn-color-retry,#btn-restart-truths");
-    if (!state.toolHasProgress || completed) return true;
-    state.leaveApproved = confirm("進行中のゲームを終了して別の画面に移りますか？");
-    return state.leaveApproved;
+  function needsLeaveConfirmation() {
+    const completed = viewDetail.querySelector("#btn-ito-retry,#btn-restart-wolf,#btn-restart-ww,#btn-duel-restart,#btn-mash-retry,#btn-color-retry,#btn-restart-truths,#btn-gesture-retry,#btn-count30-retry,#btn-katakana-retry,.result-stage");
+    return Boolean(state.toolHasProgress && !completed);
+  }
+
+  let pendingLeaveConfirm = false;
+  function requestLeaveGame(onProceed) {
+    if (!needsLeaveConfirmation()) {
+      state.leaveApproved = true;
+      onProceed();
+      return;
+    }
+    if (pendingLeaveConfirm) return;
+    pendingLeaveConfirm = true;
+    const ask = typeof GameResult !== "undefined" && typeof GameResult.confirmAction === "function"
+      ? GameResult.confirmAction({
+          title: "進行中のゲームを終了しますか？",
+          message: "進行中のゲームを終了して別の画面に移ります。今の状態はリセットされます。",
+          confirmLabel: "終了して移動",
+          cancelLabel: "ゲームを続ける",
+          danger: true
+        })
+      : Promise.resolve(true);
+    ask.then((ok) => {
+      pendingLeaveConfirm = false;
+      if (ok) {
+        state.leaveApproved = true;
+        onProceed();
+      }
+    });
   }
 
   function favoriteButton(game) {
@@ -1070,7 +1097,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
           <p class="pick-prompt">${partyPicks.get(game.id)}</p>
           <div class="pick-foot">
-            <p class="pick-meta">${formatPlayerRange(game)} · ${escapeHTML(game.duration)}${StampRally.played.includes(game.id) ? " · プレイ済" : ""}</p>
+            <p class="pick-meta">${game.minPlayers}〜${game.maxPlayers}人 · ${escapeHTML(game.duration)}${StampRally.played.includes(game.id) ? " · プレイ済" : ""}</p>
             <span class="pick-arrow" aria-hidden="true">↗</span>
           </div>`;
         fragment.appendChild(card);
@@ -1101,7 +1128,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <h3 class="card-title"><a href="#game/${game.id}" class="card-title-link">${renderGameTitle(game, true)}</a></h3>
           <p class="card-catchphrase">${escapeHTML(game.catchphrase)}</p>
           <div class="card-meta">
-            <span class="meta-pill pill-players">${formatPlayerRange(game)}</span>
+            <span class="meta-pill pill-players">${game.minPlayers === game.maxPlayers ? game.minPlayers : `${game.minPlayers}〜${game.maxPlayers === 99 ? '大人数' : game.maxPlayers}`}人</span>
             <span class="meta-pill pill-time">${game.duration}</span>
             <span class="meta-pill pill-props">${hasTool ? 'スマホ1台' : '手ぶら'}</span>
           </div>
@@ -1189,7 +1216,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="classic-rule-card-header">
           <div class="classic-rule-header-info">
             <h4 class="classic-rule-title">${game.title}</h4>
-            <span class="classic-rule-meta">${formatPlayerRange(game)} · ${game.duration}</span>
+            <span class="classic-rule-meta">${game.minPlayers}〜${game.maxPlayers === 99 ? '大人数' : game.maxPlayers}人 · ${game.duration}</span>
           </div>
         </div>
         <p class="classic-rule-desc">${escapeHTML(game.catchphrase || game.overview || "")}</p>
@@ -1328,12 +1355,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (favToggleBtn) {
     favToggleBtn.addEventListener("click", () => {
-      if (state.activeGameId && !canLeaveGame()) return;
-      if (state.activeGameId) window.location.hash = "";
-      Sound.playClick();
-      state.filter.onlyFavorite = !state.filter.onlyFavorite;
-      favToggleBtn.classList.toggle("active", state.filter.onlyFavorite);
-      renderGrid();
+      const proceed = () => {
+        if (state.activeGameId) window.location.hash = "";
+        Sound.playClick();
+        state.filter.onlyFavorite = !state.filter.onlyFavorite;
+        favToggleBtn.classList.toggle("active", state.filter.onlyFavorite);
+        renderGrid();
+      };
+      if (state.activeGameId) {
+        requestLeaveGame(proceed);
+        return;
+      }
+      proceed();
     });
   }
 
@@ -1379,7 +1412,7 @@ document.addEventListener("DOMContentLoaded", () => {
           resultBox.classList.remove("spinning");
           Sound.playFanfare();
           Confetti.burst(80);
-          Toast.success(`「${randomGame.title}」が出ました！🎲`);
+          Toast.success(`「${randomGame.title}」に決まりました`);
           btnSpinRoulette.disabled = false;
           btnGoGame.classList.remove("hidden");
 
@@ -1522,8 +1555,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function handleRoute() {
     const hash = window.location.hash;
-    if (state.activeGameId && hash !== state.activeGameRoute && !state.leaveApproved && !canLeaveGame()) {
+    if (state.activeGameId && hash !== state.activeGameRoute && !state.leaveApproved && needsLeaveConfirmation()) {
+      const targetHash = hash;
       history.replaceState(null, "", location.pathname + location.search + state.activeGameRoute);
+      requestLeaveGame(() => {
+        if (targetHash) {
+          window.location.hash = targetHash;
+        } else {
+          history.replaceState(null, "", location.pathname + location.search);
+          handleRoute();
+        }
+      });
       return;
     }
     state.leaveApproved = false;
@@ -1620,7 +1662,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="section-box mt-4 official-product-box">
         <div class="product-box-header">
           <span class="product-badge-pr">PR</span>
-          <h3 class="product-box-title">📦 本物のカード・公式版で遊ぶとさらに盛り上がる！</h3>
+          <h3 class="product-box-title">本物のカード・公式版で遊ぶとさらに盛り上がります</h3>
         </div>
         <div class="product-box-body">
           <h4 class="product-item-name">${escapeHTML(prod.name)}</h4>
@@ -1628,10 +1670,10 @@ document.addEventListener("DOMContentLoaded", () => {
           <p class="product-desc">${escapeHTML(prod.desc)}</p>
           <div class="product-btn-group">
             <a href="${AFFILIATE_CONFIG.getAmazonUrl(prod.keyword)}" target="_blank" rel="noopener noreferrer sponsored nofollow" class="btn-affiliate btn-amazon">
-              <span class="btn-aff-icon">📦</span> Amazonで見る ➔
+              Amazonで見る ↗
             </a>
             <a href="${AFFILIATE_CONFIG.getRakutenUrl(prod.keyword)}" target="_blank" rel="noopener noreferrer sponsored nofollow" class="btn-affiliate btn-rakuten">
-              <span class="btn-aff-icon">🛍️</span> 楽天市場で探す ➔
+              楽天市場で探す ↗
             </a>
           </div>
           <p class="product-disclaimer">※上記リンクから購入されると、当サイト運営者に一定の手数料が支払われる場合があります。</p>
@@ -1641,16 +1683,16 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="section-box mt-4 official-product-box">
         <div class="product-box-header">
           <span class="product-badge-pr">PR</span>
-          <h3 class="product-box-title">🎲 『${escapeHTML(game.title)}』に関連するカードゲーム</h3>
+          <h3 class="product-box-title">『${escapeHTML(game.title)}』に関連するカードゲーム</h3>
         </div>
         <div class="product-box-body">
           <p class="product-desc">カードを囲んで遊びたいときに。関連する市販のゲームを探せます。</p>
           <div class="product-btn-group">
             <a href="${AFFILIATE_CONFIG.getAmazonUrl(affKeyword)}" target="_blank" rel="noopener noreferrer sponsored nofollow" class="btn-affiliate btn-amazon">
-              <span class="btn-aff-icon">📦</span> Amazonで探す ➔
+              Amazonで探す ↗
             </a>
             <a href="${AFFILIATE_CONFIG.getRakutenUrl(affKeyword)}" target="_blank" rel="noopener noreferrer sponsored nofollow" class="btn-affiliate btn-rakuten">
-              <span class="btn-aff-icon">🛍️</span> 楽天市場で探す ➔
+              楽天市場で探す ↗
             </a>
           </div>
           <p class="product-disclaimer">※上記リンクから購入されると、当サイト運営者に一定の手数料が支払われる場合があります。</p>
@@ -1661,6 +1703,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // お題カスタムマネージャー用のカウント
     const customTopics = TopicManager.getCustomTopics(game.id);
     const totalPresets = (game.presets ? game.presets.length : 0) + customTopics.length;
+    const speechSummaryText = game.speechSummary || (() => {
+      const firstSentence = String(game.overview || "").split("。")[0].trim();
+      return firstSentence && firstSentence !== game.catchphrase ? `${firstSentence}。` : game.catchphrase;
+    })();
 
     viewDetail.innerHTML = `
       <div class="detail-container">
@@ -1688,7 +1734,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <h2 class="detail-compact-title">${renderGameTitle(game)}</h2>
               <p class="detail-compact-catch">${escapeHTML(game.catchphrase)}</p>
               <div class="detail-compact-meta">
-                <span>${formatPlayerRange(game)}</span>
+                <span>${game.minPlayers}〜${game.maxPlayers === 99 ? '大人数' : game.maxPlayers + '人'}</span>
                 <span>${game.duration}</span>
                 <span>${escapeHTML(game.preparation)}</span>
               </div>
@@ -1704,7 +1750,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <!-- 10秒口頭ルール説明バナー -->
         <div class="speech-banner-box" role="region" aria-label="10秒口頭ルール説明">
           <div class="speech-banner-badge">10秒ルール</div>
-          <p class="speech-banner-text">「${escapeHTML(game.catchphrase)}」</p>
+          <p class="speech-banner-text">${escapeHTML(speechSummaryText)}</p>
         </div>
 
         <!-- タブ切り替えバー -->
@@ -1783,7 +1829,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="tab-pane ${state.activeTab === 'presets' ? 'active' : ''}" id="pane-presets">
               <div class="presets-section">
                 <div class="presets-header-bar">
-                  <h3 class="section-title">💡 収録お題一覧</h3>
+                  <h3 class="section-title">収録お題一覧</h3>
                   <button class="btn btn-sm btn-outline" id="btn-open-topic-custom" aria-expanded="false" aria-controls="custom-topic-editor">⚙️ お題を追加・管理する</button>
                 </div>
                 <div id="custom-topic-editor" class="section-box mt-3 hidden">
@@ -1814,7 +1860,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     } else if (p.text) {
                       text = `<span class="preset-num">${idx + 1}</span><div>${escapeHTML(p.text)}</div>`;
                     } else if (p.citizen) {
-                      text = `<span class="preset-tag">${escapeHTML(p.category)}</span><div>市民: <strong>${escapeHTML(p.citizen)}</strong> / 🐺: <strong>${escapeHTML(p.wolf)}</strong></div>`;
+                      text = `<span class="preset-tag">${escapeHTML(p.category)}</span><div>市民: <strong>${escapeHTML(p.citizen)}</strong> / ウルフ: <strong>${escapeHTML(p.wolf)}</strong></div>`;
                       rawStr = `${p.citizen} / ${p.wolf}`;
                     } else if (p.word) {
                       text = `<span class="preset-num">${idx + 1}</span><div><strong>${escapeHTML(p.word)}</strong> <span class="text-sub">(${escapeHTML(p.hint)})</span></div>`;
@@ -1834,12 +1880,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 ${game.seoSlug ? `
                   <div class="section-box mt-4 seo-link-banner">
                     <div class="seo-banner-header">
-                      <span class="seo-banner-tag">📖 完全版WEB記事</span>
+                      <span class="seo-banner-tag">お題・ルール記事</span>
                       <h4 class="seo-banner-title">『${escapeHTML(game.title)}』の厳選お題＆ルールまとめを見る</h4>
                     </div>
                     <p class="seo-banner-desc">遊び方と自作お題、シーン別のコツを詳しく紹介しています。</p>
                     <a href="${game.seoSlug}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-block mt-2">
-                      お題まとめ記事を開く ➔
+                      お題まとめ記事を開く ↗
                     </a>
                   </div>
                 ` : ''}
@@ -1851,7 +1897,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         <!-- 関連するおすすめゲーム -->
         <div class="detail-recommend-section">
-          <h3 class="recommend-title">🎲 他のおすすめゲーム</h3>
+          <h3 class="recommend-title">他のおすすめゲーム</h3>
           <div class="recommend-grid" id="recommend-grid"></div>
         </div>
       </div>
@@ -1914,10 +1960,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 戻るボタン（プレイ中の誤タップ・誤爆防止ガード付き）
     viewDetail.querySelector("#btn-back-home").addEventListener("click", () => {
-      if (!canLeaveGame()) return;
-      document.body.classList.remove("is-tool-active");
-      Sound.playClick();
-      window.location.hash = "";
+      requestLeaveGame(() => {
+        document.body.classList.remove("is-tool-active");
+        Sound.playClick();
+        window.location.hash = "";
+      });
     });
 
     // 道具なしゲームのスタンプ手動獲得ボタン
@@ -1930,9 +1977,10 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           StampRally.markPlayed(game.id);
         }
-        markRulesBtn.textContent = '👑 制覇スタンプ獲得済み！';
+        markRulesBtn.textContent = 'プレイ済みに記録済み';
         markRulesBtn.className = 'btn btn-sm btn-secondary';
         markRulesBtn.disabled = true;
+        Toast.success('プレイ済みに記録しました');
       });
     }
 
@@ -1957,7 +2005,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         try {
           await navigator.clipboard.writeText(window.location.href);
-          Toast.success("🔗 リンクをクリップボードにコピーしました！");
+          Toast.success("リンクをクリップボードにコピーしました");
         } catch (e) {
           const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareData.text)}&url=${encodeURIComponent(shareData.url)}`;
           window.open(xUrl, "_blank", "noopener,noreferrer");
@@ -2066,10 +2114,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const rCard = document.createElement("div");
       rCard.className = "recommend-card";
       rCard.innerHTML = `
-        <span class="rec-icon">${rec.icon}</span>
         <div class="rec-info">
           <strong class="rec-title">${escapeHTML(rec.title)}</strong>
-          <span class="rec-meta">👥 ${formatPlayerRange(rec)} / ⏱️ ${rec.duration}</span>
+          <span class="rec-meta">${rec.minPlayers}〜${rec.maxPlayers === 99 ? '大人数' : rec.maxPlayers + '人'} · ${escapeHTML(rec.duration)}</span>
         </div>
       `;
       rCard.addEventListener("click", () => {
@@ -2091,10 +2138,11 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btmNavHome) {
     btmNavHome.addEventListener("click", (e) => {
       e.preventDefault();
-      if (!canLeaveGame()) return;
-      Sound.playClick();
-      window.location.hash = "";
-      if (!state.activeGameId) showHome();
+      requestLeaveGame(() => {
+        Sound.playClick();
+        window.location.hash = "";
+        if (!state.activeGameId) showHome();
+      });
     });
   }
 
@@ -2106,18 +2154,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (btmNavFav) {
     btmNavFav.addEventListener("click", () => {
-      if (state.activeGameId && !canLeaveGame()) return;
-      Sound.playClick();
-      if (window.location.hash !== "") {
-        window.location.hash = "";
+      const proceed = () => {
+        Sound.playClick();
+        if (window.location.hash !== "") {
+          window.location.hash = "";
+        }
+        state.filter.onlyFavorite = !state.filter.onlyFavorite;
+        favToggleBtn.classList.toggle("active", state.filter.onlyFavorite);
+        btmNavFav.classList.toggle("active", state.filter.onlyFavorite);
+        renderGrid();
+        if (state.filter.onlyFavorite) {
+          Toast.info("★ お気に入りのゲームを表示中");
+        }
+      };
+      if (state.activeGameId) {
+        requestLeaveGame(proceed);
+        return;
       }
-      state.filter.onlyFavorite = !state.filter.onlyFavorite;
-      favToggleBtn.classList.toggle("active", state.filter.onlyFavorite);
-      btmNavFav.classList.toggle("active", state.filter.onlyFavorite);
-      renderGrid();
-      if (state.filter.onlyFavorite) {
-        Toast.info("★ お気に入りのゲームを表示中");
-      }
+      proceed();
     });
   }
 
@@ -2144,8 +2198,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       if (state.activeGameId) {
-        if (!canLeaveGame()) return;
-        window.location.hash = "";
+        requestLeaveGame(() => {
+          window.location.hash = "";
+        });
         return;
       }
     }
@@ -2159,21 +2214,29 @@ document.addEventListener("DOMContentLoaded", () => {
         if (modalRoulette) ModalManager.open(modalRoulette);
       } else if (e.key === "f" || e.key === "F") {
         e.preventDefault();
-        Sound.playClick();
-        if (window.location.hash !== "") {
-          window.location.hash = "";
+        const proceedFav = () => {
+          Sound.playClick();
+          if (window.location.hash !== "") {
+            window.location.hash = "";
+          }
+          state.filter.onlyFavorite = !state.filter.onlyFavorite;
+          if (favToggleBtn) favToggleBtn.classList.toggle("active", state.filter.onlyFavorite);
+          if (btmNavFav) btmNavFav.classList.toggle("active", state.filter.onlyFavorite);
+          renderGrid();
+          Toast.info(state.filter.onlyFavorite ? "★ お気に入りのゲームを表示中" : "すべてのゲームを表示中");
+        };
+        if (state.activeGameId) {
+          requestLeaveGame(proceedFav);
+        } else {
+          proceedFav();
         }
-        state.filter.onlyFavorite = !state.filter.onlyFavorite;
-        if (favToggleBtn) favToggleBtn.classList.toggle("active", state.filter.onlyFavorite);
-        if (btmNavFav) btmNavFav.classList.toggle("active", state.filter.onlyFavorite);
-        renderGrid();
-        Toast.info(state.filter.onlyFavorite ? "★ お気に入りのゲームを表示中" : "すべてのゲームを表示中");
       } else if (e.key === "h" || e.key === "H") {
         e.preventDefault();
-        Sound.playClick();
-        if (!canLeaveGame()) return;
-        window.location.hash = "";
-        if (!state.activeGameId) showHome();
+        requestLeaveGame(() => {
+          Sound.playClick();
+          window.location.hash = "";
+          if (!state.activeGameId) showHome();
+        });
       }
     }
   });
@@ -2207,7 +2270,7 @@ document.addEventListener("DOMContentLoaded", () => {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === "accepted") {
-        Toast.success("🎉 アプリのインストールを開始しました！");
+        Toast.success("アプリのインストールを開始しました");
         if (pwaInstallBanner) pwaInstallBanner.classList.add("hidden");
       }
       deferredPrompt = null;
@@ -2292,9 +2355,9 @@ document.addEventListener("DOMContentLoaded", () => {
     updateMuteButtons();
     syncSettingsModal();
     if (isMuted) {
-      Toast.info("🔇 完全消音（マナーモード）にしました");
+      Toast.info("効果音をOFFにしました");
     } else {
-      Toast.success("🔊 効果音をオンにしました");
+      Toast.success("効果音をONにしました");
     }
   }
 
@@ -2330,7 +2393,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!Sound.isMuted) Sound.playClick();
       Storage.set("asobi_sound_muted", Sound.isMuted);
       updateMuteButtons();
-      Toast.info(e.target.checked ? "🔊 効果音をONにしました" : "🔇 効果音をOFF（完全消音）にしました");
+      Toast.info(e.target.checked ? "効果音をONにしました" : "効果音をOFFにしました");
     });
   }
 
@@ -2344,7 +2407,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const game = state.games.find(g => g.id === state.activeGameId);
         if (game) showGameDetail(game);
       }
-      Toast.info(e.target.checked ? "🧒 ふりがなモード（キッズ対応）をONにしました" : "🧒 ふりがなモードをOFFにしました");
+      Toast.info(e.target.checked ? "ふりがなモードをONにしました" : "ふりがなモードをOFFにしました");
     });
   }
 
@@ -2354,7 +2417,7 @@ document.addEventListener("DOMContentLoaded", () => {
       state.isDark = e.target.checked;
       Storage.set("asobi_theme_dark", state.isDark);
       applyTheme();
-      Toast.info(e.target.checked ? "🌙 ダークモードに切り替えました" : "☀️ ライトモードに切り替えました");
+      Toast.info(e.target.checked ? "ダークモードに切り替えました" : "ライトモードに切り替えました");
     });
   }
 
@@ -2381,8 +2444,17 @@ document.addEventListener("DOMContentLoaded", () => {
   // アプリ保存データの一括初期化
   const btnResetAppData = document.getElementById("btn-reset-app-data");
   if (btnResetAppData) {
-    btnResetAppData.addEventListener("click", () => {
-      if (confirm("【確認】お気に入り、プレイ履歴、スタンプラリー、カスタムお題など、すべての保存データを初期化しますか？")) {
+    btnResetAppData.addEventListener("click", async () => {
+      const ok = typeof GameResult !== "undefined" && typeof GameResult.confirmAction === "function"
+        ? await GameResult.confirmAction({
+            title: "保存データを初期化しますか？",
+            message: "お気に入り、プレイ履歴、スタンプラリー、カスタムお題など、すべての保存データを初期化します。",
+            confirmLabel: "初期化する",
+            cancelLabel: "キャンセル",
+            danger: true
+          })
+        : true;
+      if (ok) {
         Sound.playExplosion();
         const keysToRemove = [];
         for (let i = 0; i < localStorage.length; i++) {
@@ -2436,8 +2508,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (btnResetScores) {
-    btnResetScores.addEventListener("click", () => {
-      if (confirm("全員のスコアを0にリセットしますか？")) {
+    btnResetScores.addEventListener("click", async () => {
+      const ok = typeof GameResult !== "undefined" && typeof GameResult.confirmAction === "function"
+        ? await GameResult.confirmAction({
+            title: "スコアをリセットしますか？",
+            message: "全員のスコアを0点に戻します。",
+            confirmLabel: "リセットする",
+            cancelLabel: "キャンセル",
+            danger: true
+          })
+        : true;
+      if (ok) {
         ScoreBoard.resetScores();
       }
     });
@@ -2589,10 +2670,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // オフライン / オンライン検知 & SW更新監視
   // ==========================================
   window.addEventListener("offline", () => {
-    Toast.warning("📴 オフラインになりました（オフラインでも遊べます！）");
+    Toast.warning("オフラインになりました（そのまま遊べます）");
   });
   window.addEventListener("online", () => {
-    Toast.success("🌐 オンラインに復帰しました");
+    Toast.success("オンラインに復帰しました");
   });
 
   if ("serviceWorker" in navigator) {

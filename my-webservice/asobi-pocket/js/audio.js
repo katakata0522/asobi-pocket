@@ -259,6 +259,34 @@ class SoundEngine {
     } catch (e) {}
   }
 
+  playTimeUp() {
+    if (this.isMuted) return;
+    this.init();
+    if (!this.ctx) return;
+
+    try {
+      this.hapticMedium();
+      const now = this.ctx.currentTime;
+      [
+        { f: 783.99, t: 0.0, d: 0.22 }, // G5
+        { f: 659.25, t: 0.14, d: 0.28 }, // E5
+        { f: 523.25, t: 0.28, d: 0.42 } // C5
+      ].forEach((n) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const start = now + n.t;
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(n.f, start);
+        gain.gain.setValueAtTime(0.22, start);
+        gain.gain.exponentialRampToValueAtTime(0.01, start + n.d);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(start);
+        osc.stop(start + n.d);
+      });
+    } catch (e) {}
+  }
+
   hapticLight() {
     this.vibrate(12);
   }

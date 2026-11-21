@@ -25,7 +25,7 @@
     }
   };
 
-  const celebrate = (count = 70) => {
+  const celebrate = (count = 54) => {
     play("playFanfare");
     if (typeof Confetti !== "undefined" && typeof Confetti.burst === "function") {
       Confetti.burst(count);
@@ -37,6 +37,12 @@
     const m = Math.floor(safe / 60);
     const s = safe % 60;
     return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  };
+
+  const scrollIntoViewSafe = (el) => {
+    if (typeof GameResult !== "undefined" && typeof GameResult.scrollResultIntoView === "function") {
+      GameResult.scrollResultIntoView(el);
+    }
   };
 
   // Word Wolf: keep the actual majority/minority words in round state so
@@ -87,8 +93,8 @@
       if (state.step === "setup") {
         container.innerHTML = `
           <div class="tool-card">
-            <h3 class="tool-title">🐺 ワードウルフ設定</h3>
-            ${articlePreset ? '<p class="text-sm text-sub mb-3">記事で選んだペアを使います。</p>' : ''}
+            <h3 class="tool-title">ワードウルフ設定</h3>
+            ${articlePreset ? '<p class="text-sm text-sub mb-3">記事で選んだペアを使います。</p>' : ""}
             <div class="setting-group">
               <label class="setting-label">参加人数: <span id="val-player-count" class="badge-num">${state.playerCount}人</span></label>
               <input type="range" class="range-slider" min="3" max="${game.maxPlayers}" value="${state.playerCount}" id="range-player-count">
@@ -109,7 +115,7 @@
               </div>
             </div>
             <details class="player-custom-accordion"><summary>席順と名前を設定（任意）</summary><div class="table-roster"></div></details>
-            <button class="btn btn-primary btn-block btn-lg" id="btn-start-wolf">役職とお題を配る ➔</button>
+            <button class="btn btn-primary btn-block btn-lg" id="btn-start-wolf">役職とお題を配る</button>
           </div>`;
 
         roster.mount(container, state.playerCount);
@@ -134,8 +140,8 @@
         });
         container.querySelector("#btn-start-wolf").addEventListener("click", () => {
           const presets = getActiveTopicsForGame(game.id, game.presets)
-            .map(topic => typeof topic === "string" ? customWolfPair(topic) : topic)
-            .filter(topic => topic?.citizen && topic?.wolf);
+            .map((topic) => (typeof topic === "string" ? customWolfPair(topic) : topic))
+            .filter((topic) => topic?.citizen && topic?.wolf);
           if (!articlePreset && !presets.length) {
             toast("warning", "ワードウルフのお題がありません");
             return;
@@ -176,18 +182,18 @@
         container.innerHTML = `
           <div class="tool-card text-center">
             <div class="pass-indicator">順番: ${state.currentPlayerIdx + 1} / ${state.playerCount} 人目</div>
-            <h3 class="player-turn-title">📱 ${esc(player.name)} さん</h3>
+            <h3 class="player-turn-title">${esc(player.name)} さん</h3>
             <p class="pass-desc">スマホを受け取った本人だけが、お題を確認してください。</p>
             <div class="secret-box-wrapper">
-              <button class="btn btn-secret" id="btn-reveal-word"><span class="secret-icon">🔒</span><span class="secret-text">タップしてお題を見る</span></button>
+              <button class="btn btn-secret" id="btn-reveal-word"><span class="secret-text">タップしてお題を見る</span></button>
               <div class="secret-word-card hidden" id="secret-word-card">
                 <span class="word-category">ジャンル: ${esc(state.selectedPreset?.category || "トーク")}</span>
                 <div class="the-word">${esc(player.word)}</div>
-                <p class="word-caution">※この言葉そのものは言わずに会話しよう</p>
-                <button class="btn btn-outline btn-xs mt-2" id="btn-hide-word">🙈 伏せる</button>
+                <p class="word-caution">※この言葉そのものは言わずに会話しましょう</p>
+                <button class="btn btn-outline btn-xs mt-2" id="btn-hide-word">伏せる</button>
               </div>
             </div>
-            <button class="btn btn-primary btn-block mt-4 hidden" id="btn-next-player">${state.currentPlayerIdx + 1 < state.playerCount ? "確認した！次の人へ ➔" : "全員完了！トークを始める ⏱️"}</button>
+            <button class="btn btn-primary btn-block mt-4 hidden" id="btn-next-player">${state.currentPlayerIdx + 1 < state.playerCount ? "確認した・次の人へ" : "全員確認完了・トークを始める"}</button>
           </div>`;
 
         const reveal = container.querySelector("#btn-reveal-word");
@@ -221,12 +227,12 @@
         let running = true;
         container.innerHTML = `
           <div class="tool-card text-center">
-            <div class="timer-badge">💬 トークタイム中！</div>
+            <div class="timer-badge">トークタイム中</div>
             <div class="timer-display-lg" id="wolf-timer-display">${formatTime(remaining)}</div>
-            <p class="timer-guide">まず一周、「いつ、どこで見かける？」に一言ずつ答えよう。自分のお題は秘密！</p>
+            <p class="timer-guide">まず一周、「いつ、どこで見かける？」に一言ずつ答えてみましょう。自分のお題は秘密です。</p>
             <div class="btn-group-row">
               <button class="btn btn-secondary" id="btn-toggle-timer">一時停止</button>
-              <button class="btn btn-danger" id="btn-finish-talk">トーク終了＆投票 ➔</button>
+              <button class="btn btn-danger" id="btn-finish-talk">トーク終了・投票へ</button>
             </div>
           </div>`;
 
@@ -244,7 +250,7 @@
           }
           if (remaining <= 0) {
             clearTimer();
-            play("playExplosion");
+            play("playTimeUp");
             state.step = "vote";
             render();
           }
@@ -266,12 +272,12 @@
       if (state.step === "vote") {
         container.innerHTML = `
           <div class="tool-card text-center">
-            <h3 class="tool-title">🗳️ 最多票の人を選択</h3>
+            <h3 class="tool-title">最多票の人を選択</h3>
             <p class="vote-instruction">一斉に指差し、最多票の人を1人選びます。同票なら候補者が一言ずつ話し、その人たちだけでもう一度投票してください。</p>
             <div class="vote-player-grid">
-              ${state.players.map((player) => `<button class="btn btn-outline btn-vote-target ${state.selectedVoteId === player.id ? "active" : ""}" data-pid="${player.id}">👤 ${esc(player.name)}</button>`).join("")}
+              ${state.players.map((player) => `<button class="btn btn-outline btn-vote-target ${state.selectedVoteId === player.id ? "active" : ""}" data-pid="${player.id}">${esc(player.name)}</button>`).join("")}
             </div>
-            <button class="btn btn-warning btn-lg btn-block mt-4" id="btn-open-roles" ${state.selectedVoteId ? "" : "disabled"}>投票確定！結果発表 🎉</button>
+            <button class="btn btn-warning btn-lg btn-block mt-4" id="btn-open-roles" ${state.selectedVoteId ? "" : "disabled"}>投票を確定して結果を見る</button>
           </div>`;
 
         container.querySelectorAll(".btn-vote-target").forEach((button) => {
@@ -282,10 +288,18 @@
           });
         });
         container.querySelector("#btn-open-roles").addEventListener("click", () => {
-          celebrate(80);
+          const picked = state.players.find((p) => p.id === state.selectedVoteId);
+          if (picked?.role === "wolf") {
+            // 逆転チャンスが残っている段階では早まった祝福を出さない
+            play("playSelect");
+          } else {
+            celebrate(54);
+          }
           state.step = "result";
           render();
-          container.querySelector("#wolf-result-title").focus();
+          const titleEl = container.querySelector("#wolf-result-title");
+          if (titleEl) titleEl.focus({ preventScroll: true });
+          scrollIntoViewSafe(container.querySelector(".tool-card"));
         });
         return;
       }
@@ -293,43 +307,88 @@
       const votedPlayer = state.players.find((player) => player.id === state.selectedVoteId);
       const caughtWolf = votedPlayer?.role === "wolf";
       const waitingForGuess = caughtWolf && state.guessCorrect === null;
+      const outcome = typeof GameResult !== "undefined"
+        ? GameResult.judgeWordWolfOutcome({ votedRole: caughtWolf ? "wolf" : "citizen", guessCorrect: state.guessCorrect })
+        : {
+          tone: waitingForGuess ? "pending" : (caughtWolf && !state.guessCorrect ? "win" : "wolf"),
+          eyebrow: waitingForGuess ? "ウルフを発見" : "ゲーム終了",
+          title: waitingForGuess ? "ウルフの逆転チャンス" : (caughtWolf && !state.guessCorrect ? "市民チームの勝利" : "ウルフ側の勝利"),
+          subtitle: ""
+        };
+
+      const rolesHtml = waitingForGuess ? "" : `
+        <div class="roles-list my-3">
+          ${state.players.map((player) => `
+            <div class="role-item ${player.role === "wolf" ? "is-wolf" : "is-citizen"}">
+              <span class="role-icon">${player.role === "wolf" ? "ウルフ" : "市民"}</span>
+              <span class="role-player">${esc(player.name)}</span>
+              <span class="role-word">お題: <strong>${esc(player.word)}</strong></span>
+            </div>`).join("")}
+        </div>`;
+
+      const voteSummaryHtml = `
+        <div class="topic-box my-3 text-left">
+          <span class="topic-tag">投票結果</span>
+          <p class="mt-1 font-bold">${esc(votedPlayer?.name || "未選択")} は ${caughtWolf ? "ウルフでした。市民側が少数派を発見！" : "市民でした。ウルフ側の勝利です。"}</p>
+        </div>`;
+
+      const guessSectionHtml = waitingForGuess && state.spokenGuess ? `
+        <div class="topic-box my-3 text-left" id="wolf-host-verdict">
+          <span class="topic-tag">司会による判定</span>
+          <p class="mt-1">確定した回答: <strong>${esc(state.spokenGuess)}</strong></p>
+          <p>市民のお題: <strong>${esc(state.citizenWord)}</strong></p>
+          <p class="text-xs text-sub mt-1">同じものを指す言い方であれば正解です。</p>
+          <div class="flex gap-2 mt-3">
+            <button class="btn btn-success flex-1" id="wolf-host-yes">同じものを指す</button>
+            <button class="btn btn-secondary flex-1" id="wolf-host-no">別のものを指す</button>
+          </div>
+        </div>` : waitingForGuess ? `
+        <form class="topic-box my-3 text-left wolf-guess-box" id="wolf-guess-form">
+          <span class="topic-tag">逆転回答</span>
+          <p class="text-xs text-sub mt-1">最多票になったウルフ本人が1回だけ回答します。市民に配られたお題を当てれば逆転勝利です。</p>
+          <div class="decision-input-row mt-2">
+            <input type="text" class="decision-input" id="input-wolf-guess" aria-label="市民のお題" placeholder="市民のお題を入力..." autocomplete="off">
+            <button type="submit" class="btn btn-danger" id="btn-judge-wolf-guess">判定する</button>
+          </div>
+          <div class="flex gap-2 mt-2 flex-wrap">
+            <button type="submit" class="btn btn-sm btn-outline" id="btn-host-wolf-guess">この回答を確定して司会が判定</button>
+            <button type="button" class="btn btn-sm btn-outline" id="btn-skip-wolf-guess">パスしてお題を公開</button>
+          </div>
+        </form>` : "";
+
+      const guessOutcomeHtml = caughtWolf && !waitingForGuess ? `
+        <div id="wolf-guess-result-msg" class="topic-box my-3 font-bold">
+          ${state.guessCorrect
+            ? `正解！市民のお題は「${esc(state.citizenWord)}」でした。ウルフ側の逆転勝利！`
+            : `市民のお題は「${esc(state.citizenWord)}」でした。市民側の勝利です！`}
+        </div>` : "";
+
+      const resultHeaderHtml = typeof GameResult !== "undefined"
+        ? GameResult.renderResultCard({
+          tone: outcome.tone,
+          eyebrow: outcome.eyebrow,
+          title: outcome.title,
+          subtitle: outcome.subtitle,
+          titleId: "wolf-result-title",
+          metrics: waitingForGuess ? [] : [
+            { label: "市民のお題", value: state.citizenWord },
+            { label: "ウルフのお題", value: state.wolfWord }
+          ]
+        })
+        : `<h3 class="mb-2" id="wolf-result-title" tabindex="-1">${esc(outcome.title)}</h3>`;
+
       container.innerHTML = `
         <div class="tool-card text-center">
-          <h3 class="mb-2" id="wolf-result-title" tabindex="-1">${waitingForGuess ? "🐺 ウルフの逆転チャンス" : "🎉 正解 ＆ 役職オープン！"}</h3>
-          ${waitingForGuess ? "" : `<div class="roles-list my-3">
-            ${state.players.map((player) => `
-              <div class="role-item ${player.role === "wolf" ? "is-wolf" : "is-citizen"}">
-                <span class="role-icon">${player.role === "wolf" ? "🐺 ウルフ" : "👤 市民"}</span>
-                <span class="role-player">${esc(player.name)}</span>
-                <span class="role-word">お題: <strong>${esc(player.word)}</strong></span>
-              </div>`).join("")}
-          </div>`}
-          <div class="topic-box my-3 text-left">
-            <span class="topic-tag">🗳️ 投票結果</span>
-            <p class="mt-1 font-bold">${esc(votedPlayer?.name || "未選択")} は ${caughtWolf ? "🐺 ウルフでした。市民側が少数派を発見！" : "👤 市民でした。ウルフ側の勝利！"}</p>
-          </div>
-          ${waitingForGuess && state.spokenGuess ? `<div class="topic-box my-3" id="wolf-host-verdict">
-            <p>確定した回答：${esc(state.spokenGuess)}</p><p>市民のお題：${esc(state.citizenWord)}</p>
-            <p>そのお題と同じものを指す言い方なら正解です。</p>
-            <button class="btn btn-success" id="wolf-host-yes">同じものを指す</button>
-            <button class="btn btn-secondary" id="wolf-host-no">別のものを指す</button></div>` : waitingForGuess ? `
-            <form class="topic-box my-3 text-left wolf-guess-box" id="wolf-guess-form">
-              <p class="text-xs text-sub mt-1">最多票になったウルフ本人が1回だけ回答します。市民に配られたお題を当てれば逆転です。</p>
-              <div class="decision-input-row mt-2">
-                <input type="text" class="decision-input" id="input-wolf-guess" aria-label="市民のお題" placeholder="市民のお題を入力..." autocomplete="off">
-                <button type="submit" class="btn btn-danger" id="btn-judge-wolf-guess">判定！ 🎯</button>
-              </div>
-              <button type="submit" class="btn btn-sm btn-outline mt-2" id="btn-host-wolf-guess">この回答を確定して司会が判定</button>
-              <button type="button" class="btn btn-sm btn-outline mt-2" id="btn-skip-wolf-guess">パスしてお題を公開</button>
-            </form>` : ""}
-          ${caughtWolf && !waitingForGuess ? `
-            <div id="wolf-guess-result-msg" class="topic-box my-3 font-bold">
-              ${state.guessCorrect
-                ? `🎉 大正解！【${esc(state.citizenWord)}】<br>🐺 ウルフ側の逆転勝利！`
-                : `⭕ 市民のお題は【${esc(state.citizenWord)}】でした。市民側の勝利！`}
-            </div>` : ""}
-          <button class="btn btn-primary btn-block mt-4" id="btn-restart-wolf">もう一度遊ぶ 🔄</button>
+          ${resultHeaderHtml}
+          ${rolesHtml}
+          ${voteSummaryHtml}
+          ${guessSectionHtml}
+          ${guessOutcomeHtml}
+          <button class="btn btn-primary btn-block mt-4" id="btn-restart-wolf">もう一度遊ぶ</button>
         </div>`;
+
+      const titleNode = container.querySelector("#wolf-result-title");
+      if (titleNode) titleNode.tabIndex = -1;
 
       if (waitingForGuess) {
         const form = container.querySelector("#wolf-guess-form");
@@ -337,10 +396,11 @@
         const finishGuess = (correct) => {
           if (state.guessCorrect !== null) return;
           state.guessCorrect = correct;
-          if (correct) celebrate(100);
-          else play("playWrong");
+          celebrate(56);
           render();
-          container.querySelector("#wolf-result-title").focus();
+          const heading = container.querySelector("#wolf-result-title");
+          if (heading) heading.focus({ preventScroll: true });
+          scrollIntoViewSafe(container.querySelector(".tool-card"));
         };
         container.querySelector("#wolf-host-yes")?.addEventListener("click", () => finishGuess(true));
         container.querySelector("#wolf-host-no")?.addEventListener("click", () => finishGuess(false));
@@ -355,7 +415,7 @@
           if (event.submitter?.id === "btn-host-wolf-guess") {
             state.spokenGuess = guess;
             render();
-            container.querySelector("#wolf-host-yes").focus();
+            container.querySelector("#wolf-host-yes")?.focus();
             return;
           }
           finishGuess(matchesTopicAnswer(state.citizenWord, guess));
@@ -375,8 +435,8 @@
     container.innerHTML = `
       <div class="finger-roulette-container" id="touch-area">
         <div class="roulette-overlay" id="roulette-overlay">
-          <div class="roulette-title">👆 指を置く / PCは2か所以上クリック</div>
-          <div class="roulette-desc">スマホはマルチタッチ、PCはクリックした位置を仮想の指として抽選します。</div>
+          <div class="roulette-title">画面に指を置く / PCは2か所以上クリック</div>
+          <div class="roulette-desc">スマホは全員の指を同時に置き、PCはクリックした位置を仮想の指として抽選します。</div>
           <div class="roulette-mode-select">
             <span>選ぶ人数: </span>
             <button class="btn-pill active" data-pick="1">1人選ぶ</button>
@@ -390,11 +450,14 @@
     const canvas = container.querySelector("#roulette-canvas");
     const ctx = canvas.getContext("2d");
     const overlay = container.querySelector("#roulette-overlay");
-    const colors = ["#FF5A5F", "#48BB78", "#4299E1", "#ECC94B", "#9F7AEA", "#ED64A6", "#38B2AC", "#FF9800"];
+    const colors = ["#E54B36", "#2F855A", "#2B6CB0", "#D69E2E", "#7C5CBF", "#C84B8C", "#2C7A7B", "#DD6B20"];
     const points = new Map();
     let pickCount = 1;
     let phase = "waiting";
     let countdownTimer = null;
+    let countdownStart = 0;
+    const COUNTDOWN_MS = 2200;
+    let lastCount = 0;
     let winners = [];
     let rafId = null;
     let desktopId = 1000;
@@ -408,6 +471,8 @@
     const reset = () => {
       if (countdownTimer) clearTimeout(countdownTimer);
       countdownTimer = null;
+      countdownStart = 0;
+      lastCount = 0;
       points.clear();
       winners = [];
       phase = "waiting";
@@ -417,55 +482,138 @@
     const decide = () => {
       if (points.size < 2) return reset();
       phase = "decided";
+      countdownTimer = null;
       const ids = [...points.keys()];
       winners = [];
       while (winners.length < Math.min(pickCount, ids.length)) {
         const id = ids[Math.floor(Math.random() * ids.length)];
         if (!winners.includes(id)) winners.push(id);
       }
-      celebrate(60);
-      toast("success", "決定しました！もう一度なら指を離す / PCは再クリック");
+      celebrate(48);
+      toast("success", "決定しました！もう一度遊ぶときは指を離すか再クリックしてください");
     };
 
-    const maybeStart = () => {
+    const maybeStart = (forceReset = false) => {
       if (points.size < 2) {
         if (countdownTimer) clearTimeout(countdownTimer);
         countdownTimer = null;
+        countdownStart = 0;
+        lastCount = points.size;
         phase = "waiting";
         overlay.classList.remove("hidden");
         return;
       }
       overlay.classList.add("hidden");
-      if (phase === "waiting") {
+      // 3人目以降が指を置いた（人数が変わった）ときはカウントダウンをリセットして全員が揃うのを待つ
+      if (phase === "waiting" || forceReset || points.size !== lastCount) {
+        if (countdownTimer) clearTimeout(countdownTimer);
         phase = "counting";
-        play("playTick", 600);
-        countdownTimer = setTimeout(decide, 1800);
+        lastCount = points.size;
+        countdownStart = Date.now();
+        play("playTick", 600 + Math.min(points.size, 8) * 55);
+        countdownTimer = setTimeout(decide, COUNTDOWN_MS);
       }
+    };
+
+    const drawStar = (x, y, spikes, outerR, innerR) => {
+      let rot = (Math.PI / 2) * 3;
+      const step = Math.PI / spikes;
+      ctx.beginPath();
+      ctx.moveTo(x, y - outerR);
+      for (let i = 0; i < spikes; i++) {
+        ctx.lineTo(x + Math.cos(rot) * outerR, y + Math.sin(rot) * outerR);
+        rot += step;
+        ctx.lineTo(x + Math.cos(rot) * innerR, y + Math.sin(rot) * innerR);
+        rot += step;
+      }
+      ctx.closePath();
+      ctx.fill();
     };
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const now = Date.now();
+      const progress = phase === "counting" && countdownStart > 0
+        ? Math.min(1, (now - countdownStart) / COUNTDOWN_MS)
+        : 0;
+      let idx = 0;
       points.forEach((point, id) => {
+        idx += 1;
         const winner = winners.includes(id);
-        const radius = winner ? 72 : 54;
+        const dimmed = phase === "decided" && !winner;
+        const radius = winner ? 68 : 48;
+        ctx.save();
+        if (dimmed) ctx.globalAlpha = 0.28;
+
+        // 外側の波紋リング
         ctx.beginPath();
-        ctx.arc(point.x, point.y, radius + 10 * Math.sin(Date.now() / 160), 0, Math.PI * 2);
-        ctx.strokeStyle = `${point.color}66`;
-        ctx.lineWidth = 6;
+        ctx.arc(point.x, point.y, radius + 10 + 6 * Math.sin(now / 180 + idx), 0, Math.PI * 2);
+        ctx.strokeStyle = winner ? "rgba(230, 184, 76, 0.55)" : `${point.color}55`;
+        ctx.lineWidth = winner ? 5 : 4;
         ctx.stroke();
+
+        // カウントダウン進捗アーク（全員が置いたあと決定までの目安）
+        if (phase === "counting" && progress > 0) {
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, radius + 16, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress);
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+          ctx.lineWidth = 4;
+          ctx.stroke();
+        }
+
+        // メインサークル
         ctx.beginPath();
         ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = winner ? "#FFD700" : point.color;
+        ctx.fillStyle = winner ? "#E6B84C" : point.color;
         ctx.fill();
         ctx.strokeStyle = "#FFFFFF";
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 3.5;
         ctx.stroke();
+
+        // 中央の図形（絵文字を使わず端正なベクター描画）
         ctx.fillStyle = "#FFFFFF";
-        ctx.font = winner ? "bold 32px sans-serif" : "24px sans-serif";
+        if (winner) {
+          drawStar(point.x, point.y - 6, 5, 18, 8);
+          ctx.font = "700 13px sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("決定", point.x, point.y + 22);
+        } else {
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, 12, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(255,255,255,0.85)";
+          ctx.lineWidth = 2.5;
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, 4.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      });
+
+      // 上部に現在の参加人数・抽選ステータスを控えめに表示
+      if (points.size > 0) {
+        const remainSec = Math.max(0, Math.ceil((COUNTDOWN_MS - (now - countdownStart)) / 1000));
+        const label = phase === "decided"
+          ? `${points.size}人から ${winners.length}人 を決定`
+          : phase === "counting"
+            ? `${points.size}人が待機中 · あと ${remainSec}秒（追加で指を置くと延長）`
+            : `${points.size}人配置中 · もう1人置くと抽選開始`;
+        ctx.save();
+        ctx.font = "700 13px sans-serif";
+        const tw = ctx.measureText(label).width;
+        const bw = tw + 28;
+        const bx = (canvas.width - bw) / 2;
+        ctx.fillStyle = "rgba(18, 22, 28, 0.72)";
+        ctx.beginPath();
+        ctx.roundRect(bx, 14, bw, 32, 8);
+        ctx.fill();
+        ctx.fillStyle = "#FFFFFF";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(winner ? "👑" : "👆", point.x, point.y);
-      });
+        ctx.fillText(label, canvas.width / 2, 30);
+        ctx.restore();
+      }
       rafId = requestAnimationFrame(draw);
     };
 
@@ -475,6 +623,7 @@
         reset();
         return;
       }
+      const prevTouchCount = [...points.keys()].filter((id) => String(id).startsWith("t-")).length;
       [...points.keys()].filter((id) => String(id).startsWith("t-")).forEach((id) => points.delete(id));
       const rect = canvas.getBoundingClientRect();
       [...event.touches].forEach((touch, index) => {
@@ -484,7 +633,7 @@
           color: colors[index % colors.length]
         });
       });
-      if (phase !== "decided") maybeStart();
+      if (phase !== "decided") maybeStart(event.touches.length !== prevTouchCount);
     };
 
     area.addEventListener("touchstart", syncTouches, { passive: false });
@@ -508,7 +657,7 @@
         desktopId += 1;
         points.set(`m-${desktopId}`, { x, y, color: colors[points.size % colors.length] });
       }
-      maybeStart();
+      maybeStart(true);
     });
 
     container.querySelectorAll(".btn-pill").forEach((button) => {
@@ -539,6 +688,7 @@
       matchWinner: null,
       message: "",
       reactionMs: null,
+      bestMs: null,
       startAt: 0,
       cueTimer: null,
       nextTimer: null
@@ -560,7 +710,7 @@
       state.cueTimer = setTimeout(() => {
         state.phase = "go";
         state.startAt = performance.now();
-        state.message = "押せ！！！";
+        state.message = "今だ！(GO!)";
         play("playCountBeep", true);
         play("hapticWarning");
         render();
@@ -574,8 +724,9 @@
       if (state.scoreP1 >= 3 || state.scoreP2 >= 3) {
         state.matchWinner = state.scoreP1 >= 3 ? 1 : 2;
         state.phase = "win";
-        celebrate(90);
+        celebrate(56);
         render();
+        scrollIntoViewSafe(container.querySelector(".duel-container"));
         return;
       }
       state.phase = "feedback";
@@ -588,10 +739,13 @@
         if (state.cueTimer) clearTimeout(state.cueTimer);
         state.cueTimer = null;
         play("playWrong");
-        play("hapticExplosion");
+        play("hapticWarning");
         afterPoint(player === 1 ? 2 : 1, `PLAYER ${player} フライング！`);
       } else if (state.phase === "go") {
         state.reactionMs = Math.round(performance.now() - state.startAt);
+        if (state.bestMs === null || state.reactionMs < state.bestMs) {
+          state.bestMs = state.reactionMs;
+        }
         play("playCorrect");
         play("hapticSuccess");
         afterPoint(player, `PLAYER ${player}: ${state.reactionMs}ms`);
@@ -599,15 +753,36 @@
     };
 
     function render() {
+      const winOverlay = state.phase === "win"
+        ? `<div class="duel-overlay">
+            <div class="tool-card duel-result-card text-center">
+              ${typeof GameResult !== "undefined"
+                ? GameResult.renderResultCard({
+                  tone: "win",
+                  eyebrow: "勝負決着",
+                  title: `PLAYER ${state.matchWinner} の勝利`,
+                  subtitle: state.message,
+                  compact: true,
+                  metrics: [
+                    { label: "最終スコア", value: `${state.scoreP1} - ${state.scoreP2}` },
+                    ...(state.bestMs !== null ? [{ label: "最速反応", value: `${state.bestMs}ms` }] : [])
+                  ]
+                })
+                : `<h3>PLAYER ${state.matchWinner} の勝利</h3>`}
+              <button class="btn btn-primary btn-block mt-3" id="btn-duel-restart">もう一度対決する</button>
+            </div>
+          </div>`
+        : "";
+
       container.innerHTML = `
         <div class="duel-container ${state.phase}">
           <div class="duel-half duel-top" id="duel-p1-area"><div class="duel-content rotate-180"><div class="duel-score">スコア: ${state.scoreP1} / 3</div><div class="duel-player-label">PLAYER 1</div><div class="duel-status-text ${state.phase === "go" ? "go" : ""}">${state.phase === "ready" ? "準備" : state.message}</div></div></div>
           <div class="duel-divider">
-            ${state.phase === "ready" ? '<button class="btn btn-primary btn-sm" id="btn-duel-start">勝負スタート！</button>' : ""}
-            ${state.phase === "win" ? `<div class="duel-win-banner">🏆 PLAYER ${state.matchWinner} の勝利！<button class="btn btn-sm btn-outline mt-1" id="btn-duel-restart">もう一度対決</button></div>` : ""}
-            ${!["ready", "win"].includes(state.phase) ? `<div class="duel-center-text">${state.reactionMs == null ? state.message : `${state.reactionMs}ms`}</div>` : ""}
+            ${state.phase === "ready" ? '<button class="btn btn-primary btn-sm" id="btn-duel-start">勝負スタート</button>' : ""}
+            ${!["ready", "win"].includes(state.phase) ? `<div class="duel-center-text">${state.reactionMs == null ? esc(state.message) : `${state.reactionMs}ms`}</div>` : ""}
           </div>
           <div class="duel-half duel-bottom" id="duel-p2-area"><div class="duel-content"><div class="duel-player-label">PLAYER 2</div><div class="duel-score">スコア: ${state.scoreP2} / 3</div><div class="duel-status-text ${state.phase === "go" ? "go" : ""}">${state.phase === "ready" ? "準備" : state.message}</div></div></div>
+          ${winOverlay}
         </div>`;
 
       const start = container.querySelector("#btn-duel-start");
@@ -620,6 +795,7 @@
         state.phase = "ready";
         state.matchWinner = null;
         state.message = "";
+        state.bestMs = null;
         render();
       });
       if (["waiting", "go"].includes(state.phase)) {
@@ -644,8 +820,13 @@
       cleanup();
       if (state.phase !== "playing") return;
       state.phase = "result";
-      celebrate(80);
+      const verdict = typeof GameResult !== "undefined"
+        ? GameResult.judgeDuelMash(state.p1Taps, state.p2Taps, 100 - state.gauge)
+        : { shouldCelebrate: state.gauge !== 50 };
+      if (verdict.shouldCelebrate) celebrate(56);
+      else play("playTimeUp");
       render();
+      scrollIntoViewSafe(container.querySelector(".duel-container"));
     };
 
     const refresh = () => {
@@ -675,14 +856,44 @@
     };
 
     function render() {
-      const winner = state.gauge < 50 ? "PLAYER 1" : state.gauge > 50 ? "PLAYER 2" : "引き分け";
+      // state.gauge decreases toward 0 when P1 pushes, increases toward 100 when P2 pushes.
+      // Pass p1Progress = 100 - state.gauge into judgeDuelMash (100 = P1 KO, 0 = P2 KO).
+      const verdict = typeof GameResult !== "undefined"
+        ? GameResult.judgeDuelMash(state.p1Taps, state.p2Taps, 100 - state.gauge)
+        : {
+          tone: state.gauge === 50 ? "neutral" : "win",
+          headline: state.gauge < 50 ? "PLAYER 1 の勝利" : state.gauge > 50 ? "PLAYER 2 の勝利" : "引き分け",
+          subtitle: `P1 ${state.p1Taps}回 対 P2 ${state.p2Taps}回`
+        };
+
+      const resultOverlay = state.phase === "result"
+        ? `<div class="duel-overlay">
+            <div class="tool-card duel-result-card text-center">
+              ${typeof GameResult !== "undefined"
+                ? GameResult.renderResultCard({
+                  tone: verdict.tone,
+                  eyebrow: verdict.isKo ? "完全決着" : "タイムアップ",
+                  title: verdict.headline,
+                  subtitle: verdict.subtitle,
+                  compact: true,
+                  metrics: [
+                    { label: "PLAYER 1", value: `${state.p1Taps}回` },
+                    { label: "PLAYER 2", value: `${state.p2Taps}回` }
+                  ]
+                })
+                : `<h2>${esc(verdict.headline)}</h2><p class="my-2">P1: ${state.p1Taps}回 vs P2: ${state.p2Taps}回</p>`}
+              <button class="btn btn-primary btn-block mt-3" id="btn-mash-retry">もう一度対決する</button>
+            </div>
+          </div>`
+        : "";
+
       container.innerHTML = `
         <div class="duel-container mash-battle ${state.phase}">
-          <div class="duel-half duel-top" id="mash-p1-btn"><div class="duel-content rotate-180"><div class="duel-player-label">PLAYER 1</div><div class="mash-count">連打数: ${state.p1Taps}</div><div class="mash-tap-hint">ここを全力連打！👆</div></div></div>
-          <div class="mash-gauge-track"><div class="mash-gauge-p1" style="height:${100 - state.gauge}%"></div><div class="mash-gauge-center-line"><span class="badge badge-warning font-mono">⏱️ ${state.timeLeft}s</span></div><div class="mash-gauge-p2" style="height:${state.gauge}%"></div></div>
-          <div class="duel-half duel-bottom" id="mash-p2-btn"><div class="duel-content"><div class="duel-player-label">PLAYER 2</div><div class="mash-count">連打数: ${state.p2Taps}</div><div class="mash-tap-hint">ここを全力連打！👆</div></div></div>
-          ${state.phase === "ready" ? '<div class="duel-overlay"><div class="tool-card text-center"><h3>💥 連打パワーバトル</h3><p>15秒間、1台の画面を上下から連打！</p><button class="btn btn-primary btn-lg mt-2" id="btn-mash-start">FIGHT スタート！</button></div></div>' : ""}
-          ${state.phase === "result" ? `<div class="duel-overlay"><div class="tool-card text-center"><h2>🏆 ${winner}</h2><p class="my-2">P1: ${state.p1Taps}回 vs P2: ${state.p2Taps}回</p><button class="btn btn-primary btn-block mt-3" id="btn-mash-retry">もう一度対決 🔄</button></div></div>` : ""}
+          <div class="duel-half duel-top" id="mash-p1-btn"><div class="duel-content rotate-180"><div class="duel-player-label">PLAYER 1</div><div class="mash-count">連打数: ${state.p1Taps}</div><div class="mash-tap-hint">ここを全力連打</div></div></div>
+          <div class="mash-gauge-track"><div class="mash-gauge-p1" style="height:${100 - state.gauge}%"></div><div class="mash-gauge-center-line"><span class="badge badge-warning font-mono">${state.timeLeft}s</span></div><div class="mash-gauge-p2" style="height:${state.gauge}%"></div></div>
+          <div class="duel-half duel-bottom" id="mash-p2-btn"><div class="duel-content"><div class="duel-player-label">PLAYER 2</div><div class="mash-count">連打数: ${state.p2Taps}</div><div class="mash-tap-hint">ここを全力連打</div></div></div>
+          ${state.phase === "ready" ? '<div class="duel-overlay"><div class="tool-card duel-result-card text-center"><h3 class="tool-title">連打パワーバトル</h3><p class="text-sm text-sub my-2">15秒間、1台の画面を上下から連打して相手の陣地を押し切ります。</p><button class="btn btn-primary btn-lg btn-block mt-2" id="btn-mash-start">バトルスタート</button></div></div>' : ""}
+          ${resultOverlay}
         </div>`;
 
       const start = container.querySelector("#btn-mash-start");
@@ -698,7 +909,7 @@
         state.timerId = setInterval(() => {
           state.timeLeft -= 1;
           const badge = container.querySelector(".mash-gauge-center-line span");
-          if (badge) badge.textContent = `⏱️ ${state.timeLeft}s`;
+          if (badge) badge.textContent = `${state.timeLeft}s`;
           if (state.timeLeft <= 0) finish();
         }, 1000);
       });
@@ -728,7 +939,9 @@
         ? getActiveTopicsForGame(game.id, game.presets)
         : (Array.isArray(game.presets) ? game.presets : []);
       if (!source.length) return "日本の都道府県";
-      const item = source[Math.floor(Math.random() * source.length)];
+      const item = typeof window !== "undefined" && window.DeckManager && typeof window.DeckManager.getNext === "function"
+        ? window.DeckManager.getNext(`yamanote-fixed_${game.id || "yamanote"}`, source)
+        : source[Math.floor(Math.random() * source.length)];
       return typeof extractTopicText === "function" ? extractTopicText(item) : (typeof item === "string" ? item : item.text || item.title || "お題");
     };
 
@@ -743,9 +956,14 @@
       state.intervalId = setInterval(() => {
         play("playClap");
         const visual = container.querySelector(".rhythm-visual-beat");
+        const dot = container.querySelector(".rhythm-pulse-dot");
         if (visual) {
           visual.classList.add("beat-hit");
           setTimeout(() => visual.classList.remove("beat-hit"), 140);
+        }
+        if (dot) {
+          dot.classList.add("beat-hit");
+          setTimeout(() => dot.classList.remove("beat-hit"), 140);
         }
       }, (60 / state.bpm) * 1000);
     };
@@ -755,12 +973,12 @@
     function render() {
       container.innerHTML = `
         <div class="tool-card text-center">
-          <h3 class="tool-title">🚃 山手線ゲーム ＆ リズムマシーン</h3>
-          <div class="topic-box my-3"><span class="topic-tag">🎯 お題</span><div class="topic-text">${esc(state.currentTopic)}</div><button class="btn btn-sm btn-outline mt-2" id="btn-next-yamanote-topic">お題チェンジ 🎲</button></div>
-          <div class="rhythm-display-box my-4 ${state.isPlaying ? "beating" : ""}"><div class="rhythm-visual-beat">👏</div><div class="rhythm-bpm-display font-mono">BPM: ${state.bpm}</div></div>
-          <div class="flex gap-2 justify-center my-3"><button class="btn ${state.isPlaying ? "btn-danger" : "btn-success"} btn-lg" id="btn-toggle-rhythm">${state.isPlaying ? "⏹️ リズム停止" : "▶️ リズムスタート"}</button></div>
+          <h3 class="tool-title">山手線ゲーム・リズムマシーン</h3>
+          <div class="topic-box my-3"><span class="topic-tag">今回のお題</span><div class="topic-text">${esc(state.currentTopic)}</div><button class="btn btn-sm btn-outline mt-2" id="btn-next-yamanote-topic">お題を変える</button></div>
+          <div class="rhythm-display-box my-4 ${state.isPlaying ? "beating" : ""}"><div class="rhythm-visual-beat" aria-hidden="true"><span class="rhythm-pulse-dot"></span></div><div class="rhythm-bpm-display font-mono">BPM ${state.bpm}</div></div>
+          <div class="flex gap-2 justify-center my-3"><button class="btn ${state.isPlaying ? "btn-danger" : "btn-success"} btn-lg" id="btn-toggle-rhythm">${state.isPlaying ? "リズム停止" : "リズムスタート"}</button></div>
           <div class="setting-group mt-3"><label class="setting-label">テンポ (BPM):</label><div class="flex gap-2 justify-center items-center"><button class="btn btn-sm btn-outline" id="btn-bpm-down">-10</button><input type="range" class="range-slider" min="60" max="160" value="${state.bpm}" id="range-bpm"><button class="btn btn-sm btn-outline" id="btn-bpm-up">+10</button></div></div>
-          <div class="scoreboard-quick-box mt-4"><span>アウト回数: <strong class="badge-num">${state.foulCount}</strong></span><button class="btn btn-sm btn-danger ml-2" id="btn-add-foul">アウト！ ✕</button><button class="btn btn-sm btn-outline ml-1" id="btn-reset-foul">リセット</button></div>
+          <div class="scoreboard-quick-box mt-4"><span>アウト回数: <strong class="badge-num">${state.foulCount}</strong></span><button class="btn btn-sm btn-danger ml-2" id="btn-add-foul">アウト</button><button class="btn btn-sm btn-outline ml-1" id="btn-reset-foul">リセット</button></div>
         </div>`;
 
       container.querySelector("#btn-next-yamanote-topic").addEventListener("click", () => {
@@ -797,14 +1015,16 @@
   };
 
   GameTools.renderGesture = function renderGestureFixed(container, game) {
-    const state = { score: 0, timeLeft: 60, phase: "ready", timerId: null, currentTopic: "" };
+    const state = { score: 0, passed: 0, timeLeft: 60, phase: "ready", timerId: null, currentTopic: "" };
 
     const getTopic = () => {
       const source = typeof getActiveTopicsForGame === "function"
         ? getActiveTopicsForGame(game.id, game.presets)
         : (Array.isArray(game.presets) ? game.presets : []);
       if (!source.length) return "ゴリラがバナナを食べているところ";
-      const item = source[Math.floor(Math.random() * source.length)];
+      const item = typeof window !== "undefined" && window.DeckManager && typeof window.DeckManager.getNext === "function"
+        ? window.DeckManager.getNext(`gesture-fixed_${game.id || "gesture"}`, source)
+        : source[Math.floor(Math.random() * source.length)];
       return typeof extractTopicText === "function" ? extractTopicText(item) : (typeof item === "string" ? item : item.text || item.title || "お題");
     };
 
@@ -821,27 +1041,49 @@
     const finish = () => {
       cleanup();
       state.phase = "result";
-      play("playExplosion");
+      if (state.score > 0) celebrate(54);
+      else play("playTimeUp");
       render();
+      scrollIntoViewSafe(container.querySelector(".tool-card"));
     };
 
     function render() {
+      const resultHtml = state.phase === "result"
+        ? `<div class="won-box my-3">
+            ${typeof GameResult !== "undefined"
+              ? GameResult.renderResultCard({
+                tone: state.score > 0 ? "win" : "neutral",
+                eyebrow: "タイムアップ",
+                title: `${state.score} 問正解`,
+                subtitle: state.score >= 5 ? "息ぴったりの好記録です。" : state.score > 0 ? "ナイスジェスチャーでした。" : "次はテンポよくパスも使ってみましょう。",
+                compact: true,
+                metrics: [
+                  { label: "正解数", value: `${state.score}問` },
+                  { label: "パス回数", value: `${state.passed}回` }
+                ]
+              })
+              : `<h2 class="text-success">終了！ ${state.score} 問正解</h2>`}
+            <button class="btn btn-primary btn-block mt-3" id="btn-gesture-retry">もう一度遊ぶ</button>
+          </div>`
+        : "";
+
       container.innerHTML = `
         <div class="tool-card text-center">
-          <h3 class="tool-title">🤫 サイレント・ジェスチャーゲーム</h3>
+          <h3 class="tool-title">サイレント・ジェスチャー</h3>
           <div class="gesture-score-badge my-2">正解数: <strong class="badge-num font-mono">${state.score}</strong> 問</div>
           ${state.phase === "playing" ? `<div class="topic-box my-4"><span class="topic-tag">演じる人だけが見るお題</span><div class="topic-text font-black text-xl">${esc(state.currentTopic)}</div></div>` : ""}
-          ${state.phase === "ready" ? "<p>演じる人にスマホを渡してください。回答する人に画面を向けずにスタート！</p>" : ""}
-          <div class="timer-display font-mono text-2xl ${state.timeLeft <= 10 ? "text-danger animate-pulse" : "text-primary"}">⏱️ 残り: ${state.timeLeft} 秒</div>
-          ${state.phase === "ready" ? '<button class="btn btn-primary btn-lg btn-block mt-3" id="btn-gesture-start">スタート！ (60秒)</button>' : ""}
-          ${state.phase === "playing" ? '<div class="flex gap-2 justify-center my-3"><button class="btn btn-success btn-lg flex-1" id="btn-gesture-correct">⭕ 正解！次へ</button><button class="btn btn-outline btn-lg" id="btn-gesture-pass">パス ➔</button></div>' : ""}
-          ${state.phase === "result" ? `<div class="won-box my-3"><h2 class="text-success">終了！ ${state.score} 問正解 🎉</h2><button class="btn btn-primary mt-2" id="btn-gesture-retry">もう一度</button></div>` : ""}
+          ${state.phase === "ready" ? '<p class="text-sm text-sub my-3">演じる人にスマホを渡してください。回答する人に画面が見えないようにしてスタートします。</p>' : ""}
+          ${state.phase !== "result" ? `<div class="timer-display font-mono text-2xl ${state.timeLeft <= 10 ? "text-danger animate-pulse" : "text-primary"}">残り ${state.timeLeft} 秒</div>` : ""}
+          ${state.phase === "ready" ? '<button class="btn btn-primary btn-lg btn-block mt-3" id="btn-gesture-start">スタート (60秒)</button>' : ""}
+          ${state.phase === "playing" ? '<div class="flex gap-2 justify-center my-3"><button class="btn btn-success btn-lg flex-1" id="btn-gesture-correct">正解・次へ</button><button class="btn btn-outline btn-lg" id="btn-gesture-pass">パス</button></div>' : ""}
+          ${resultHtml}
         </div>`;
 
       const start = container.querySelector("#btn-gesture-start");
       if (start) start.addEventListener("click", () => {
         cleanup();
         state.score = 0;
+        state.passed = 0;
         state.timeLeft = 60;
         state.phase = "playing";
         state.currentTopic = getTopic();
@@ -851,7 +1093,7 @@
           state.timeLeft -= 1;
           const timer = container.querySelector(".timer-display");
           if (timer) {
-            timer.textContent = `⏱️ 残り: ${state.timeLeft} 秒`;
+            timer.textContent = `残り ${state.timeLeft} 秒`;
             if (state.timeLeft <= 10) timer.classList.add("text-danger", "animate-pulse");
           }
           if (state.timeLeft <= 0) finish();
@@ -860,9 +1102,9 @@
       const correct = container.querySelector("#btn-gesture-correct");
       if (correct) correct.addEventListener("click", () => { state.score += 1; play("playCorrect"); nextTopic(); });
       const pass = container.querySelector("#btn-gesture-pass");
-      if (pass) pass.addEventListener("click", () => { play("playClick"); nextTopic(); });
+      if (pass) pass.addEventListener("click", () => { state.passed += 1; play("playClick"); nextTopic(); });
       const retry = container.querySelector("#btn-gesture-retry");
-      if (retry) retry.addEventListener("click", () => { state.phase = "ready"; state.score = 0; state.timeLeft = 60; render(); });
+      if (retry) retry.addEventListener("click", () => { state.phase = "ready"; state.score = 0; state.passed = 0; state.timeLeft = 60; render(); });
     }
 
     render();

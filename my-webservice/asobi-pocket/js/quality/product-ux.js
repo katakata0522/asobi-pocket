@@ -156,7 +156,7 @@
       card.innerHTML = `
         <div class="rec-info">
           <strong class="rec-title">${esc(game.title)}</strong>
-          <span class="rec-meta">${formatPlayerRange(game)} · ${esc(game.duration)}</span>
+          <span class="rec-meta">${game.minPlayers}〜${Number(game.maxPlayers) === 99 ? "大人数" : `${game.maxPlayers}人`} · ${esc(game.duration)}</span>
         </div>`;
       const open = () => { location.hash = `game/${game.id}`; };
       card.addEventListener("click", open);
@@ -256,7 +256,7 @@
           clearSpin();
           if (typeof Sound !== "undefined") Sound.playFanfare();
           if (typeof Confetti !== "undefined" && typeof Confetti.burst === "function") Confetti.burst(80);
-          if (typeof Toast !== "undefined") Toast.success(`「${selected.title}」が出ました！🎲`);
+          if (typeof Toast !== "undefined") Toast.success(`「${selected.title}」に決まりました`);
           goButton.classList.remove("hidden");
           goButton.onclick = () => {
             if (globalThis.ModalManager && typeof globalThis.ModalManager.close === "function") {
@@ -402,11 +402,21 @@
       } else if (id === "btn-close-scoreboard") {
         drawer?.classList.add("hidden");
       } else if (id === "btn-reset-scores") {
-        if (confirm("全員のスコアを0にリセットしますか？")) {
+        const ask = typeof window.GameResult !== "undefined" && typeof window.GameResult.confirmAction === "function"
+          ? window.GameResult.confirmAction({
+              title: "スコアをリセットしますか？",
+              message: "全員のスコアを0点に戻します。",
+              confirmLabel: "リセットする",
+              cancelLabel: "キャンセル",
+              danger: true
+            })
+          : Promise.resolve(true);
+        ask.then((ok) => {
+          if (!ok) return;
           players.forEach((player) => { player.score = 0; });
           save();
           render();
-        }
+        });
       } else if (id === "btn-add-player") {
         players.push({ name: `プレイヤー${players.length + 1}`, score: 0 });
         save();

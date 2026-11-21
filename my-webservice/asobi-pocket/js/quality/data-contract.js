@@ -324,19 +324,19 @@
         const categories = ["all", "声・言い方", "演技", "言葉・発想", "ミニチャレンジ"];
         container.innerHTML = `
           <div class="tool-card text-center batsu-card">
-            <h3 class="tool-title">⚡ ソフトミッションルーレット</h3>
+            <h3 class="tool-title">ソフトミッションルーレット</h3>
             <p class="text-sub text-sm mb-2">飲酒・痛み・暴露なし。嫌なら理由を言わずパスできます。</p>
             <div class="gacha-cat-filters" aria-label="ミッションカテゴリ">
               ${categories.map((category) => `<button class="btn-filter-tag ${selectedCategory === category ? "active" : ""}" data-batsu-category="${escapeMarkup(category)}">${category === "all" ? "すべて" : escapeMarkup(category)}</button>`).join("")}
             </div>
             <div class="batsu-mission-box my-4" id="batsu-box" aria-live="polite">
-              <span class="batsu-badge">🎯 ${escapeMarkup(current.category)}</span>
+              <span class="batsu-badge">${escapeMarkup(current.category)}</span>
               <div class="batsu-text" id="batsu-text">${escapeMarkup(current.text)}</div>
             </div>
             <div class="batsu-actions">
-              <button class="btn btn-danger btn-lg btn-block pulse-scale" id="btn-spin-batsu">ルーレットを回す！ 🎰</button>
-              <button class="btn btn-outline btn-block mt-2" id="btn-batsu-pass">↩ これはパス・引き直す</button>
-              <button class="btn btn-success btn-block mt-2" id="btn-batsu-done">ミッション達成！ 👏</button>
+              <button class="btn btn-danger btn-lg btn-block pulse-scale" id="btn-spin-batsu">ルーレットを回す</button>
+              <button class="btn btn-outline btn-block mt-2" id="btn-batsu-pass">これはパス・引き直す</button>
+              <button class="btn btn-success btn-block mt-2" id="btn-batsu-done">ミッション達成</button>
             </div>
             <p class="text-xs text-sub mt-3">パスに理由は不要です。本人の意思とその場のルールを優先してください。</p>
           </div>`;
@@ -375,15 +375,15 @@
           markStarted();
           current = pick();
           if (typeof Sound !== "undefined") Sound.playClick();
-          if (typeof Toast !== "undefined") Toast.info("パスOK！別のミッションに引き直しました ↩");
+          if (typeof Toast !== "undefined") Toast.info("パスOK。別のミッションに引き直しました");
           render();
         });
 
         container.querySelector("#btn-batsu-done").addEventListener("click", () => {
           markStarted();
           if (typeof Sound !== "undefined") Sound.playFanfare();
-          if (typeof Confetti !== "undefined") Confetti.burst(60);
-          if (typeof Toast !== "undefined") Toast.success("ナイス！ミッション達成 👏");
+          if (typeof Confetti !== "undefined") Confetti.burst(46);
+          if (typeof Toast !== "undefined") Toast.success("ミッション達成");
         });
       };
 

@@ -37,7 +37,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
 
-  <link rel="stylesheet" href="style.css?v=20261121-game-usability">
+  <link rel="stylesheet" href="style.css?v=20261001">
 
   <!-- Google Analytics: KatakataLab共通プロパティ。SPAのhash遷移もpage_viewとして送信 -->
   <script>
@@ -132,10 +132,9 @@
   <!-- 🔟 ダイナミックアイランド風・フローティングミニタイマー -->
   <div class="dynamic-island-timer hidden" id="dynamic-island-timer" role="status" aria-live="polite">
     <div class="dynamic-island-content">
-      <span class="dynamic-island-icon">⏱️</span>
       <span class="dynamic-island-title" id="dynamic-island-title">タイマー稼働中</span>
       <span class="dynamic-island-time font-mono" id="dynamic-island-time">00:00</span>
-      <button class="dynamic-island-btn" id="dynamic-island-jump" aria-label="ゲームへ戻る">戻る ➔</button>
+      <button class="dynamic-island-btn" id="dynamic-island-jump" aria-label="ゲームへ戻る">戻る</button>
       <button class="dynamic-island-close" id="dynamic-island-close" aria-label="タイマーを閉じる">×</button>
     </div>
   </div>
@@ -491,13 +490,12 @@
   <!-- PWA アプリインストールバナー (スマート表示) -->
   <aside class="pwa-install-banner hidden" id="pwa-install-banner" aria-label="アプリインストール案内">
     <div class="pwa-banner-inner">
-      <span class="pwa-banner-icon" aria-hidden="true">🎲</span>
       <div class="pwa-banner-text">
         <strong>あそびポケットをホーム画面に追加</strong>
-        <span>1タップで即起動＆オフラインでも快適プレイ！</span>
+        <span>1タップで起動・オフラインでもそのまま遊べます</span>
       </div>
       <div class="pwa-banner-actions">
-        <button class="btn btn-primary btn-sm" id="btn-pwa-install">追加する 📲</button>
+        <button class="btn btn-primary btn-sm" id="btn-pwa-install">追加する</button>
         <button class="btn-pwa-close" id="btn-pwa-close" aria-label="閉じる">✕</button>
       </div>
     </div>
@@ -507,11 +505,11 @@
   <div class="modal-overlay hidden" id="modal-pwa-guide" role="dialog" aria-modal="true" aria-labelledby="pwa-guide-title">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 id="pwa-guide-title">📲 ホーム画面に追加する方法</h3>
+        <h3 id="pwa-guide-title">ホーム画面に追加する方法</h3>
         <button class="btn-modal-close" id="btn-close-pwa-guide" aria-label="閉じる">✕</button>
       </div>
       <div class="modal-body text-left">
-        <p class="text-sub mb-3">iPhone (Safari) をお使いの方は、以下の手順でアプリアイコンとして追加できます：</p>
+        <p class="text-sub mb-3">iPhone (Safari) をお使いの方は、以下の手順でホーム画面に追加できます。</p>
         <div class="rules-step-list">
           <div class="rule-step-item">
             <div class="step-badge">1</div>
@@ -524,20 +522,20 @@
             <div class="step-badge">2</div>
             <div class="step-content">
               <h4 class="step-title">「ホーム画面に追加」を選択</h4>
-              <p class="step-desc">メニューをスクロールして［➕ ホーム画面に追加］をタップします。</p>
+              <p class="step-desc">メニューをスクロールして「ホーム画面に追加」をタップします。</p>
             </div>
           </div>
           <div class="rule-step-item">
             <div class="step-badge">3</div>
             <div class="step-content">
-              <h4 class="step-title">右上の「追加」をタップで完了！</h4>
-              <p class="step-desc">全画面・オフラインでいつでも爆速起動できるようになります！</p>
+              <h4 class="step-title">右上の「追加」をタップして完了</h4>
+              <p class="step-desc">全画面表示でいつでもすぐ開けるようになります。</p>
             </div>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-primary btn-block" id="btn-pwa-guide-ok">わかりました！ 👍</button>
+        <button class="btn btn-primary btn-block" id="btn-pwa-guide-ok">わかりました</button>
       </div>
     </div>
   </div>
@@ -546,17 +544,17 @@
   <div class="modal-overlay hidden talk-focus-overlay" id="modal-talk-focus" role="dialog" aria-modal="true">
     <div class="talk-focus-container">
       <div class="talk-focus-header">
-        <span class="badge badge-warning">🗣️ トーク集中モード</span>
+        <span class="badge badge-warning">トーク集中モード</span>
         <button class="btn-focus-close" id="btn-close-talk-focus" aria-label="通常表示に戻る">✕ 戻る</button>
       </div>
       <div class="talk-focus-body">
-        <div class="talk-focus-topic-tag">🎯 現在のお題</div>
+        <div class="talk-focus-topic-tag">現在のお題</div>
         <h2 class="talk-focus-topic-text" id="talk-focus-topic">お題がここに表示されます</h2>
-        <div class="talk-focus-timer font-mono" id="talk-focus-timer">⏱️ 03:00</div>
-        <p class="talk-focus-hint">📱 スマホを机の真ん中に置いて、みんなの顔を見て話そう！</p>
+        <div class="talk-focus-timer font-mono" id="talk-focus-timer">03:00</div>
+        <p class="talk-focus-hint">スマホを机の真ん中に置いて、みんなの顔を見て話しましょう</p>
       </div>
       <div class="talk-focus-footer">
-        <button class="btn btn-outline btn-lg text-white" id="btn-focus-toggle-timer">⏱️ タイマースタート/一時停止</button>
+        <button class="btn btn-outline btn-lg text-white" id="btn-focus-toggle-timer">タイマー開始 / 一時停止</button>
       </div>
     </div>
   </div>
@@ -607,12 +605,13 @@
   <script defer src="data/article-topics.js"></script>
   <script defer src="js/audio.js"></script>
   <script defer src="js/confetti.js"></script>
+  <script defer src="js/game-result.js"></script>
   <script defer src="js/toast.js"></script>
-  <script defer src="js/tools.js?v=20261121-game-usability"></script>
+  <script defer src="js/tools.js"></script>
   <script defer src="js/quality/data-contract.js"></script>
   <script defer src="js/quality/tool-fixes.js"></script>
-  <script defer src="js/app.js?v=20261121-game-usability"></script>
-  <script defer src="js/quality/product-ux.js?v=20261121-game-usability"></script>
+  <script defer src="js/app.js"></script>
+  <script defer src="js/quality/product-ux.js"></script>
   <script defer src="js/evolution.js"></script>
 
   <!-- Service Worker 登録 -->

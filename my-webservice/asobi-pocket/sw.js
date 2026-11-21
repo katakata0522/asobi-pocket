@@ -1,4 +1,4 @@
-const CACHE_NAME = "asobi-pocket-20261121-game-usability-v2";
+const CACHE_NAME = "asobi-pocket-20261121-gameplay-polish-v5";
 
 // 起動に必要な資産を一括で保存し、欠けた版を有効化しない。
 const CORE_ASSETS = [
@@ -6,7 +6,7 @@ const CORE_ASSETS = [
   "./index.html",
   "./terms.html",
   "./privacy.html",
-  "./style.css?v=20261121-game-usability",
+  "./style.css",
   "./evolution.css?v=20261001-ux1",
   "./js/evolution.js",
   "./assets/pocket-mark.svg",
@@ -15,9 +15,10 @@ const CORE_ASSETS = [
   "./data/article-topics.js",
   "./js/audio.js",
   "./js/confetti.js",
+  "./js/game-result.js",
   "./js/toast.js",
-  "./js/tools.js?v=20261121-game-usability",
-  "./js/app.js?v=20261121-game-usability",
+  "./js/tools.js",
+  "./js/app.js",
   "./seo/ito-odai.html",
   "./seo/wordwolf-odai.html",
   "./seo/asa-sore-odai.html",
@@ -29,10 +30,10 @@ const QUALITY_ASSETS = [
   "./quality-ui.css",
   "./js/quality/data-contract.js",
   "./js/quality/tool-fixes.js",
-  "./js/quality/product-ux.js?v=20261121-game-usability"
+  "./js/quality/product-ux.js"
 ];
 
 
 // 自分の範囲だけを扱い、インストール済みの画面を通信待ちで止めない。
-importScripts('./pwa-runtime.js?v=20261121-game-usability');
+importScripts('./pwa-runtime.js');
 self.PwaRuntime.configure({ cacheName: CACHE_NAME, cachePrefix: 'asobi-pocket-', assets: [...CORE_ASSETS, ...QUALITY_ASSETS, "./pwa-runtime.js", "./assets/pocket-192.png", "./assets/pocket-512.png", "./seo/seo-guide.css", "./seo/analytics.js"] });
