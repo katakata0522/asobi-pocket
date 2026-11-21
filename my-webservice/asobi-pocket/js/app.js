@@ -840,8 +840,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if (q === "" && !state.filter.onlyFavorite) {
         if (game.section && game.section !== "main") return false;
       } else {
-        // 検索時は統合済み旧エイリアス以外(メイン・定番ルール・ツール)を検索可能に
-        if (game.section === "merged" && !state.filter.onlyFavorite) return false;
+        // 関連カードで見た旧モード名でも同じ遊びに戻れるよう、名前検索に限り掲載する。
+        if (game.section === "merged" && !state.filter.onlyFavorite) {
+          const names = [game.title, game.ruby, ...(game.searchAliases || [])].filter(Boolean).map(toHiragana);
+          if (!terms.some(term => names.some(name => name.includes(term)))) return false;
+        }
       }
 
       if (state.filter.exactPlayers !== "all") {
@@ -1067,7 +1070,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
           <p class="pick-prompt">${partyPicks.get(game.id)}</p>
           <div class="pick-foot">
-            <p class="pick-meta">${game.minPlayers}〜${game.maxPlayers}人 · ${escapeHTML(game.duration)}${StampRally.played.includes(game.id) ? " · プレイ済" : ""}</p>
+            <p class="pick-meta">${formatPlayerRange(game)} · ${escapeHTML(game.duration)}${StampRally.played.includes(game.id) ? " · プレイ済" : ""}</p>
             <span class="pick-arrow" aria-hidden="true">↗</span>
           </div>`;
         fragment.appendChild(card);
@@ -1098,7 +1101,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <h3 class="card-title"><a href="#game/${game.id}" class="card-title-link">${renderGameTitle(game, true)}</a></h3>
           <p class="card-catchphrase">${escapeHTML(game.catchphrase)}</p>
           <div class="card-meta">
-            <span class="meta-pill pill-players">${game.minPlayers === game.maxPlayers ? game.minPlayers : `${game.minPlayers}〜${game.maxPlayers === 99 ? '大人数' : game.maxPlayers}`}人</span>
+            <span class="meta-pill pill-players">${formatPlayerRange(game)}</span>
             <span class="meta-pill pill-time">${game.duration}</span>
             <span class="meta-pill pill-props">${hasTool ? 'スマホ1台' : '手ぶら'}</span>
           </div>
@@ -1186,7 +1189,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="classic-rule-card-header">
           <div class="classic-rule-header-info">
             <h4 class="classic-rule-title">${game.title}</h4>
-            <span class="classic-rule-meta">${game.minPlayers}〜${game.maxPlayers === 99 ? '大人数' : game.maxPlayers}人 · ${game.duration}</span>
+            <span class="classic-rule-meta">${formatPlayerRange(game)} · ${game.duration}</span>
           </div>
         </div>
         <p class="classic-rule-desc">${escapeHTML(game.catchphrase || game.overview || "")}</p>
@@ -1685,7 +1688,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <h2 class="detail-compact-title">${renderGameTitle(game)}</h2>
               <p class="detail-compact-catch">${escapeHTML(game.catchphrase)}</p>
               <div class="detail-compact-meta">
-                <span>${game.minPlayers}〜${game.maxPlayers === 99 ? '大人数' : game.maxPlayers + '人'}</span>
+                <span>${formatPlayerRange(game)}</span>
                 <span>${game.duration}</span>
                 <span>${escapeHTML(game.preparation)}</span>
               </div>
@@ -2066,7 +2069,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <span class="rec-icon">${rec.icon}</span>
         <div class="rec-info">
           <strong class="rec-title">${escapeHTML(rec.title)}</strong>
-          <span class="rec-meta">👥 ${rec.minPlayers}〜${rec.maxPlayers}人 / ⏱️ ${rec.duration}</span>
+          <span class="rec-meta">👥 ${formatPlayerRange(rec)} / ⏱️ ${rec.duration}</span>
         </div>
       `;
       rCard.addEventListener("click", () => {

@@ -223,6 +223,12 @@ function matchesTopicAnswer(topic, answer) {
   return names.includes(input);
 }
 
+function formatPlayerRange({minPlayers, maxPlayers}) {
+  if (minPlayers === maxPlayers) return `${minPlayers}人`;
+  if (Number(maxPlayers) === 99) return `${minPlayers}人以上`;
+  return `${minPlayers}〜${maxPlayers}人`;
+}
+
 function topicSearchText(value) {
   const text = toHiragana(value);
   const entries = text.split(/\s+(?:&|vs|\/)\s+/i);
