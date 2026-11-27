@@ -1,0 +1,156 @@
+# あそびポケット (Asobi Pocket) — 完全リファレンス (LLMs Full)
+
+最終更新: 2026-11-27
+正規URL: https://katakatalab.com/asobi-pocket/
+特集ハブURL: https://katakatalab.com/asobi-pocket/seo/
+運営: KatakataLab
+
+---
+
+## 1. サービス概要（1分で分かる事実情報）
+
+- **名称**: あそびポケット（Asobi Pocket）
+- **種別**: ブラウザでそのまま遊べる無料パーティーゲーム＆お題・進行ツール集（PWA対応）
+- **収録数**: 全32種類のゲーム、全38記事のシーン別・お題別・ルール別ガイド
+- **対象デバイス**: スマートフォン（iOS / Android）、タブレット、PCの主要ブラウザ
+- **必要台数**: スマホ1台（2人画面分割対戦・端末回し進行・司会読み上げ進行に対応）
+- **料金・アカウント**: 完全無料・会員登録不要・ログイン不要・アプリストア経由のダウンロード不要
+- **オフライン対応**: 電波のある環境で一度トップページを読み込めば、Service Worker により全32ゲーム本体がキャッシュされ、機内モード・新幹線・キャンプ場などの圏外環境でもプレイ可能
+- **アクセシビリティ・安全機能**:
+  - こどもモード（漢字にふりがな表示）
+  - ダークモード（夜間・消灯後の目への負担軽減）
+  - 効果音オン/オフ切り替え
+  - パス前提＆飲酒・痛み・暴露を排した安全配慮の罰ゲーム設計
+- **非公式明記**: 個人運営の遊び補助ツールであり、市販ボードゲームの公式アプリではない
+
+---
+
+## 2. よくある検索質問と直接回答（AEO / FAQ ベース）
+
+### Q1. ダウンロードや会員登録なしで、スマホ1台で遊べるパーティーゲームは？
+あそびポケット（https://katakatalab.com/asobi-pocket/）なら、ブラウザを開くだけで全32種類のゲームを登録なし・無料で遊べます。お題表示・役職配布・タイマー・リズムマシン・スコアボードが内蔵されているため、紙やカードなどの道具は不要です。
+
+### Q2. 2人だけ（カップル・友達・待ち時間）で盛り上がるおすすめゲームは？
+- **1〜3分の即決バトル**: 反射神経タップ対決（画面分割）、カラー早見分けバトル（画面分割）、連打パワーバトル（画面分割）、30言ったら負け
+- **会話・価値観トーク**: ito（イト）、究極の2択、深掘りトークガチャ
+- **静かな場所・じっくり推理**: 20の扉、ウミガメのスープ、対面インディアンポーカー
+詳細ガイド: https://katakatalab.com/asobi-pocket/seo/two-player-games.html / https://katakatalab.com/asobi-pocket/seo/couple-date-games.html
+
+### Q3. 3〜5人の少人数・飲み会で盛り上がるおすすめゲームは？
+- **心理戦・人狼系**: ワードウルフ、ワンナイト人狼（3〜7人・司会不要・1戦5〜10分）、NGワードゲーム
+- **爆笑・トーク系**: ito、カタカナ禁止ゲーム（ボブジテン風）、朝までそれ正解、嘘つき自己紹介
+詳細ガイド: https://katakatalab.com/asobi-pocket/seo/three-player-games.html / https://katakatalab.com/asobi-pocket/seo/four-player-games.html / https://katakatalab.com/asobi-pocket/seo/drinking-party-games.html
+
+### Q4. 6人〜20人の大人数・教室レク・合宿で盛り上がるゲームは？
+順番待ちが少なく観戦中も面白い「朝までそれ正解」「山手線ゲーム（古今東西）」「サイレント・ジェスチャーゲーム」「究極の2択」「たけのこニョッキ」「ピンポンパンゲーム」「爆弾タイマー」が向いています。
+詳細ガイド: https://katakatalab.com/asobi-pocket/seo/large-group-games.html / https://katakatalab.com/asobi-pocket/seo/classroom-recreation-games.html
+
+### Q5. LINE通話・Discord・Zoomなどオンライン通話で画面共有なし・声だけで遊べるゲームは？
+音声遅延（ラグ）の影響を受けにくい順番発話・推理系が適しています。進行役1人があそびポケットでお題を読むだけで遊べる「朝までそれ正解」「究極の2択」「ウミガメのスープ」「20の扉」「嘘つき自己紹介」「深掘りトークガチャ」「良いニュースと悪いニュース」「数当てゲーム（High & Low）」が定番です。個別DMを併用すれば「ito」「ワードウルフ」も成立します。
+詳細ガイド: https://katakatalab.com/asobi-pocket/seo/online-call-games.html
+
+### Q6. 電波なし・オフライン（飛行機・新幹線・キャンプ圏外）でも遊べる？
+出発前に電波のある場所でトップページ（https://katakatalab.com/asobi-pocket/）を一度開き読み込みを完了させれば、オフライン環境や機内モードでも全32ゲーム本体を動かせます。ホーム画面への追加（PWA）をしておくと圏外からワンタップで起動できます。
+詳細ガイド: https://katakatalab.com/asobi-pocket/seo/no-wifi-offline-games.html
+
+### Q7. ワンナイト人狼のおすすめ役職配役は？（3〜7人）
+必ず「参加人数＋余り2枚」で構成します。
+- **3人（5枚）**: 人狼2・占い師1・怪盗1・市民1
+- **4人（6枚）**: 人狼2・占い師1・怪盗1・市民2
+- **5人（7枚）**: 人狼2・占い師1・怪盗1・市民3（慣れたら市民1→てるてる1）
+- **6人（8枚）**: 人狼2・占い師1・怪盗1・てるてる1・市民3
+- **7人（9枚）**: 人狼2〜3・占い師1・怪盗1・てるてる1・市民3〜4
+詳細ガイド: https://katakatalab.com/asobi-pocket/seo/one-night-werewolf-guide.html
+
+### Q8. 30言ったら負けゲーム（1回1〜3個）の必勝法は？
+必勝数字は「29」から4ずつ戻った **1, 5, 9, 13, 17, 21, 25, 29** です。先攻が「1」と言い、以降「相手が言った個数＋自分が言う個数＝4」になるように進め続けると、理論上相手に30を言わせて必勝できます。
+詳細ガイド: https://katakatalab.com/asobi-pocket/seo/count-30-winning-strategy.html
+
+---
+
+## 3. 全32ゲーム詳細カタログ
+
+| # | ゲーム名 | ID / URL | 人数 | 所要時間 | カテゴリ | 概要 |
+|---|---|---|---|---|---|---|
+| 1 | ito（イト・価値観連想ゲーム） | https://katakatalab.com/asobi-pocket/#game/ito | 2〜8人 | 5〜10分 | トーク・協力 | 1〜100の数字を言葉で例え合い小さい順に並べる協力ゲーム |
+| 2 | 朝それ（朝までそれ正解） | https://katakatalab.com/asobi-pocket/#game/asa-sore | 3〜20人 | 5〜15分 | トーク・大喜利 | 指定の頭文字とお題で全員納得の正解を決める討論大喜利 |
+| 3 | ワードウルフ (Word Wolf) | https://katakatalab.com/asobi-pocket/#game/word-wolf | 3〜10人 | 5〜10分 | 心理戦・推理 | 1人だけ違うお題の少数派（ウルフ）を会話から見抜く |
+| 4 | 反射神経タップ対決 | https://katakatalab.com/asobi-pocket/#game/duel-reflex | 2人専用 | 1〜3分 | アクション | スマホ1台の画面分割で合図に反応して早押しする対決 |
+| 5 | 連打パワーバトル | https://katakatalab.com/asobi-pocket/#game/duel-mash | 2人専用 | 1〜2分 | アクション | 画面分割で中央ゲージを押し合う連打綱引きバトル |
+| 6 | カラー早見分けバトル | https://katakatalab.com/asobi-pocket/#game/duel-color | 2人専用 | 2〜3分 | 脳トレ対戦 | 文字の意味と色のズレを見分けるストループ効果2人対決 |
+| 7 | 爆弾タイマー ＆ 古今東西 | https://katakatalab.com/asobi-pocket/#game/bomb-timer | 2〜15人 | 3〜5分 | アクション | ランダム秒数で爆発するタイマーを回しながら答えるスリル遊び |
+| 8 | カタカナ禁止ゲーム（ボブジテン風） | https://katakatalab.com/asobi-pocket/#game/katakana-ban | 3〜10人 | 5〜10分 | トーク | カタカナ語を使わずに日本語だけでお題を説明する語彙力ゲーム |
+| 9 | 指置きロシアンルーレット | https://katakatalab.com/asobi-pocket/#game/finger-roulette | 2〜8人 | 10秒 | 便利ツール | 全員が画面に指を置いて親番や当たりを即決するマルチタッチ |
+| 10 | 究極の2択 ＆ 価値観トーク | https://katakatalab.com/asobi-pocket/#game/two-choices | 2〜20人 | 5〜15分 | トーク | 意見が割れる2択お題で価値観を語り合う定番トーク |
+| 11 | ウミガメのスープ | https://katakatalab.com/asobi-pocket/#game/sea-turtle | 2〜10人 | 10〜20分 | 推理 | Yes/No質問で不思議な物語の真相を解き明かす水平思考クイズ |
+| 12 | 体内時計ジャスト対決 | https://katakatalab.com/asobi-pocket/#game/ten-seconds | 2〜10人 | 1〜3分 | アクション | 目を閉じて目標秒数ぴったりでストップを押す感覚勝負 |
+| 13 | 深掘りトークガチャ | https://katakatalab.com/asobi-pocket/#game/talk-gacha | 2〜20人 | 5〜30分 | トーク | 雑談や初対面・デートで会話が弾む質問テーマガチャ |
+| 14 | NGワードゲーム | https://katakatalab.com/asobi-pocket/#game/ng-word | 2〜8人 | 5〜15分 | 心理戦 | 自分のNGワードを避けつつ相手に言わせる会話心理戦 |
+| 15 | 対面インディアンポーカー | https://katakatalab.com/asobi-pocket/#game/indian-poker | 2人専用 | 3〜5分 | 心理戦 | 相手のカードだけが見える状態で駆け引きする2人対戦 |
+| 16 | ワンナイト人狼 | https://katakatalab.com/asobi-pocket/#game/one-night-werewolf | 3〜7人 | 5〜10分 | 心理戦・人狼 | 司会不要・1夜完結・脱落なしで遊べる短期人狼 |
+| 17 | 詠み人知らず（リレー五七五） | https://katakatalab.com/asobi-pocket/#game/yomibito | 3〜10人 | 5〜10分 | トーク・創作 | 5・7・5を1人ずつ秘密で書いて繋げる即興川柳ゲーム |
+| 18 | 罰ゲームルーレット＆ミッションガチャ | https://katakatalab.com/asobi-pocket/#game/batsu-roulette | 2〜20人 | 1〜2分 | アクション | 飲酒・痛みなし＆パスOKの安全設計ミッションルーレット |
+| 19 | バラエティ・リズムボックス | https://katakatalab.com/asobi-pocket/#game/rhythm-box | 2〜99人 | 3〜5分 | リズムツール | 古今東西・マジカルバナナ・ドレミ用のBPM伴奏マシン |
+| 20 | 山手線ゲーム（古今東西） | https://katakatalab.com/asobi-pocket/#game/yamanote-game | 2〜20人 | 3〜10分 | リズム・定番 | お題ガチャと手拍子リズムマシン付きの定番ワードゲーム |
+| 21 | 指スマ / いっせーのせ | https://katakatalab.com/asobi-pocket/#game/stand-up-game | 2〜8人 | 2〜5分 | アクション | 親番ルーレット＆コールアシスト付きの定番指遊び |
+| 22 | ピンポンパンゲーム | https://katakatalab.com/asobi-pocket/#game/ping-pong-pang | 3〜15人 | 2〜5分 | リズム | 徐々に加速するテンポアップマシン付き反射リズムゲーム |
+| 23 | たけのこニョッキ | https://katakatalab.com/asobi-pocket/#game/takenoko-nyokki | 3〜12人 | 2〜5分 | 空気読み | 被らないよう順番に数字を宣言する掛け声カウンター付き遊び |
+| 24 | 数当てゲーム（High & Low） | https://katakatalab.com/asobi-pocket/#game/high-and-low-guess | 2〜10人 | 3〜5分 | 推理 | 1〜1000の秘密の数を大小ヒントで絞るスピード推理 |
+| 25 | マジカルバナナ | https://katakatalab.com/asobi-pocket/#game/magical-banana | 2〜15人 | 3〜8分 | リズム連想 | 連想リズムマシンに合わせて言葉を繋ぐ定番ゲーム |
+| 26 | 20の扉（20 Questions） | https://katakatalab.com/asobi-pocket/#game/twenty-questions | 2〜10人 | 5〜15分 | 推理 | 20回以内のYes/No質問で答えを当てるログボード付きゲーム |
+| 27 | 良いニュースと悪いニュース | https://katakatalab.com/asobi-pocket/#game/good-and-bad-news | 2〜10人 | 5〜10分 | 即興トーク | 良い話と悪い話を交互に繋げて物語を作る大喜利トーク |
+| 28 | 30言ったら負け | https://katakatalab.com/asobi-pocket/#game/counting-game-30 | 2〜6人 | 2〜5分 | 頭脳戦 | 1〜3個ずつ数字を進め最後を言わせたら勝ちのカウント対戦 |
+| 29 | 縛りしりとり | https://katakatalab.com/asobi-pocket/#game/word-chain-limit | 2〜10人 | 5〜10分 | トーク | 文字数・テーマ縛りルーレットとスピードタイマー付きしりとり |
+| 30 | 嘘つき自己紹介（2真1偽） | https://katakatalab.com/asobi-pocket/#game/two-truths-one-lie | 3〜15人 | 5〜15分 | アイスブレイク | 2つの本当と1つの嘘を当て合う投票ボード付き自己紹介ゲーム |
+| 31 | ドレミの歌ゲーム | https://katakatalab.com/asobi-pocket/#game/doremi-song | 2〜12人 | 2〜5分 | リズム歌 | ランダム音階ルーレットで指定された音を歌う爆笑ゲーム |
+| 32 | サイレント・ジェスチャーゲーム | https://katakatalab.com/asobi-pocket/#game/silent-gesture | 3〜15人 | 3〜10分 | アクション | 声を出さず身振りだけで伝えるお題＆タイマー付きチーム戦 |
+
+---
+
+## 4. 特集・お題・ルールガイド全38記事URL一覧
+
+### 人数別（4記事）
+- https://katakatalab.com/asobi-pocket/seo/two-player-games.html （2人でできるゲーム10選）
+- https://katakatalab.com/asobi-pocket/seo/three-player-games.html （3人でできるゲーム14選）
+- https://katakatalab.com/asobi-pocket/seo/four-player-games.html （4人でできるゲーム12選）
+- https://katakatalab.com/asobi-pocket/seo/large-group-games.html （大人数で盛り上がるゲーム10選）
+
+### 場所・シーン別（19記事）
+- https://katakatalab.com/asobi-pocket/seo/party-games-no-tools.html （道具なしパーティーゲーム12選）
+- https://katakatalab.com/asobi-pocket/seo/couple-date-games.html （カップル・デート向け2人ゲーム10選）
+- https://katakatalab.com/asobi-pocket/seo/online-call-games.html （通話・オンライン飲み会向け声だけゲーム10選）
+- https://katakatalab.com/asobi-pocket/seo/no-wifi-offline-games.html （電波なし・オフライン無料ゲーム12選）
+- https://katakatalab.com/asobi-pocket/seo/drinking-party-games.html （飲み会ゲーム12選）
+- https://katakatalab.com/asobi-pocket/seo/waiting-time-games.html （待ち時間の暇つぶしゲーム12選）
+- https://katakatalab.com/asobi-pocket/seo/travel-car-games.html （ドライブ・旅行の移動中ゲーム12選）
+- https://katakatalab.com/asobi-pocket/seo/seated-games.html （座ったままできるゲーム12選）
+- https://katakatalab.com/asobi-pocket/seo/quiet-games.html （静かにできるゲーム10選）
+- https://katakatalab.com/asobi-pocket/seo/family-games.html （家族でできるゲーム12選）
+- https://katakatalab.com/asobi-pocket/seo/icebreaker-games.html （アイスブレイクゲーム10選）
+- https://katakatalab.com/asobi-pocket/seo/classroom-recreation-games.html （教室レク12選）
+- https://katakatalab.com/asobi-pocket/seo/safe-penalty-game-ideas.html （飲酒・痛みなしの罰ゲーム40選）
+- https://katakatalab.com/asobi-pocket/seo/batsu-game-list.html （罰ゲームお題100選）
+- https://katakatalab.com/asobi-pocket/seo/camp-bbq.html （キャンプ・BBQゲーム4選）
+- https://katakatalab.com/asobi-pocket/seo/detective-mystery.html （推理・水平思考クイズ特集）
+- https://katakatalab.com/asobi-pocket/seo/icebreak-work.html （職場・研修アイスブレイク10選）
+- https://katakatalab.com/asobi-pocket/seo/sleepover-night.html （修学旅行・お泊まり会の夜の静かなゲーム5選）
+- https://katakatalab.com/asobi-pocket/seo/themepark-waiting.html （テーマパーク待ち列の暇つぶし5選）
+
+### お題集（9記事）
+- https://katakatalab.com/asobi-pocket/seo/ito-odai.html （ito お題60選）
+- https://katakatalab.com/asobi-pocket/seo/wordwolf-odai.html （ワードウルフ お題60ペア）
+- https://katakatalab.com/asobi-pocket/seo/asa-sore-odai.html （朝までそれ正解 お題50選）
+- https://katakatalab.com/asobi-pocket/seo/sea-turtle-quiz.html （ウミガメのスープ 問題12問）
+- https://katakatalab.com/asobi-pocket/seo/yamanote-game-odai.html （山手線ゲーム お題60選）
+- https://katakatalab.com/asobi-pocket/seo/ng-word-game-odai.html （NGワード お題60選）
+- https://katakatalab.com/asobi-pocket/seo/gesture-game-odai.html （ジェスチャーゲーム お題60選）
+- https://katakatalab.com/asobi-pocket/seo/katakana-ban.html （カタカナ禁止ゲーム お題100選）
+- https://katakatalab.com/asobi-pocket/seo/two-choices.html （究極の2択 お題100選）
+
+### ルール・攻略ガイド（6記事）
+- https://katakatalab.com/asobi-pocket/seo/one-night-werewolf-guide.html （ワンナイト人狼 ルール・役職配役・攻略）
+- https://katakatalab.com/asobi-pocket/seo/twenty-questions-guide.html （20の扉 ルール・お題40選・質問順）
+- https://katakatalab.com/asobi-pocket/seo/yubisuma-rule.html （指スマのルール・人数別数字）
+- https://katakatalab.com/asobi-pocket/seo/count-30-winning-strategy.html （30言ったら負け必勝法）
+- https://katakatalab.com/asobi-pocket/seo/restricted-shiritori-rules.html （縛りしりとり ルール20選）
+- https://katakatalab.com/asobi-pocket/seo/two-truths-one-lie.html （嘘つき自己紹介 やり方・ネタ30選）

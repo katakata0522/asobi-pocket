@@ -5024,5 +5024,493 @@ html.dark-mode .btn-menu-pwa:hover {
   }
 }
 
+/* ==========================================
+   UX7: 引き算の美学・統一ルールカード・ハンバーガー詳細メニュー・操作性向上
+   ========================================== */
+
+/* 詳細ナビバー: 「共有」は外に出し、「☰」メニューで得点・音量・お気に入りへ集約 */
+.detail-nav-right {
+  gap: 8px;
+}
+
+.detail-nav-right .btn-compact-share {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 40px;
+  padding: 0 12px !important;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  color: var(--text-main);
+  font-size: 0.78rem;
+  font-weight: 700;
+  transition: background-color 0.16s var(--ease-out), border-color 0.16s var(--ease-out), color 0.16s var(--ease-out);
+}
+
+.detail-nav-right .btn-compact-share:hover {
+  background: var(--surface-subtle);
+  border-color: var(--border-strong);
+}
+
+.detail-nav-right .btn-compact-share.is-copied {
+  background: rgba(30, 114, 72, 0.1);
+  border-color: #1e7248;
+  color: #1e7248;
+}
+
+.btn-detail-menu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background-color 0.16s var(--ease-out), border-color 0.16s var(--ease-out);
+}
+
+.btn-detail-menu:hover {
+  background: var(--surface-subtle);
+  border-color: var(--border-strong);
+}
+
+/* ゲームヒーローのアイコン付きメタ情報行 */
+.detail-compact-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin-top: 10px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.detail-compact-meta .meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.detail-compact-meta .meta-item + .meta-item::before {
+  content: none;
+  margin: 0;
+}
+
+.detail-compact-meta .meta-svg {
+  width: 15px;
+  height: 15px;
+  min-width: 15px;
+  color: var(--text-sub);
+  flex-shrink: 0;
+}
+
+/* ハンバーガーメニュー内：現在ゲームのお気に入り行 & 星ポップ */
+.menu-game-fav-row {
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.menu-fav-star {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  font-size: 1.05rem;
+  line-height: 1;
+  color: var(--text-sub);
+  flex-shrink: 0;
+  transition: background-color 0.16s var(--ease-out), color 0.16s var(--ease-out), border-color 0.16s var(--ease-out);
+}
+
+.menu-game-fav-row.active .menu-fav-star {
+  background: rgba(176, 125, 31, 0.14);
+  border-color: rgba(176, 125, 31, 0.42);
+  color: #b07d1f;
+}
+
+@keyframes starPop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.32); }
+  75% { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+
+.btn-card-fav.is-popping,
+.menu-fav-star.is-popping {
+  animation: starPop 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ルールタブ：一枚の余白ある統合カード＆番号タイムライン */
+.rules-unified-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px 20px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.rules-sub-heading {
+  font-family: var(--font-display);
+  font-size: 0.94rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
+  margin: 0 0 8px;
+}
+
+.rules-lead-text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.75;
+  color: var(--text-main);
+  text-wrap: pretty;
+}
+
+.rules-flow-block {
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.rules-timeline {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rules-timeline .rule-step-item {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+}
+
+.rules-timeline .rule-step-item:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 28px;
+  bottom: -14px;
+  width: 1px;
+  background: var(--border);
+}
+
+.rules-timeline .step-badge {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  border-radius: 50%;
+  background: var(--surface-subtle) !important;
+  border: 1px solid var(--border-strong);
+  color: var(--text-main) !important;
+  font-family: var(--font-latin);
+  font-size: 0.74rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.rules-timeline .step-title {
+  margin: 0 0 3px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.rules-timeline .step-desc {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.68;
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+
+.rules-tips-note {
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+}
+
+.rules-tips-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0 0 6px;
+}
+
+.rules-tips-title svg {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.rules-tips-text {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.68;
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+
+/* 音・リズムゲーム内：音なし時ワンタップONチップ */
+.tool-sound-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.tool-sound-hint-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.btn-sound-hint-enable {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity 0.15s var(--ease-out);
+}
+
+.btn-sound-hint-enable:hover {
+  opacity: 0.9;
+}
+
+/* マジカルバナナ・ドレミの待機ステータス（ボタンに見せない落ち着いた表示） */
+.rhythm-beat-indicator.is-idle {
+  background: transparent !important;
+  border: 1px dashed var(--border-strong) !important;
+  color: var(--text-muted) !important;
+  box-shadow: none !important;
+  font-weight: 600 !important;
+  font-size: 0.82rem !important;
+  padding: 9px 12px !important;
+  border-radius: var(--radius-sm) !important;
+  cursor: default !important;
+}
+
+/* 2人早押しバトル：高視認性48pxスタートCTA＆1行ルール案内 */
+.duel-ready-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  z-index: 4;
+}
+
+.duel-start-cta {
+  min-height: 48px !important;
+  min-width: 176px;
+  padding: 0 24px !important;
+  border-radius: 999px !important;
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: #ffffff !important;
+  font-size: 0.96rem !important;
+  font-weight: 800 !important;
+  box-shadow: 0 8px 22px rgba(217, 75, 43, 0.34) !important;
+}
+
+.duel-start-cta:hover {
+  background: var(--primary-hover) !important;
+  border-color: var(--primary-hover) !important;
+}
+
+.duel-ready-rule {
+  margin: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(20, 19, 17, 0.72);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ウミガメのスープ：反応ボタンの軽やかなタップ反応 */
+@keyframes reactionHit {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+.gm-sound-btn-grid .btn.is-hit {
+  animation: reactionHit 0.24s var(--ease-out);
+}
+
+/* タッチターゲット底上げ（38〜44px）＆ レンジスライダー操作性改善 */
+.detail-tab-btn {
+  min-height: 42px;
+}
+
+.tool-card .btn-sm,
+.tool-card .btn-xs,
+.btn-filter-tag,
+.roulette-overlay .btn-pill,
+.btn-vote-minus,
+.btn-vote-plus,
+.choice-vote-btn {
+  min-height: 38px;
+}
+
+.btn-vote-minus,
+.btn-vote-plus {
+  min-width: 38px;
+}
+
+.asa-all-kana-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.asa-all-kana-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
+
+.sea-beginner-link a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 4px 6px;
+}
+
+input[type="range"].range-slider {
+  height: 32px;
+  cursor: pointer;
+}
+
+input[type="range"].range-slider::-webkit-slider-thumb {
+  width: 22px;
+  height: 22px;
+}
+
+input[type="range"].range-slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+}
+
+/* 360px幅の確認ダイアログでボタン文言が1文字折り返されないように */
+.asobi-confirm-actions .btn {
+  white-space: nowrap;
+  padding-inline: 10px;
+}
+
+/* ダークモード視認性・コントラスト修正 */
+html.dark-mode .detail-nav-right .btn-compact-share.is-copied {
+  background: rgba(63, 185, 118, 0.16);
+  border-color: #4cc38a;
+  color: #6ee7b7;
+}
+
+html.dark-mode .menu-game-fav-row.active .menu-fav-star {
+  background: rgba(230, 184, 76, 0.18);
+  border-color: rgba(230, 184, 76, 0.45);
+  color: #f3ca68;
+}
+
+html.dark-mode .tool-sound-hint {
+  background: #22262e;
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+html.dark-mode .btn-sound-hint-enable {
+  color: #151618;
+}
+
+html.dark-mode .roulette-overlay .btn-pill {
+  background: #232730 !important;
+  color: #f2f4f8 !important;
+  border: 1px solid rgba(255, 255, 255, 0.24) !important;
+}
+
+html.dark-mode .roulette-overlay .btn-pill.active {
+  background: var(--primary) !important;
+  color: #151618 !important;
+  border-color: var(--primary) !important;
+}
+
+html.dark-mode .tool-card label,
+html.dark-mode .tool-card .setting-label,
+html.dark-mode .tool-card details,
+html.dark-mode .tool-card details summary {
+  color: var(--text-main);
+}
+
+html.dark-mode .text-danger {
+  color: #ff8a7a !important;
+}
+
+html.dark-mode .btn-choice-a,
+html.dark-mode .btn-choice-b {
+  background: #262b35 !important;
+  color: #f4f5f7 !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+}
+
+html.dark-mode .btn-choice-a:hover,
+html.dark-mode .btn-choice-b:hover {
+  background: #313744 !important;
+  border-color: rgba(255, 255, 255, 0.36) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-card-fav.is-popping,
+  .menu-fav-star.is-popping,
+  .gm-sound-btn-grid .btn.is-hit {
+    animation: none;
+  }
+}
+
 
 

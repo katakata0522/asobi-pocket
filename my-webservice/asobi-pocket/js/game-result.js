@@ -902,6 +902,7 @@
         pool.push({
           key: `${gameId}:${idx}`,
           gameId,
+          presetIndex: idx,
           gameLabel,
           kicker,
           prompt

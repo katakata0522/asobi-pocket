@@ -34,14 +34,14 @@
         if (navigator.share) await navigator.share(data);
         else if (navigator.clipboard?.writeText) {
           await navigator.clipboard.writeText(`${data.text}\n${data.url}`);
-          if (typeof Toast !== 'undefined') Toast.success('友達に送るリンクをコピーしました');
+          if (typeof Toast !== 'undefined') Toast.success('リンクをコピーしました');
         } else {
-          if (typeof Toast !== 'undefined') Toast.info('アドレスバーのURLをコピーして友達に送ってください');
+          if (typeof Toast !== 'undefined') Toast.info('URLをコピーして送ってください');
           return;
         }
         if (typeof Analytics !== 'undefined') Analytics.track('asobi_share', { surface: 'home', method: navigator.share ? 'native' : 'clipboard' });
       } catch (error) {
-        if (error?.name !== 'AbortError' && typeof Toast !== 'undefined') Toast.warning('共有できませんでした。アドレスバーのURLをコピーしてください');
+        if (error?.name !== 'AbortError' && typeof Toast !== 'undefined') Toast.warning('共有できませんでした');
       }
     });
     // 静的な案内は読み込み中にも表示し、ゲーム詳細では現在の画面にフォーカスを移す。

@@ -105,10 +105,8 @@ document.addEventListener("DOMContentLoaded", () => {
       Storage.set("asobi_wakelock_enabled", enabled);
       if (enabled) {
         this.request();
-        Toast.success("画面常時点灯（スリープ防止）をONにしました");
       } else {
         this.release();
-        Toast.info("画面常時点灯をOFFにしました");
       }
     }
   };
@@ -399,7 +397,6 @@ document.addEventListener("DOMContentLoaded", () => {
       this.players.push({ name: n, score: 0 });
       this.save();
       this.render();
-      Toast.success(`「${n}」を追加しました`);
     },
     removePlayer(index) {
       if (this.players.length <= 1) {
@@ -438,7 +435,6 @@ document.addEventListener("DOMContentLoaded", () => {
       this.players.forEach(p => p.score = 0);
       this.save();
       this.render();
-      Toast.info("スコアを0にリセットしました");
     },
     render() {
       const container = document.getElementById("scoreboard-players-list");
@@ -800,11 +796,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // ふりがな（ルビ）付きタイトル生成ヘルパー
   function renderGameTitle(game, compact = false) {
     if (!game) return "";
-    if (state.kidsMode && game.ruby) {
-      return `<ruby>${escapeHTML(game.title)}<rt>${escapeHTML(game.ruby)}</rt></ruby>`;
-    }
     const shortTitles = { "ito": "ito（価値観）", "katakana-ban": "カタカナ禁止", "asa-sore": "朝までそれ正解", "rhythm-box": "リズムボックス", "indian-poker": "インディアンポーカー", "finger-roulette": "指置きルーレット", "duel-reflex": "反射神経対決", "duel-mash": "連打パワーバトル", "duel-color": "カラー早見分け", "bomb-timer": "爆弾タイマー", "ng-word": "NGワードゲーム" };
     const title = compact ? (shortTitles[game.id] || game.title.replace(/\s*[（(].*$/u, "").trim()) : game.title;
+    if (state.kidsMode && game.ruby) {
+      return `<ruby class="game-title-ruby">${escapeHTML(title)}<rt>${escapeHTML(game.ruby)}</rt></ruby>`;
+    }
     return escapeHTML(title);
   }
 
@@ -869,18 +865,26 @@ document.addEventListener("DOMContentLoaded", () => {
     Sound.playClick();
 
     const idx = state.favorites.indexOf(gameId);
+    const added = idx < 0;
     if (idx >= 0) {
       state.favorites.splice(idx, 1);
-      Toast.info("お気に入りから解除しました");
     } else {
       state.favorites.push(gameId);
-      Toast.success("★ お気に入りに追加しました");
     }
     Storage.set("asobi_favorites", state.favorites);
     updateFavBadge();
     renderGrid();
+    if (added) {
+      requestAnimationFrame(() => {
+        document.querySelectorAll(`.btn-card-fav[data-fav-id="${gameId}"]`).forEach((btn) => {
+          btn.classList.remove("is-popping");
+          void btn.offsetWidth;
+          btn.classList.add("is-popping");
+        });
+      });
+    }
     if (state.activeGameId) {
-      updateDetailFavButton();
+      updateDetailFavButton(added);
     }
   }
 
@@ -1390,7 +1394,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (spotlightGameEl) spotlightGameEl.textContent = pick.gameLabel;
     if (spotlightPromptEl) spotlightPromptEl.textContent = pick.prompt;
     if (spotlightPlayLink) {
-      spotlightPlayLink.href = `#game/${pick.gameId}`;
+      const spotlightQuery = Number.isInteger(pick.presetIndex) ? `?spotlight=${pick.presetIndex}` : "";
+      spotlightPlayLink.href = `#game/${pick.gameId}${spotlightQuery}`;
       spotlightPlayLink.setAttribute("aria-label", `${pick.gameLabel}でこのお題を遊ぶ`);
     }
     if (!initial) {
@@ -1510,9 +1515,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       state.filter.onlyFavorite = !state.filter.onlyFavorite;
       renderGrid();
-      if (showToast) {
-        Toast.info(state.filter.onlyFavorite ? "★ お気に入りのゲームを表示中" : "すべてのゲームを表示中");
-      }
     };
     if (state.activeGameId) {
       requestLeaveGame(proceed);
@@ -1567,7 +1569,6 @@ document.addEventListener("DOMContentLoaded", () => {
           resultBox.classList.remove("spinning");
           Sound.playFanfare();
           Confetti.burst(80);
-          Toast.success(`「${randomGame.title}」に決まりました`);
           btnSpinRoulette.disabled = false;
           btnGoGame.classList.remove("hidden");
 
@@ -1806,10 +1807,21 @@ document.addEventListener("DOMContentLoaded", () => {
       if (game) {
         if (state.activeGameRoute !== hash) state.toolHasProgress = false;
         state.activeGameRoute = hash;
-        const topicNumber = new URLSearchParams(options).get("topic");
-        state.articleTopic = typeof ASOBI_ARTICLE_TOPICS !== "undefined" && /^[1-9]\d{0,2}$/.test(topicNumber)
-          ? ASOBI_ARTICLE_TOPICS[gameId]?.[Number(topicNumber) - 1] || null
-          : null;
+        const params = new URLSearchParams(options);
+        const topicNumber = params.get("topic");
+        const spotlightIdx = params.get("spotlight");
+        if (typeof ASOBI_ARTICLE_TOPICS !== "undefined" && /^[1-9]\d{0,2}$/.test(topicNumber)) {
+          state.articleTopic = ASOBI_ARTICLE_TOPICS[gameId]?.[Number(topicNumber) - 1] || null;
+        } else if (/^\d{1,3}$/.test(spotlightIdx) && Array.isArray(game.presets)) {
+          const picked = game.presets[Number(spotlightIdx)];
+          if (picked) {
+            state.articleTopic = typeof picked === "string" ? { text: picked } : { ...picked };
+          } else {
+            state.articleTopic = null;
+          }
+        } else {
+          state.articleTopic = null;
+        }
         showGameDetail(game);
         return;
       }
@@ -1852,16 +1864,42 @@ document.addEventListener("DOMContentLoaded", () => {
     requestAnimationFrame(() => window.scrollTo({ top: state.homeScrollY, behavior: "instant" }));
   }
 
-  function updateDetailFavButton() {
-    const btnFav = document.getElementById("detail-fav-btn");
-    if (!btnFav || !state.activeGameId) return;
-    const isFav = state.favorites.includes(state.activeGameId);
-    const activeGame = state.games.find(g => g.id === state.activeGameId);
+  function updateDetailFavButton(pop = false) {
+    const isFav = Boolean(state.activeGameId && state.favorites.includes(state.activeGameId));
+    const activeGame = state.activeGameId ? state.games.find(g => g.id === state.activeGameId) : null;
     const title = activeGame ? activeGame.title : "このゲーム";
-    btnFav.classList.toggle("active", isFav);
-    btnFav.setAttribute("aria-pressed", String(isFav));
-    btnFav.setAttribute("aria-label", `${title}を${isFav ? "お気に入りから削除" : "お気に入りに追加"}`);
-    btnFav.textContent = isFav ? "★" : "☆";
+
+    const btnFav = document.getElementById("detail-fav-btn");
+    if (btnFav && state.activeGameId) {
+      btnFav.classList.toggle("active", isFav);
+      btnFav.setAttribute("aria-pressed", String(isFav));
+      btnFav.setAttribute("aria-label", `${title}を${isFav ? "お気に入りから外す" : "お気に入りに追加"}`);
+      btnFav.textContent = isFav ? "★" : "☆";
+    }
+
+    const menuContext = document.getElementById("menu-game-context");
+    const menuFavBtn = document.getElementById("btn-menu-game-fav");
+    const menuFavIcon = document.getElementById("menu-game-fav-icon");
+    const menuFavTitle = document.getElementById("menu-game-fav-title");
+    const menuFavSub = document.getElementById("menu-game-fav-sub");
+    if (menuContext && menuFavBtn) {
+      menuContext.classList.toggle("hidden", !state.activeGameId);
+      if (state.activeGameId) {
+        menuFavBtn.classList.toggle("is-favorited", isFav);
+        menuFavBtn.setAttribute("aria-pressed", String(isFav));
+        menuFavBtn.setAttribute("aria-label", `${title}を${isFav ? "お気に入りから外す" : "お気に入りに追加"}`);
+        if (menuFavIcon) {
+          menuFavIcon.textContent = isFav ? "★" : "☆";
+          if (pop) {
+            menuFavIcon.classList.remove("is-popping");
+            void menuFavIcon.offsetWidth;
+            menuFavIcon.classList.add("is-popping");
+          }
+        }
+        if (menuFavTitle) menuFavTitle.textContent = isFav ? "お気に入り済み" : "お気に入りに追加";
+        if (menuFavSub) menuFavSub.textContent = activeGame ? activeGame.title : "";
+      }
+    }
   }
 
   function showGameDetail(game, requestedTab = null) {
@@ -1952,45 +1990,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
     viewDetail.innerHTML = `
       <div class="detail-container">
-        <!-- スリムな詳細ナビバー -->
+        <!-- スリムな詳細ナビバー（共有は外、得点・音・お気に入り・設定はハンバーガーへ） -->
         <nav class="detail-nav-bar" aria-label="詳細ナビゲーション">
           <button class="btn-nav-back" id="btn-back-home" aria-label="ゲーム一覧に戻る">
-            <span aria-hidden="true">←</span> <span>一覧</span>
+            <svg class="ui-svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.5 4.5L7 10l5.5 5.5"/></svg>
+            <span>一覧</span>
           </button>
           <div class="detail-nav-title">
             <span class="nav-name">${renderGameTitle(game)}</span>
           </div>
           <div class="detail-nav-right">
-            <button class="btn-compact-share" id="detail-share-btn" aria-label="共有：この遊びを友達に送る" title="この遊びを友達に送る">共有</button>
-            <button type="button" class="btn-detail-scoreboard" id="btn-detail-scoreboard" aria-label="得点を記録する">得点</button>
-            <button class="btn-mute-toggle" id="btn-detail-mute" aria-label="音声をミュート切替">音なし</button>
-            ${game.isDuo ? '<span class="nav-pill pill-duo">2人用</span>' : ''}
+            <button class="btn-compact-share" id="detail-share-btn" aria-label="この遊びを共有する" title="友達に共有する">
+              <svg class="ui-svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3v9.5M6.5 6.5L10 3l3.5 3.5"/><path d="M4.5 11.5v4a1.5 1.5 0 0 0 1.5 1.5h8a1.5 1.5 0 0 0 1.5-1.5v-4"/></svg>
+              <span class="share-btn-label">共有</span>
+            </button>
+            <button class="btn-detail-menu" id="btn-detail-menu" aria-label="メニューと設定を開く" aria-haspopup="dialog" aria-controls="modal-settings" title="メニュー・設定">
+              <svg class="ui-svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13"/></svg>
+            </button>
           </div>
         </nav>
 
-        <!-- メインカード・ヒーロー -->
+        <!-- メインカード・ヒーロー（余計なボタンを引いてスッキリ） -->
         <div class="detail-compact-hero">
-          <div class="detail-hero-left">
-            <div class="detail-hero-info">
-              <h2 class="detail-compact-title">${renderGameTitle(game)}</h2>
-              <p class="detail-compact-catch">${escapeHTML(game.catchphrase)}</p>
-              <div class="detail-compact-meta">
-                <span>${escapeHTML(formatPlayersText(game))}</span>
-                <span>${game.duration}</span>
-                <span>${escapeHTML(game.preparation)}</span>
-              </div>
+          <div class="detail-hero-info">
+            <h2 class="detail-compact-title">${renderGameTitle(game)}</h2>
+            <p class="detail-compact-catch">${escapeHTML(game.catchphrase)}</p>
+            <div class="detail-compact-meta">
+              <span class="meta-item"><svg class="meta-svg" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="6" cy="5.5" r="2.2"/><path d="M2.2 13c.4-2 2-3.2 3.8-3.2s3.4 1.2 3.8 3.2"/><circle cx="11.2" cy="6.2" r="1.7"/><path d="M10.8 10.1c1.3.2 2.5 1.1 2.9 2.7"/></svg>${escapeHTML(formatPlayersText(game))}</span>
+              <span class="meta-item"><svg class="meta-svg" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="5.8"/><path d="M8 4.8V8l2.2 1.4"/></svg>${escapeHTML(game.duration)}</span>
+              <span class="meta-item"><svg class="meta-svg" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><rect x="4.5" y="2" width="7" height="12" rx="1.5"/><path d="M7.2 11.8h1.6"/></svg>${escapeHTML(game.preparation)}</span>
             </div>
           </div>
-          <div class="detail-hero-actions">
-            <button class="btn-compact-fav" id="detail-fav-btn" title="お気に入り"></button>
-            <button class="btn-compact-line" id="detail-line-btn" title="LINEで送る">LINEで送る</button>
-          </div>
-        </div>
-
-        <!-- ひとことで言うと（口頭説明サマリー） -->
-        <div class="speech-banner-box" role="region" aria-label="ゲームの概要まとめ">
-          <div class="speech-banner-badge">ひとことで言うと</div>
-          <p class="speech-banner-text">${escapeHTML(speechSummaryText)}</p>
         </div>
 
         <!-- タブ切り替えバー -->
@@ -2001,7 +2031,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </button>
           ` : ''}
           <button class="detail-tab-btn ${state.activeTab === 'rules' ? 'active' : ''}" data-tab="rules">
-            <span>遊び方</span>
+            <span>ルール</span>
           </button>
           ${game.presets && game.presets.length > 0 ? `
             <button class="detail-tab-btn ${state.activeTab === 'presets' ? 'active' : ''}" data-tab="presets">
@@ -2020,44 +2050,39 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
           ` : ''}
 
-          <!-- 2. ルールタブ -->
+          <!-- 2. ルールタブ（縦積みを1枚の落ち着いたカードに統合） -->
           <div class="tab-pane ${state.activeTab === 'rules' ? 'active' : ''}" id="pane-rules">
             <div class="rules-section">
-              <div class="section-box">
-                <h3 class="section-title">ゲームの概要</h3>
-                <p class="section-text">${escapeHTML(game.overview)}</p>
+              <div class="section-box rules-unified-card">
+                <div class="rules-lead-block">
+                  <h3 class="section-title">ルール</h3>
+                  <p class="section-text">${escapeHTML(game.overview)}</p>
+                </div>
+
+                <div class="rules-flow-block">
+                  <h4 class="rules-sub-heading">遊び方の流れ</h4>
+                  <ol class="rules-step-list rules-timeline">
+                    ${game.rules.map(r => `
+                      <li class="rule-step-item">
+                        <div class="step-badge" aria-hidden="true">${escapeHTML(String(r.step))}</div>
+                        <div class="step-content">
+                          <h5 class="step-title">${escapeHTML(r.title)}</h5>
+                          <p class="step-desc">${escapeHTML(r.desc).replace(/\n/g, '<br>')}</p>
+                        </div>
+                      </li>
+                    `).join('')}
+                  </ol>
+                </div>
+
+                ${game.tips && game.tips.length > 0 ? `
+                  <div class="rules-tips-note">
+                    <h4 class="rules-sub-heading">楽しむコツ</h4>
+                    <ul class="tips-list">
+                      ${game.tips.map(t => `<li>${escapeHTML(t)}</li>`).join('')}
+                    </ul>
+                  </div>
+                ` : ''}
               </div>
-
-              <div class="section-box mt-4">
-                <h3 class="section-title">遊び方ステップ</h3>
-                <div class="rules-step-list">
-                  ${game.rules.map(r => `
-                    <div class="rule-step-item">
-                      <div class="step-badge">0${r.step}</div>
-                      <div class="step-content">
-                        <h4 class="step-title">${escapeHTML(r.title)}</h4>
-                        <p class="step-desc">${escapeHTML(r.desc).replace(/\n/g, '<br>')}</p>
-                      </div>
-                    </div>
-                  `).join('')}
-                </div>
-              </div>
-
-              ${game.tips && game.tips.length > 0 ? `
-                <div class="section-box mt-4 tips-box">
-                  <h3 class="section-title">盛り上がるコツ・アレンジ</h3>
-                  <ul class="tips-list">
-                    ${game.tips.map(t => `<li>${escapeHTML(t)}</li>`).join('')}
-                  </ul>
-                </div>
-              ` : ''}
-
-                <div class="section-box mt-4 p-3 border rounded text-center rules-stamp-card">
-                  <p class="text-xs text-muted mb-2 font-bold">このゲームで遊んだらプレイ記録を残せます</p>
-                  <button class="btn btn-sm ${StampRally.played.includes(game.id) ? 'btn-secondary' : 'btn-primary'}" id="btn-mark-rules-played" ${StampRally.played.includes(game.id) ? 'disabled' : ''}>
-                    ${StampRally.played.includes(game.id) ? 'プレイ済みに記録済み' : '遊んだ記録をつける'}
-                  </button>
-                </div>
 
               <!-- 公式アイテム・アフィリエイト枠 -->
               ${affiliateMarkup}
@@ -2069,7 +2094,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="tab-pane ${state.activeTab === 'presets' ? 'active' : ''}" id="pane-presets">
               <div class="presets-section">
                 <div class="presets-header-bar">
-                  <h3 class="section-title">収録お題一覧</h3>
+                  <h3 class="section-title">お題</h3>
                   <button class="btn btn-sm btn-outline" id="btn-open-topic-custom" aria-expanded="false" aria-controls="custom-topic-editor">お題を追加・管理する</button>
                 </div>
                 <div id="custom-topic-editor" class="section-box mt-3 hidden">
@@ -2120,12 +2145,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 ${game.seoSlug ? `
                   <div class="section-box mt-4 seo-link-banner">
                     <div class="seo-banner-header">
-                      <span class="seo-banner-tag">お題・ルール記事</span>
-                      <h4 class="seo-banner-title">『${escapeHTML(game.title)}』の厳選お題＆ルールまとめを見る</h4>
+                      <span class="seo-banner-tag">まとめ記事</span>
+                      <h4 class="seo-banner-title">『${escapeHTML(game.title)}』のお題・遊び方ガイド</h4>
                     </div>
-                    <p class="seo-banner-desc">遊び方と自作お題、シーン別のコツを詳しく紹介しています。</p>
+                    <p class="seo-banner-desc">シーン別のお題やアレンジ例をまとめています。</p>
                     <a href="${game.seoSlug}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-block mt-2">
-                      お題まとめ記事を開く ↗
+                      ガイドを読む ↗
                     </a>
                   </div>
                 ` : ''}
@@ -2137,7 +2162,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         <!-- 関連するおすすめゲーム -->
         <div class="detail-recommend-section">
-          <h3 class="recommend-title">他のおすすめゲーム</h3>
+          <h3 class="recommend-title">次に遊ぶなら</h3>
           <div class="recommend-grid" id="recommend-grid"></div>
         </div>
       </div>
@@ -2220,18 +2245,25 @@ document.addEventListener("DOMContentLoaded", () => {
         markRulesBtn.textContent = 'プレイ済みに記録済み';
         markRulesBtn.className = 'btn btn-sm btn-secondary';
         markRulesBtn.disabled = true;
-        Toast.success('プレイ済みに記録しました');
       });
     }
 
-    // お気に入りボタン
+    // お気に入り状態同期（ハンバーガーメニュー内の「このゲーム」欄）
     updateDetailFavButton();
-    viewDetail.querySelector("#detail-fav-btn").addEventListener("click", (e) => {
+    viewDetail.querySelector("#detail-fav-btn")?.addEventListener("click", (e) => {
       toggleFavorite(game.id, e);
     });
 
-    // シェアボタン
-    viewDetail.querySelector("#detail-share-btn").addEventListener("click", async () => {
+    // 詳細画面ハンバーガーメニュー
+    viewDetail.querySelector("#btn-detail-menu")?.addEventListener("click", () => {
+      Sound.playClick();
+      syncSettingsModal();
+      if (modalSettings) ModalManager.open(modalSettings);
+    });
+
+    // シェアボタン（コピー時はボタン自体が ✓ コピー済 に変わる）
+    const shareBtn = viewDetail.querySelector("#detail-share-btn");
+    shareBtn?.addEventListener("click", async () => {
       Sound.playClick();
       const shareData = {
         title: `${game.title} | あそびポケット`,
@@ -2245,7 +2277,15 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         try {
           await navigator.clipboard.writeText(window.location.href);
-          Toast.success("リンクをクリップボードにコピーしました");
+          const lbl = shareBtn.querySelector(".share-btn-label");
+          if (lbl) {
+            lbl.textContent = "コピー済";
+            shareBtn.classList.add("is-copied");
+            setTimeout(() => {
+              lbl.textContent = "共有";
+              shareBtn.classList.remove("is-copied");
+            }, 1600);
+          }
         } catch (e) {
           const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareData.text)}&url=${encodeURIComponent(shareData.url)}`;
           window.open(xUrl, "_blank", "noopener,noreferrer");
@@ -2253,25 +2293,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // LINE共有ボタン
-    const detailLineBtn = viewDetail.querySelector("#detail-line-btn");
-    if (detailLineBtn) {
-      detailLineBtn.addEventListener("click", () => {
-        Sound.playClick();
-        const lineText = `スマホ1台・手ぶらですぐ遊べる「${game.title}」をみんなで遊ぼう！\n${window.location.href}`;
-        window.open(`https://line.me/R/msg/text/?${encodeURIComponent(lineText)}`, "_blank", "noopener,noreferrer");
-      });
-    }
-
-    viewDetail.querySelector("#btn-detail-scoreboard")?.addEventListener("click", () => document.getElementById("btn-toggle-scoreboard")?.click());
-
-    // 詳細画面の消音（ミュート）トグルボタン
-    const detailMuteBtn = viewDetail.querySelector("#btn-detail-mute");
-    if (detailMuteBtn) {
-      detailMuteBtn.addEventListener("click", () => {
-        handleMuteToggle();
-      });
-    }
     updateMuteButtons();
 
     // タブ切り替え & ツール連動スリムヘッダー ＆ フルスクリーンゲームモード
@@ -2567,15 +2588,20 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function handleMuteToggle() {
-    const isMuted = Sound.toggleMute();
+    Sound.toggleMute();
     updateMuteButtons();
     syncSettingsModal();
-    if (isMuted) {
-      Toast.info("効果音をOFFにしました");
-    } else {
-      Toast.success("効果音をONにしました");
-    }
+    window.dispatchEvent(new CustomEvent("asobi:sound-change", { detail: { muted: Sound.isMuted } }));
   }
+
+  window.enableAsobiSound = function enableAsobiSound() {
+    Sound.isMuted = false;
+    Storage.set("asobi_sound_muted", false);
+    Sound.playClick();
+    updateMuteButtons();
+    syncSettingsModal();
+    window.dispatchEvent(new CustomEvent("asobi:sound-change", { detail: { muted: false } }));
+  };
 
   updateMuteButtons();
 
@@ -2589,7 +2615,14 @@ document.addEventListener("DOMContentLoaded", () => {
       menuSoundStatus.textContent = Sound.isMuted ? "音なし" : "音あり";
       menuSoundStatus.classList.toggle("is-on", !Sound.isMuted);
     }
+    updateDetailFavButton();
   }
+
+  document.getElementById("btn-menu-game-fav")?.addEventListener("click", (e) => {
+    if (state.activeGameId) {
+      toggleFavorite(state.activeGameId, e);
+    }
+  });
 
   if (btnOpenSettings) {
     btnOpenSettings.addEventListener("click", () => {
@@ -2610,7 +2643,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!Sound.isMuted) Sound.playClick();
       Storage.set("asobi_sound_muted", Sound.isMuted);
       updateMuteButtons();
-      Toast.info(e.target.checked ? "効果音をONにしました" : "効果音をOFFにしました");
+      window.dispatchEvent(new CustomEvent("asobi:sound-change", { detail: { muted: Sound.isMuted } }));
     });
   }
 
@@ -2624,7 +2657,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const game = state.games.find(g => g.id === state.activeGameId);
         if (game) showGameDetail(game);
       }
-      Toast.info(e.target.checked ? "ふりがなモードをONにしました" : "ふりがなモードをOFFにしました");
     });
   }
 
@@ -2634,7 +2666,6 @@ document.addEventListener("DOMContentLoaded", () => {
       state.isDark = e.target.checked;
       Storage.set("asobi_theme_dark", state.isDark);
       applyTheme();
-      Toast.info(e.target.checked ? "ダークモードに切り替えました" : "ライトモードに切り替えました");
     });
   }
 

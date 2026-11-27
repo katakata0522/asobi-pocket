@@ -3593,11 +3593,11 @@ const GAMES_DATA = [
   },
   {
     "id": "yamanote-game",
-    "title": "山手線ゲーム (古今東西) ＆ リズムマシーン",
+    "title": "山手線ゲーム（古今東西）",
     "ruby": "やまのてげーむ",
     "icon": "🚃",
-    "badge": "リズムツール付",
-    "catchphrase": "手拍子BPM音とお題ガチャ付き！リズムに乗ってお題を答える王道ゲーム！",
+    "badge": "定番リズム",
+    "catchphrase": "手拍子のリズムに乗ってお題を答える定番パーティーゲーム",
     "category": "action",
     "toolType": "yamanote",
     "minPlayers": 2,
@@ -3613,12 +3613,12 @@ const GAMES_DATA = [
       "飲み会",
       "古今東西"
     ],
-    "overview": "パンパンとリズムを刻む手拍子マシンを搭載！お題ガチャ（都道府県、ジブリ作品、居酒屋メニュー等）を引き、BPMテンポアップ機能でどんどん難易度が上がる超快適仕様！",
+    "overview": "都道府県や食べ物などのお題を決めて、手拍子のテンポに合わせて順番に答えていく定番ゲーム。答えに詰まったり、すでに出たものを言ったりするとアウトです。",
     "rules": [
       {
         "step": "1",
-        "title": "お題とテンポをスタート",
-        "desc": "お題を引き、リズムマシン（手拍子）を鳴らします。"
+        "title": "お題を決めてテンポをスタート",
+        "desc": "お題を引き、手拍子のリズムをスタートします。"
       },
       {
         "step": "2",
@@ -3813,7 +3813,7 @@ const GAMES_DATA = [
   },
   {
     "id": "ping-pong-pang",
-    "title": "ピンポンパンゲーム (テンポアップマシン)",
+    "title": "ピンポンパンゲーム",
     "ruby": "ぴんぽんぱん",
     "icon": "🏓",
     "badge": "爆速リズム付",
@@ -3964,7 +3964,7 @@ const GAMES_DATA = [
   },
   {
     "id": "magical-banana",
-    "title": "マジカルバナナ (連想リズムマシン)",
+    "title": "マジカルバナナ",
     "ruby": "まじかるばなな",
     "icon": "🍌",
     "badge": "連想BGM付",
@@ -4219,7 +4219,7 @@ const GAMES_DATA = [
   },
   {
     "id": "twenty-questions",
-    "title": "20の扉 (20 Questions ログボード)",
+    "title": "20の扉（20 Questions）",
     "ruby": "にじゅうのとびら",
     "icon": "🚪",
     "badge": "質問管理付",
@@ -4582,7 +4582,7 @@ const GAMES_DATA = [
   },
   {
     "id": "counting-game-30",
-    "title": "30言ったら負け (21カウント対戦ボード)",
+    "title": "30言ったら負け（21ゲーム）",
     "ruby": "さんじゅういったらまけ",
     "icon": "🔢",
     "badge": "対戦ボード付",
@@ -4805,7 +4805,7 @@ const GAMES_DATA = [
   },
   {
     "id": "two-truths-one-lie",
-    "title": "嘘つき自己紹介（2真1偽 投票ボード）",
+    "title": "嘘つき自己紹介（2真1偽）",
     "ruby": "うそつきじこしょうかい",
     "icon": "🎭",
     "badge": "投票ツール付",
@@ -4919,7 +4919,7 @@ const GAMES_DATA = [
   },
   {
     "id": "doremi-song",
-    "title": "ドレミの歌ゲーム (ランダム音階ルーレット)",
+    "title": "ドレミの歌ゲーム",
     "ruby": "どれみのうたげーむ",
     "icon": "🎵",
     "badge": "音階ルーレット付",

@@ -19,6 +19,43 @@ function escapeHTML(str) {
     .replace(/'/g, "&#039;");
 }
 
+function renderSoundHintMarkup() {
+  const isMuted = typeof Sound !== "undefined" ? Boolean(Sound.isMuted) : false;
+  return `<div class="tool-sound-hint${isMuted ? "" : " hidden"}" data-sound-hint>
+    <span class="tool-sound-hint-text">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/></svg>
+      今は音なしです
+    </span>
+    <button type="button" class="btn-sound-hint-enable" data-enable-sound>音をONにする</button>
+  </div>`;
+}
+
+function bindSoundHintInContainer(container) {
+  const sync = () => {
+    const isMuted = typeof Sound !== "undefined" ? Boolean(Sound.isMuted) : false;
+    container.querySelectorAll("[data-sound-hint]").forEach((el) => {
+      el.classList.toggle("hidden", !isMuted);
+    });
+  };
+  const onClick = (e) => {
+    const btn = e.target.closest("[data-enable-sound]");
+    if (!btn) return;
+    if (typeof window.enableAsobiSound === "function") {
+      window.enableAsobiSound();
+    } else if (typeof Sound !== "undefined") {
+      Sound.isMuted = false;
+      Sound.playClick?.();
+    }
+    sync();
+  };
+  container.addEventListener("click", onClick);
+  window.addEventListener("asobi:sound-change", sync);
+  return () => {
+    container.removeEventListener("click", onClick);
+    window.removeEventListener("asobi:sound-change", sync);
+  };
+}
+
 // 得点表に名前がある席はその名前で始める。ゲーム内の変更はその卓で保持する。
 function tableRoster() {
   const edits = [];
@@ -925,8 +962,6 @@ const GameTools = {
 
       container.innerHTML = `
         <div class="tool-card text-center asa-sore-card">
-          <div class="asa-sore-banner">朝までそれ正解ジェネレーター</div>
-
           ${latestCardHtml ? `<div class="mb-3">${latestCardHtml}</div>` : ""}
 
           <!-- お題ディスプレイ -->
@@ -936,7 +971,7 @@ const GameTools = {
             <div class="asa-sore-suffix">…といえば？</div>
           </div>
 
-          <label class="text-xs text-sub"><input type="checkbox" id="asa-all-kana" ${allKana ? "checked" : ""}> 難しい頭文字も使う</label>
+          <label class="asa-all-kana-label text-xs text-sub"><input type="checkbox" id="asa-all-kana" ${allKana ? "checked" : ""}> 難しい頭文字も使う</label>
           <div class="asa-controls-grid">
             <button class="btn btn-outline btn-sm" id="btn-shuffle-both">全部シャッフル</button>
             <button class="btn btn-outline btn-sm" id="btn-shuffle-kana">頭文字だけ変更</button>
@@ -1148,6 +1183,7 @@ const GameTools = {
 
       container.innerHTML = `
         <div class="tool-card text-center bomb-game-card">
+          ${renderSoundHintMarkup()}
           <div class="topic-box">
             <span class="topic-tag">今回のお題</span>
             <div class="topic-text" id="bomb-topic-text">${escapeHTML(currentTopic)}</div>
@@ -1233,9 +1269,6 @@ const GameTools = {
           rallyCount++;
           const numEl = container.querySelector("#rally-count-num");
           if (numEl) numEl.textContent = rallyCount;
-          if (rallyCount % 5 === 0) {
-            Toast.info(`ラリー ${rallyCount} 回突破`);
-          }
         });
 
         container.querySelector("#btn-stop-bomb").addEventListener("click", resetBomb);
@@ -1333,8 +1366,10 @@ const GameTools = {
       render();
     }
 
+    const unbindSoundHint = bindSoundHintInContainer(container);
     render();
     return () => {
+      unbindSoundHint();
       if (GameTimer.activeTimer && GameTimer.activeTimer.gameId === "bomb-timer") {
         GameTimer.activeTimer = null;
       }
@@ -1362,6 +1397,21 @@ const GameTools = {
     }
 
     shuffle();
+    if (game && game.articleTopic) {
+      const targetWord = typeof game.articleTopic === "string"
+        ? game.articleTopic
+        : (game.articleTopic.word || game.articleTopic.text || "");
+      if (targetWord) {
+        const hitIdx = presets.findIndex(p => (typeof p === "string" ? p : p.word) === targetWord);
+        if (hitIdx > 0) {
+          const [matched] = presets.splice(hitIdx, 1);
+          presets.unshift(matched);
+        } else if (hitIdx === -1 && typeof game.articleTopic === "object") {
+          presets.unshift(game.articleTopic);
+        }
+        currentIndex = 0;
+      }
+    }
 
     const kataTimer = new GameTimer({
       totalSeconds: 60,
@@ -1869,21 +1919,28 @@ const GameTools = {
         </div>
       `;
 
-      container.querySelector("#btn-ans-yes").addEventListener("click", () => {
+      const pulseHit = (el) => {
+        if (!el) return;
+        el.classList.remove("is-hit");
+        void el.offsetWidth;
+        el.classList.add("is-hit");
+        safeSetTimeout(() => el.classList.remove("is-hit"), 260);
+      };
+      container.querySelector("#btn-ans-yes").addEventListener("click", (e) => {
         Sound.playCorrect();
-        Toast.success("YES");
+        pulseHit(e.currentTarget);
       });
-      container.querySelector("#btn-ans-no").addEventListener("click", () => {
+      container.querySelector("#btn-ans-no").addEventListener("click", (e) => {
         Sound.playWrong();
-        Toast.warning("NO（違います）");
+        pulseHit(e.currentTarget);
       });
-      container.querySelector("#btn-ans-na").addEventListener("click", () => {
+      container.querySelector("#btn-ans-na").addEventListener("click", (e) => {
         Sound.playTick(500);
-        Toast.info("関係ありません");
+        pulseHit(e.currentTarget);
       });
-      container.querySelector("#btn-ans-good").addEventListener("click", () => {
+      container.querySelector("#btn-ans-good").addEventListener("click", (e) => {
         Sound.playSelect();
-        Toast.success("鋭い質問です。真相に近づいています");
+        pulseHit(e.currentTarget);
       });
 
       container.querySelectorAll(".btn-phased-hint-toggle").forEach(btn => {
@@ -2132,7 +2189,12 @@ const GameTools = {
       return DeckManager.getNext(`talk-gacha_${cat}`, list) || presets[0] || { q: "人生で一番大笑いしたハプニングは？", category: "ライト" };
     }
 
-    let currentItem = drawGachaItem("all");
+    const initGachaText = game && game.articleTopic
+      ? (typeof game.articleTopic === "string" ? game.articleTopic : (game.articleTopic.q || game.articleTopic.text || ""))
+      : "";
+    let currentItem = initGachaText
+      ? (presets.find(p => p.q === initGachaText) || { q: initGachaText, category: (game.articleTopic && game.articleTopic.category) || "ライト" })
+      : drawGachaItem("all");
 
     let choiceState = {
       item: twoChoicesPresets[0] || { a: "選択肢A", b: "選択肢B" },
@@ -3941,8 +4003,8 @@ const GameTools = {
           </div>
 
           <div class="my-2">
-            <div id="banana-beat-indicator" class="rhythm-beat-indicator">
-              ${bananaState.isPlaying ? 'リズムに合わせて復唱＆連想' : 'スタートを押してリズム開始'}
+            <div id="banana-beat-indicator" class="rhythm-beat-indicator ${bananaState.isPlaying ? 'is-playing' : 'is-idle'}">
+              ${bananaState.isPlaying ? 'リズムに合わせて連想しよう' : '「リズムスタート」で開始'}
             </div>
           </div>
 
@@ -3978,8 +4040,8 @@ const GameTools = {
           </div>
 
           <div class="my-2">
-            <div id="doremi-beat-indicator" class="rhythm-beat-indicator">
-              ${doremiState.isPlaying ? 'テンポを刻み中...' : 'リズムに合わせて指定の音階を歌いましょう'}
+            <div id="doremi-beat-indicator" class="rhythm-beat-indicator ${doremiState.isPlaying ? 'is-playing' : 'is-idle'}">
+              ${doremiState.isPlaying ? 'テンポを刻み中…' : '「リズム開始」でスタート'}
             </div>
           </div>
 
@@ -4002,8 +4064,7 @@ const GameTools = {
 
       container.innerHTML = `
         <div class="tool-card text-center rhythm-box-card">
-          <h3 class="tool-title mb-2">リズムゲームボックス</h3>
-
+          ${renderSoundHintMarkup()}
           <div class="btn-toggle-group rhythm-subtab-group mb-3">
             <button class="btn-toggle flex-1 ${currentSubTab === 'yamanote' ? 'active' : ''}" data-subtab="yamanote">古今東西</button>
             <button class="btn-toggle flex-1 ${currentSubTab === 'magical-banana' ? 'active' : ''}" data-subtab="magical-banana">マジカルバナナ</button>
@@ -4027,8 +4088,6 @@ const GameTools = {
         Sound.playSelect();
         if (typeof window.openBatsuModal === "function") {
           window.openBatsuModal();
-        } else {
-          Toast.info("ソフトミッションルーレットを起動します");
         }
       };
 
@@ -4194,9 +4253,11 @@ const GameTools = {
       }
     }
 
+    const unbindSoundHint = bindSoundHintInContainer(container);
     render();
 
     return () => {
+      unbindSoundHint();
       stopAllRhythms();
     };
   },
@@ -4366,7 +4427,7 @@ const GameTools = {
       const btn = container.querySelector("#btn-pingpong-auto");
       if (btn) {
         btn.className = state.isPlaying ? "btn btn-danger btn-block btn-lg" : "btn btn-primary btn-block btn-lg";
-        btn.textContent = state.isPlaying ? "自動テンポマシン停止" : "自動テンポマシン開始";
+        btn.textContent = state.isPlaying ? "ストップ" : "スタート";
       }
     }
 
@@ -4401,12 +4462,12 @@ const GameTools = {
 
       container.innerHTML = `
         <div class="tool-card text-center">
-          <div class="flex justify-between items-center mb-1">
-            <h3 class="tool-title" style="margin:0;">ピンポンパン ゲームマスター</h3>
-            <span class="badge badge-info font-mono text-xs">BPM: <span id="pingpong-bpm-val">${state.bpm}</span></span>
+          ${renderSoundHintMarkup()}
+          <div class="flex justify-end items-center mb-1">
+            <span class="badge badge-info font-mono text-xs">BPM <span id="pingpong-bpm-val">${state.bpm}</span></span>
           </div>
 
-          <div class="pingpong-display my-4 p-4 rounded border animate-scale" style="background: rgba(59,130,246,0.06); border-color: rgba(59,130,246,0.3);">
+          <div class="pingpong-display my-3 p-4 rounded border animate-scale" style="background: rgba(59,130,246,0.06); border-color: rgba(59,130,246,0.3);">
             <div class="pingpong-word font-black text-3xl text-primary">${words[state.step]}</div>
             <div class="pingpong-combo badge badge-success mt-2">コンボ: ${state.combo} 回</div>
             ${state.lastPeakCombo > 0 ? `<div class="text-xs text-sub mt-2">これまでの最高記録: ${state.lastPeakCombo}回コンボ</div>` : ""}
@@ -4423,10 +4484,10 @@ const GameTools = {
 
           <div class="flex flex-col gap-2 mt-3">
             <button class="btn ${state.isPlaying ? 'btn-danger' : 'btn-primary'} btn-block btn-lg py-3 font-bold" id="btn-pingpong-auto">
-              ${state.isPlaying ? '自動テンポマシン停止' : '自動テンポマシン開始'}
+              ${state.isPlaying ? 'ストップ' : 'スタート'}
             </button>
             <button class="btn btn-danger btn-sm btn-block mt-1" id="btn-pingpong-reset">
-              ミス・リセット（0回に戻す）
+              リセット
             </button>
           </div>
           <details class="tool-optional-settings" id="pingpong-options" ${optionsOpen ? "open" : ""}>
@@ -4484,9 +4545,11 @@ const GameTools = {
       });
     }
 
+    const unbindSoundHint = bindSoundHintInContainer(container);
     render();
 
     return () => {
+      unbindSoundHint();
       stopAutoPlay();
     };
   },
@@ -4810,8 +4873,6 @@ const GameTools = {
 
       container.innerHTML = `
         <div class="tool-card text-center">
-          <h3 class="tool-title">20の扉 (20 Questions) ログボード</h3>
-
           <div class="remaining-badge-box my-3">
             <span class="badge badge-info">残り質問可能数</span>
             <div class="remaining-count ${state.remaining <= 5 ? 'text-danger' : 'text-primary'} font-black font-mono">
@@ -5495,7 +5556,6 @@ const GameTools = {
     function update() {
       container.innerHTML = `
         <div class="tool-card">
-          <h3 class="tool-title text-center">嘘つき自己紹介（2真1偽）</h3>
           <p class="text-sm text-muted text-center mb-3">本当の出来事2つと、嘘の出来事1つを入力してシャッフルします。</p>
 
           ${promptList.length > 0 ? `
@@ -5585,7 +5645,7 @@ const GameTools = {
 
         container.innerHTML = `
           <div class="tool-card text-center">
-            <h3 class="tool-title">嘘はどれだ？（投票ボード）</h3>
+            <h3 class="tool-title">どれが嘘？</h3>
             <p class="text-sm text-muted">質問しながら怪しい番号に投票し、最後に正解をオープンしましょう。</p>
 
             ${resultSlotHtml ? `<div id="two-truths-result-slot" class="my-3">${resultSlotHtml}</div>` : '<div id="two-truths-result-slot"></div>'}

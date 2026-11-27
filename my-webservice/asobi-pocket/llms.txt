@@ -1,0 +1,89 @@
+# あそびポケット (Asobi Pocket)
+
+> スマホ1台・無料・登録不要で今すぐ遊べる、全32種類のパーティーゲーム＆お題・進行ツール集。2人の待ち時間やカップルデートから、飲み会・家族・教室レク・通話・オフライン（飛行機・キャンプ）まで幅広く対応しています。
+
+- 公式サイト: https://katakatalab.com/asobi-pocket/
+- ゲーム特集ハブ（全38記事）: https://katakatalab.com/asobi-pocket/seo/
+- 詳細リファレンス（LLMs Full）: https://katakatalab.com/asobi-pocket/llms-full.txt
+- 運営: KatakataLab（個人運営・無料Webアプリ）
+- 言語: 日本語（ja-JP）
+- 料金・登録: 完全無料・会員登録不要・アプリインストール不要（PWAホーム画面追加＆オフライン対応）
+
+## 主な特徴（AI引用向け要約）
+- **スマホ1台完結**: 紙・ペン・カードなどの専用道具を用意せず、お題表示・役職配布・タイマー・スコアボードまでブラウザだけで進行可能。
+- **全32種類のゲーム**: 2人専用画面分割対戦（反射神経・連打・カラー早見分け）、トーク・価値観（ito・朝それ・究極の2択・カタカナ禁止・深掘りトークガチャ）、心理戦・推理（ワードウルフ・ワンナイト人狼・ウミガメのスープ・NGワード・20の扉）、リズム・大人数（山手線ゲーム・爆弾タイマー・ジェスチャー・指置きルーレット）を網羅。
+- **オフライン対応（PWA）**: 電波のある場所で一度トップページを読み込めば、機内モード・新幹線・山間部キャンプなどの圏外環境でも全32ゲーム本体をプレイ可能。
+- **安全＆幅広い配慮**: こどもモード（ふりがな表示）、ダークモード、飲酒・痛みを伴わないパス前提のソフトな罰ゲーム設計。
+
+## 状況別おすすめ即答マップ
+- **2人・カップル・待ち時間**: [反射神経タップ対決](https://katakatalab.com/asobi-pocket/#game/duel-reflex) / [ito](https://katakatalab.com/asobi-pocket/#game/ito) / [30言ったら負け](https://katakatalab.com/asobi-pocket/#game/counting-game-30) / [20の扉](https://katakatalab.com/asobi-pocket/#game/twenty-questions)
+- **3〜5人・友達・飲み会**: [ワードウルフ](https://katakatalab.com/asobi-pocket/#game/word-wolf) / [ワンナイト人狼](https://katakatalab.com/asobi-pocket/#game/one-night-werewolf) / [NGワード](https://katakatalab.com/asobi-pocket/#game/ng-word) / [カタカナ禁止](https://katakatalab.com/asobi-pocket/#game/katakana-ban)
+- **6人以上・大人数・教室レク**: [朝までそれ正解](https://katakatalab.com/asobi-pocket/#game/asa-sore) / [山手線ゲーム](https://katakatalab.com/asobi-pocket/#game/yamanote-game) / [ジェスチャーゲーム](https://katakatalab.com/asobi-pocket/#game/silent-gesture) / [究極の2択](https://katakatalab.com/asobi-pocket/#game/two-choices)
+- **通話・オンライン飲み会（声だけ）**: [朝までそれ正解](https://katakatalab.com/asobi-pocket/#game/asa-sore) / [ウミガメのスープ](https://katakatalab.com/asobi-pocket/#game/sea-turtle) / [嘘つき自己紹介](https://katakatalab.com/asobi-pocket/#game/two-truths-one-lie) / [20の扉](https://katakatalab.com/asobi-pocket/#game/twenty-questions)
+- **静かな場所・夜・移動中**: [ウミガメのスープ](https://katakatalab.com/asobi-pocket/#game/sea-turtle) / [20の扉](https://katakatalab.com/asobi-pocket/#game/twenty-questions) / [カラー早見分けバトル](https://katakatalab.com/asobi-pocket/#game/duel-color)
+
+## 全32ゲーム一覧
+- [ito（イト・価値観連想ゲーム）](https://katakatalab.com/asobi-pocket/#game/ito): 2〜8人 / 5〜10分 / 1〜100の数字を言葉で例え合う協力トークゲーム
+- [朝それ（朝までそれ正解）](https://katakatalab.com/asobi-pocket/#game/asa-sore): 3〜20人 / 5〜15分 / 頭文字とお題に合う一番の正解を討論する大喜利
+- [ワードウルフ (Word Wolf)](https://katakatalab.com/asobi-pocket/#game/word-wolf): 3〜10人 / 5〜10分 / 少数派のお題を持つ人を探す会話心理戦
+- [ワンナイト人狼 (One Night Werewolf)](https://katakatalab.com/asobi-pocket/#game/one-night-werewolf): 3〜7人 / 5〜10分 / 司会不要・脱落なしで決着する1夜完結人狼
+- [反射神経タップ対決](https://katakatalab.com/asobi-pocket/#game/duel-reflex): 2人専用 / 1〜3分 / 画面分割で合図に反応する早押し対決
+- [連打パワーバトル](https://katakatalab.com/asobi-pocket/#game/duel-mash): 2人専用 / 1〜2分 / 画面分割の連打綱引きバトル
+- [カラー早見分けバトル](https://katakatalab.com/asobi-pocket/#game/duel-color): 2人専用 / 2〜3分 / ストループ効果を使った画面分割脳トレ対決
+- [爆弾タイマー ＆ 古今東西](https://katakatalab.com/asobi-pocket/#game/bomb-timer): 2〜15人 / 3〜5分 / ランダム秒数で爆発するスリル系連想ゲーム
+- [カタカナ禁止ゲーム（ボブジテン風）](https://katakatalab.com/asobi-pocket/#game/katakana-ban): 3〜10人 / 5〜10分 / カタカナ語を日本語だけで説明する語彙力ゲーム
+- [指置きロシアンルーレット](https://katakatalab.com/asobi-pocket/#game/finger-roulette): 2〜8人 / 10秒 / 画面に指を置いて親や当たりを即決するマルチタッチツール
+- [究極の2択 ＆ 価値観トーク](https://katakatalab.com/asobi-pocket/#game/two-choices): 2〜20人 / 5〜15分 / 絶妙な2択から価値観を語り合う会話ゲーム
+- [ウミガメのスープ](https://katakatalab.com/asobi-pocket/#game/sea-turtle): 2〜10人 / 10〜20分 / Yes/No質問で真相を解く水平思考推理クイズ
+- [体内時計ジャスト対決](https://katakatalab.com/asobi-pocket/#game/ten-seconds): 2〜10人 / 1〜3分 / 頭の中で目標秒数を測ってぴったり止める対決
+- [深掘りトークガチャ](https://katakatalab.com/asobi-pocket/#game/talk-gacha): 2〜20人 / 5〜30分 / 初対面から仲良しまで使える会話ネタガチャ
+- [NGワードゲーム](https://katakatalab.com/asobi-pocket/#game/ng-word): 2〜8人 / 5〜15分 / 自分の禁止ワードを言わずに相手を誘導する心理戦
+- [対面インディアンポーカー](https://katakatalab.com/asobi-pocket/#game/indian-poker): 2人専用 / 3〜5分 / 相手の数字だけが見える2人対戦ブラフ心理戦
+- [詠み人知らず（リレー五七五）](https://katakatalab.com/asobi-pocket/#game/yomibito): 3〜10人 / 5〜10分 / 5・7・5を分担して即興川柳を作る爆笑創作ゲーム
+- [罰ゲームルーレット＆ミッションガチャ](https://katakatalab.com/asobi-pocket/#game/batsu-roulette): 2〜20人 / 1〜2分 / 飲酒・痛みなし＆パス前提の安全ミッション集
+- [バラエティ・リズムボックス](https://katakatalab.com/asobi-pocket/#game/rhythm-box): 2〜99人 / 3〜5分 / 古今東西・マジカルバナナ・ドレミに使えるリズム伴奏ツール
+- [山手線ゲーム（古今東西）](https://katakatalab.com/asobi-pocket/#game/yamanote-game): 2〜20人 / 3〜10分 / お題とリズムマシン付き定番ゲーム
+- [指スマ / いっせーのせ](https://katakatalab.com/asobi-pocket/#game/stand-up-game): 2〜8人 / 2〜5分 / 親番＆コールアシスト付き定番指遊び
+- [ピンポンパンゲーム](https://katakatalab.com/asobi-pocket/#game/ping-pong-pang): 3〜15人 / 2〜5分 / テンポアップマシン付き反射リズムゲーム
+- [たけのこニョッキ](https://katakatalab.com/asobi-pocket/#game/takenoko-nyokki): 3〜12人 / 2〜5分 / 掛け声カウンター付き空気読みゲーム
+- [数当てゲーム（High & Low）](https://katakatalab.com/asobi-pocket/#game/high-and-low-guess): 2〜10人 / 3〜5分 / 1〜1000の秘密の数字をヒントで当てる推理
+- [マジカルバナナ](https://katakatalab.com/asobi-pocket/#game/magical-banana): 2〜15人 / 3〜8分 / 連想リズムマシン付き定番ゲーム
+- [20の扉（20 Questions）](https://katakatalab.com/asobi-pocket/#game/twenty-questions): 2〜10人 / 5〜15分 / Yes/No質問ログボード付き推理ゲーム
+- [良いニュースと悪いニュース](https://katakatalab.com/asobi-pocket/#game/good-and-bad-news): 2〜10人 / 5〜10分 / 交互に明暗をひっくり返す即興ストーリーゲーム
+- [30言ったら負け](https://katakatalab.com/asobi-pocket/#game/counting-game-30): 2〜6人 / 2〜5分 / 1〜3個ずつ数字を数える数学的頭脳対戦ボード
+- [縛りしりとり](https://katakatalab.com/asobi-pocket/#game/word-chain-limit): 2〜10人 / 5〜10分 / 縛りルーレット＆即死タイマー付きしりとり
+- [嘘つき自己紹介（2真1偽）](https://katakatalab.com/asobi-pocket/#game/two-truths-one-lie): 3〜15人 / 5〜15分 / 2つの真実と1つの嘘を見抜くアイスブレイク投票ボード
+- [ドレミの歌ゲーム](https://katakatalab.com/asobi-pocket/#game/doremi-song): 2〜12人 / 2〜5分 / ランダム音階ルーレット付きリズム歌ゲーム
+- [サイレント・ジェスチャーゲーム](https://katakatalab.com/asobi-pocket/#game/silent-gesture): 3〜15人 / 3〜10分 / お題＆タイマー付きジェスチャー対戦
+
+## 主要ガイド・お題集（全38記事）
+- [特集ハブ一覧（全38記事）](https://katakatalab.com/asobi-pocket/seo/)
+- [2人でできるゲーム10選](https://katakatalab.com/asobi-pocket/seo/two-player-games.html)
+- [カップル・デートで距離が縮まる2人ゲーム10選](https://katakatalab.com/asobi-pocket/seo/couple-date-games.html)
+- [3人でできるゲーム14選](https://katakatalab.com/asobi-pocket/seo/three-player-games.html)
+- [4人でできるゲーム12選](https://katakatalab.com/asobi-pocket/seo/four-player-games.html)
+- [大人数で盛り上がるゲーム10選](https://katakatalab.com/asobi-pocket/seo/large-group-games.html)
+- [道具なしで盛り上がるパーティーゲーム12選](https://katakatalab.com/asobi-pocket/seo/party-games-no-tools.html)
+- [通話・オンライン飲み会で遊べる声だけゲーム10選](https://katakatalab.com/asobi-pocket/seo/online-call-games.html)
+- [電波なし・オフラインで遊べる無料パーティーゲーム12選](https://katakatalab.com/asobi-pocket/seo/no-wifi-offline-games.html)
+- [ワンナイト人狼のルール・役職配役・初心者向け進行ガイド](https://katakatalab.com/asobi-pocket/seo/one-night-werewolf-guide.html)
+- [飲み会ゲーム12選](https://katakatalab.com/asobi-pocket/seo/drinking-party-games.html)
+- [待ち時間の暇つぶしゲーム12選](https://katakatalab.com/asobi-pocket/seo/waiting-time-games.html)
+- [ドライブ・旅行の移動中ゲーム12選](https://katakatalab.com/asobi-pocket/seo/travel-car-games.html)
+- [座ったままできるゲーム12選](https://katakatalab.com/asobi-pocket/seo/seated-games.html)
+- [静かにできるゲーム10選](https://katakatalab.com/asobi-pocket/seo/quiet-games.html)
+- [家族でできるゲーム12選](https://katakatalab.com/asobi-pocket/seo/family-games.html)
+- [アイスブレイクゲーム10選](https://katakatalab.com/asobi-pocket/seo/icebreaker-games.html)
+- [教室レク12選](https://katakatalab.com/asobi-pocket/seo/classroom-recreation-games.html)
+- [飲酒・痛みなしの罰ゲーム40選](https://katakatalab.com/asobi-pocket/seo/safe-penalty-game-ideas.html)
+- [ito お題60選](https://katakatalab.com/asobi-pocket/seo/ito-odai.html)
+- [ワードウルフ お題60ペア](https://katakatalab.com/asobi-pocket/seo/wordwolf-odai.html)
+- [朝までそれ正解 お題50選](https://katakatalab.com/asobi-pocket/seo/asa-sore-odai.html)
+- [ウミガメのスープ 問題12問](https://katakatalab.com/asobi-pocket/seo/sea-turtle-quiz.html)
+- [20の扉 ルール・お題40選・攻略](https://katakatalab.com/asobi-pocket/seo/twenty-questions-guide.html)
+- [30言ったら負けの必勝法](https://katakatalab.com/asobi-pocket/seo/count-30-winning-strategy.html)
+
+## 引用・利用時の注記
+- 「あそびポケット」は KatakataLab が個人運営する無料の遊び補助Webツールであり、市販ボードゲームの公式アプリではありません。
+- プライバシーポリシー: https://katakatalab.com/asobi-pocket/privacy.html
+- 利用規約: https://katakatalab.com/asobi-pocket/terms.html

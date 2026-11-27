@@ -1,4 +1,4 @@
-const CACHE_NAME = "asobi-pocket-20261126-editorial-polish-v11";
+const CACHE_NAME = "asobi-pocket-20261127-seo-llmo-v12";
 
 // 起動に必要な資産を一括で保存し、欠けた版を有効化しない。
 const CORE_ASSETS = [

@@ -375,7 +375,6 @@
           markStarted();
           current = pick();
           if (typeof Sound !== "undefined") Sound.playClick();
-          if (typeof Toast !== "undefined") Toast.info("パスOK。別のミッションに引き直しました");
           render();
         });
 
@@ -383,7 +382,6 @@
           markStarted();
           if (typeof Sound !== "undefined") Sound.playFanfare();
           if (typeof Confetti !== "undefined") Confetti.burst(46);
-          if (typeof Toast !== "undefined") Toast.success("ミッション達成");
         });
       };
 
@@ -489,11 +487,19 @@
       }
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`);
-        if (typeof Toast !== "undefined") Toast.success("共有用テキストをコピーしました");
+        const lbl = shareButton.querySelector(".share-btn-label");
+        if (lbl) {
+          lbl.textContent = "コピー済";
+          shareButton.classList.add("is-copied");
+          setTimeout(() => {
+            lbl.textContent = "共有";
+            shareButton.classList.remove("is-copied");
+          }, 1600);
+        }
       }
     } catch (error) {
       if (error?.name !== "AbortError" && typeof Toast !== "undefined") {
-        Toast.warning("共有を完了できませんでした");
+        Toast.warning("共有できませんでした");
       }
     }
   }, true);

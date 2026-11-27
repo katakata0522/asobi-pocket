@@ -6,6 +6,8 @@
   <title>あそびポケット｜スマホ1台で遊べる無料パーティーゲーム</title>
   <meta name="description" content="スマホ1台で、2人の待ち時間も友達との集まりもすぐ遊びの時間に。人数と気分から選べて、ワードウルフ・ito・反射神経対決・ウミガメのスープなど全32種のパーティーゲームを登録なし・無料で楽しめます。遊び方とお題集も充実。">
   <link rel="canonical" href="https://katakatalab.com/asobi-pocket/">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <link rel="alternate" type="text/plain" title="LLMs.txt (AI検索向け概要)" href="https://katakatalab.com/asobi-pocket/llms.txt">
   
   <!-- PWA Manifest & Icons -->
   <link rel="manifest" href="manifest.json">
@@ -91,7 +93,7 @@
     }());
   </script>
   <link rel="stylesheet" href="quality-ui.css">
-  <link rel="stylesheet" href="evolution.css?v=20261126-ux6">
+  <link rel="stylesheet" href="evolution.css?v=20261127-ux7">
 </head>
 <body>
   <a class="skip-link" href="#discovery">ゲーム選びへスキップ</a>
@@ -424,6 +426,20 @@
           </button>
         </section>
 
+        <!-- 1.5 表示中のゲーム操作（ゲーム画面中のみ表示） -->
+        <section class="menu-section hidden" id="menu-game-context" aria-labelledby="menu-sec-current">
+          <h4 class="menu-section-title" id="menu-sec-current">このゲーム</h4>
+          <div class="menu-nav-list">
+            <button type="button" class="menu-nav-item menu-game-fav-row" id="btn-menu-game-fav" aria-pressed="false">
+              <span class="menu-nav-icon menu-fav-star" id="menu-game-fav-icon" aria-hidden="true">☆</span>
+              <span class="menu-nav-text">
+                <strong id="menu-game-fav-title">お気に入りに追加</strong>
+                <span id="menu-game-fav-sub">あとですぐ遊べるように保存</span>
+              </span>
+            </button>
+          </div>
+        </section>
+
         <!-- 2. 便利ツール -->
         <section class="menu-section" aria-labelledby="menu-sec-tools">
           <h4 class="menu-section-title" id="menu-sec-tools">便利ツール</h4>
@@ -695,13 +711,42 @@
       {
         "@type": "WebApplication",
         "name": "あそびポケット",
+        "alternateName": "Asobi Pocket",
         "url": "https://katakatalab.com/asobi-pocket/",
         "description": "スマホ1台で、2人の待ち時間も友達との集まりもすぐ遊びの時間に。人数と気分から選べて、ワードウルフ・ito・反射神経対決・ウミガメのスープなど全32種のパーティーゲームを登録なし・無料で楽しめます。遊び方とお題集も充実。",
         "applicationCategory": "GameApplication",
         "operatingSystem": "All",
+        "browserRequirements": "Requires JavaScript. Modern mobile or desktop browser.",
         "inLanguage": "ja-JP",
         "isAccessibleForFree": true,
+        "publisher": {"@type": "Organization", "name": "KatakataLab", "url": "https://katakatalab.com/asobi-pocket/"},
+        "featureList": [
+          "スマホ1台・登録不要・無料で全32種類のパーティーゲームをプレイ可能",
+          "2人専用の画面分割対戦ゲーム（反射神経・連打・カラー早見分け）搭載",
+          "ワードウルフ・ito・ワンナイト人狼・ウミガメのスープ・朝それ等のお題＆進行ツール完備",
+          "一度読み込めば電波のない場所でも遊べるPWAオフライン対応",
+          "こどもモード（ふりがな表示）・ダークモード・安全配慮の罰ゲーム機能"
+        ],
         "offers": {"@type": "Offer", "price": "0", "priceCurrency": "JPY"}
+      },
+      {
+        "@type": "ItemList",
+        "name": "あそびポケットの代表的な無料パーティーゲーム",
+        "numberOfItems": 12,
+        "itemListElement": [
+          {"@type": "ListItem", "position": 1, "name": "ito（イト・価値観連想ゲーム）", "url": "https://katakatalab.com/asobi-pocket/#game/ito"},
+          {"@type": "ListItem", "position": 2, "name": "ワードウルフ (Word Wolf)", "url": "https://katakatalab.com/asobi-pocket/#game/word-wolf"},
+          {"@type": "ListItem", "position": 3, "name": "ワンナイト人狼 (One Night Werewolf)", "url": "https://katakatalab.com/asobi-pocket/#game/one-night-werewolf"},
+          {"@type": "ListItem", "position": 4, "name": "朝それ（朝までそれ正解）", "url": "https://katakatalab.com/asobi-pocket/#game/asa-sore"},
+          {"@type": "ListItem", "position": 5, "name": "ウミガメのスープ (水平思考推理クイズ)", "url": "https://katakatalab.com/asobi-pocket/#game/sea-turtle"},
+          {"@type": "ListItem", "position": 6, "name": "反射神経タップ対決 (2人画面分割)", "url": "https://katakatalab.com/asobi-pocket/#game/duel-reflex"},
+          {"@type": "ListItem", "position": 7, "name": "カタカナ禁止ゲーム（ボブジテン風）", "url": "https://katakatalab.com/asobi-pocket/#game/katakana-ban"},
+          {"@type": "ListItem", "position": 8, "name": "NGワードゲーム", "url": "https://katakatalab.com/asobi-pocket/#game/ng-word"},
+          {"@type": "ListItem", "position": 9, "name": "究極の2択 ＆ 価値観トーク", "url": "https://katakatalab.com/asobi-pocket/#game/two-choices"},
+          {"@type": "ListItem", "position": 10, "name": "爆弾タイマー ＆ 古今東西", "url": "https://katakatalab.com/asobi-pocket/#game/bomb-timer"},
+          {"@type": "ListItem", "position": 11, "name": "20の扉 (20 Questions ログボード)", "url": "https://katakatalab.com/asobi-pocket/#game/twenty-questions"},
+          {"@type": "ListItem", "position": 12, "name": "30言ったら負け (21カウント対戦ボード)", "url": "https://katakatalab.com/asobi-pocket/#game/counting-game-30"}
+        ]
       },
       {
         "@type": "FAQPage",
@@ -720,6 +765,22 @@
             "acceptedAnswer": {
               "@type": "Answer",
               "text": "オンラインで一度読み込み、オフライン用の保存が完了した後は、ゲーム本体を使えます。外部の商品ページや初めて開く特集記事には通信が必要です。"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "2人だけでも遊べるゲームはある？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "はい。反射神経タップ対決・連打パワーバトル・カラー早見分けバトルの2人専用画面分割ゲームをはじめ、ito・ウミガメのスープ・20の扉・30言ったら負け・対面インディアンポーカーなど2人で遊べるゲームを多数収録しています。"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "子どもや初対面でも安心して遊べる？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "メニューから「こどもモード（ふりがな表示）」をオンにできるほか、飲酒や痛みを伴わないパス前提のソフトなミッション設計を基本としているため、家族・学校・初対面のアイスブレイクでも安心して使えます。"
             }
           },
           {

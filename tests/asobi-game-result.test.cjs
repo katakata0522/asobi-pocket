@@ -249,6 +249,10 @@ test("pickSpotlightTopic returns real, emoji-free presets across multiple games 
     assert.ok(item.prompt.length > 0 && item.prompt.length <= 56);
     assert.equal(EMOJI_PATTERN.test(item.prompt), false, `Spotlight prompt contains emoji: ${item.prompt}`);
     assert.equal(EMOJI_PATTERN.test(item.gameLabel), false);
+    assert.equal(typeof item.presetIndex, "number");
+    assert.ok(item.presetIndex >= 0);
+    const sourceGame = ALL_GAMES.find((g) => g.id === item.gameId);
+    assert.ok(sourceGame && sourceGame.presets[item.presetIndex] !== undefined, `Missing preset at index ${item.presetIndex} for ${item.gameId}`);
   }
 
   const first = GameResult.pickSpotlightTopic(ALL_GAMES, { rng: () => 0 });

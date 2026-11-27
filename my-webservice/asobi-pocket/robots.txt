@@ -1,4 +1,36 @@
+# あそびポケット (Asobi Pocket) - 検索エンジン・AI検索クローラー向け設定
+# LLMs-Txt: https://katakatalab.com/asobi-pocket/llms.txt
+# LLMs-Full-Txt: https://katakatalab.com/asobi-pocket/llms-full.txt
+
 User-agent: *
 Allow: /
 
+User-agent: Googlebot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
 Sitemap: https://katakatalab.com/asobi-pocket/sitemap.xml
+

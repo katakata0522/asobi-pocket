@@ -490,7 +490,6 @@
         if (!winners.includes(id)) winners.push(id);
       }
       celebrate(48);
-      toast("success", "決定しました！もう一度遊ぶときは指を離すか再クリックしてください");
     };
 
     const maybeStart = (forceReset = false) => {
@@ -778,7 +777,7 @@
         <div class="duel-container ${state.phase}">
           <div class="duel-half duel-top" id="duel-p1-area"><div class="duel-content rotate-180"><div class="duel-score">スコア: ${state.scoreP1} / 3</div><div class="duel-player-label">PLAYER 1</div><div class="duel-status-text ${state.phase === "go" ? "go" : ""}">${state.phase === "ready" ? "準備" : state.message}</div></div></div>
           <div class="duel-divider">
-            ${state.phase === "ready" ? '<button class="btn btn-primary btn-sm" id="btn-duel-start">勝負スタート</button>' : ""}
+            ${state.phase === "ready" ? '<div class="duel-ready-cta"><button class="btn btn-primary duel-start-cta" id="btn-duel-start">勝負スタート</button><p class="duel-ready-rule">画面が緑になったらタップ · 3本先取</p></div>' : ""}
             ${!["ready", "win"].includes(state.phase) ? `<div class="duel-center-text">${state.reactionMs == null ? esc(state.message) : `${state.reactionMs}ms`}</div>` : ""}
           </div>
           <div class="duel-half duel-bottom" id="duel-p2-area"><div class="duel-content"><div class="duel-player-label">PLAYER 2</div><div class="duel-score">スコア: ${state.scoreP2} / 3</div><div class="duel-status-text ${state.phase === "go" ? "go" : ""}">${state.phase === "ready" ? "準備" : state.message}</div></div></div>
@@ -932,86 +931,10 @@
   };
 
   GameTools.renderYamanote = function renderYamanoteFixed(container, game) {
-    const state = { bpm: 80, isPlaying: false, intervalId: null, currentTopic: "", foulCount: 0 };
-
-    const getTopic = () => {
-      const source = typeof getActiveTopicsForGame === "function"
-        ? getActiveTopicsForGame(game.id, game.presets)
-        : (Array.isArray(game.presets) ? game.presets : []);
-      if (!source.length) return "日本の都道府県";
-      const item = typeof window !== "undefined" && window.DeckManager && typeof window.DeckManager.getNext === "function"
-        ? window.DeckManager.getNext(`yamanote-fixed_${game.id || "yamanote"}`, source)
-        : source[Math.floor(Math.random() * source.length)];
-      return typeof extractTopicText === "function" ? extractTopicText(item) : (typeof item === "string" ? item : item.text || item.title || "お題");
-    };
-
-    const cleanup = () => {
-      if (state.intervalId) clearInterval(state.intervalId);
-      state.intervalId = null;
-      state.isPlaying = false;
-    };
-
-    const startRhythm = () => {
-      if (state.intervalId) clearInterval(state.intervalId);
-      state.intervalId = setInterval(() => {
-        play("playClap");
-        const visual = container.querySelector(".rhythm-visual-beat");
-        const dot = container.querySelector(".rhythm-pulse-dot");
-        if (visual) {
-          visual.classList.add("beat-hit");
-          setTimeout(() => visual.classList.remove("beat-hit"), 140);
-        }
-        if (dot) {
-          dot.classList.add("beat-hit");
-          setTimeout(() => dot.classList.remove("beat-hit"), 140);
-        }
-      }, (60 / state.bpm) * 1000);
-    };
-
-    state.currentTopic = getTopic();
-
-    function render() {
-      container.innerHTML = `
-        <div class="tool-card text-center">
-          <h3 class="tool-title">山手線ゲーム・リズムマシーン</h3>
-          <div class="topic-box my-3"><span class="topic-tag">今回のお題</span><div class="topic-text">${esc(state.currentTopic)}</div><button class="btn btn-sm btn-outline mt-2" id="btn-next-yamanote-topic">お題を変える</button></div>
-          <div class="rhythm-display-box my-4 ${state.isPlaying ? "beating" : ""}"><div class="rhythm-visual-beat" aria-hidden="true"><span class="rhythm-pulse-dot"></span></div><div class="rhythm-bpm-display font-mono">BPM ${state.bpm}</div></div>
-          <div class="flex gap-2 justify-center my-3"><button class="btn ${state.isPlaying ? "btn-danger" : "btn-success"} btn-lg" id="btn-toggle-rhythm">${state.isPlaying ? "リズム停止" : "リズムスタート"}</button></div>
-          <div class="setting-group mt-3"><label class="setting-label">テンポ (BPM):</label><div class="flex gap-2 justify-center items-center"><button class="btn btn-sm btn-outline" id="btn-bpm-down">-10</button><input type="range" class="range-slider" min="60" max="160" value="${state.bpm}" id="range-bpm"><button class="btn btn-sm btn-outline" id="btn-bpm-up">+10</button></div></div>
-          <div class="scoreboard-quick-box mt-4"><span>アウト回数: <strong class="badge-num">${state.foulCount}</strong></span><button class="btn btn-sm btn-danger ml-2" id="btn-add-foul">アウト</button><button class="btn btn-sm btn-outline ml-1" id="btn-reset-foul">リセット</button></div>
-        </div>`;
-
-      container.querySelector("#btn-next-yamanote-topic").addEventListener("click", () => {
-        state.currentTopic = getTopic();
-        play("playClick");
-        render();
-      });
-      container.querySelector("#btn-toggle-rhythm").addEventListener("click", () => {
-        state.isPlaying = !state.isPlaying;
-        if (state.isPlaying) startRhythm(); else cleanup();
-        render();
-      });
-      container.querySelector("#range-bpm").addEventListener("input", (event) => {
-        state.bpm = Number(event.target.value);
-        if (state.isPlaying) startRhythm();
-        render();
-      });
-      container.querySelector("#btn-bpm-up").addEventListener("click", () => {
-        state.bpm = Math.min(160, state.bpm + 10);
-        if (state.isPlaying) startRhythm();
-        render();
-      });
-      container.querySelector("#btn-bpm-down").addEventListener("click", () => {
-        state.bpm = Math.max(60, state.bpm - 10);
-        if (state.isPlaying) startRhythm();
-        render();
-      });
-      container.querySelector("#btn-add-foul").addEventListener("click", () => { state.foulCount += 1; play("playWrong"); render(); });
-      container.querySelector("#btn-reset-foul").addEventListener("click", () => { state.foulCount = 0; render(); });
+    if (typeof GameTools.renderRhythmBox === "function") {
+      return GameTools.renderRhythmBox(container, Object.assign({}, game, { subTab: "yamanote" }));
     }
-
-    render();
-    return cleanup;
+    return () => {};
   };
 
   GameTools.renderGesture = function renderGestureFixed(container, game) {

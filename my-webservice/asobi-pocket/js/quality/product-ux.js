@@ -102,7 +102,7 @@
         if (!event.target.closest("#tool-mount-point")) return;
         const button = event.target.closest("button");
         if (!button) return;
-        if (button.matches(".btn-scene,[data-cards],[data-wolf],[data-time],[data-range],[data-target],[data-mode],[data-filter],.btn-filter-tag")) return;
+        if (button.matches(".btn-scene,[data-cards],[data-wolf],[data-time],[data-range],[data-target],[data-mode],[data-filter],.btn-filter-tag,[data-enable-sound],[data-subtab],[data-banana-bpm],[data-doremi-bpm],[data-asa-sec],[data-timer-sec]")) return;
         if (/^btn-(?:ito-next-topic|shuffle-(?:both|kana|topic)|bpm-|next-(?:topic|situation|rule|q|choice|doremi|yamanote-topic)|toggle-accel|suggest-prompt)/.test(button.id || "")) return;
         if (/reset|close|back|hide/i.test(button.id || "")) return;
         awardCurrent();
@@ -264,7 +264,6 @@
           if (modal.classList.contains("hidden")) return;
           if (typeof Sound !== "undefined") Sound.playFanfare();
           if (typeof Confetti !== "undefined" && typeof Confetti.burst === "function") Confetti.burst(80);
-          if (typeof Toast !== "undefined") Toast.success(`「${selected.title}」に決まりました`);
           goButton.classList.remove("hidden");
           goButton.onclick = () => {
             if (globalThis.ModalManager && typeof globalThis.ModalManager.close === "function") {

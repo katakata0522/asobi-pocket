@@ -13,7 +13,7 @@ const HUB_PATH = path.join(SEO_ROOT, 'index.html');
 const ANALYTICS_PATH = path.join(SEO_ROOT, 'analytics.js');
 const GUIDE_CSS_PATH = path.join(SEO_ROOT, 'seo-guide.css');
 const BASE_URL = 'https://katakatalab.com/asobi-pocket/seo/';
-const EXPECTED_ARTICLE_COUNT = 34;
+const EXPECTED_ARTICLE_COUNT = 38;
 const LEGACY_ALIASES = new Map(Object.entries({
   "two-players.html": "two-player-games.html", "no-tools.html": "party-games-no-tools.html",
   "nomikai.html": "drinking-party-games.html", "large-group.html": "large-group-games.html",
@@ -23,10 +23,14 @@ const LEGACY_ALIASES = new Map(Object.entries({
 
 const DEPTH_PAGES = new Set([
   'two-player-games.html',
+  'couple-date-games.html',
   'three-player-games.html',
   'four-player-games.html',
   'drinking-party-games.html',
   'large-group-games.html',
+  'online-call-games.html',
+  'no-wifi-offline-games.html',
+  'one-night-werewolf-guide.html',
   'waiting-time-games.html',
   'icebreaker-games.html',
   'seated-games.html',
@@ -307,6 +311,18 @@ try {
   if (!hub.includes('3人でできるゲーム14選')) fail('SEO hub regressed the 3-player guide count from 14');
   if (!hub.includes('"@type":"CollectionPage"')) fail('SEO hub CollectionPage JSON-LD missing');
   if (!sitemap.includes('<loc>https://katakatalab.com/asobi-pocket/seo/</loc>')) fail('SEO hub missing from sitemap');
+
+  const llmsPath = path.join(APP_ROOT, 'llms.txt');
+  const llmsFullPath = path.join(APP_ROOT, 'llms-full.txt');
+  const robotsPath = path.join(APP_ROOT, 'robots.txt');
+  if (!fs.existsSync(llmsPath)) fail('llms.txt missing');
+  if (!fs.existsSync(llmsFullPath)) fail('llms-full.txt missing');
+  if (!fs.existsSync(robotsPath)) fail('robots.txt missing');
+  else {
+    const robots = read(robotsPath);
+    if (!robots.includes('Sitemap: https://katakatalab.com/asobi-pocket/sitemap.xml')) fail('robots.txt missing sitemap URL');
+    if (!robots.includes('llms.txt')) fail('robots.txt missing llms.txt reference');
+  }
 
   for (const noteMessage of notes) console.log(`OK: ${noteMessage}`);
 
