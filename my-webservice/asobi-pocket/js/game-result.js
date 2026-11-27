@@ -544,6 +544,412 @@
     });
   }
 
+  const CONCIERGE_PLAYER_META = {
+    "2": { key: "2", label: "2人", detail: "対戦・サシ飲み", fullLabel: "2人（対戦・サシ飲み）" },
+    "3-4": { key: "3-4", label: "3〜4人", detail: "友達・少人数", fullLabel: "3〜4人（友達・少人数）" },
+    "5+": { key: "5+", label: "5人以上", detail: "集まり・大人数", fullLabel: "5人以上（集まり・大人数）" }
+  };
+
+  const CONCIERGE_MOOD_META = {
+    laugh: { key: "laugh", label: "盛り上がり・笑い", shortLabel: "盛り上がり・笑い" },
+    chill: { key: "chill", label: "ゆったり・トーク", shortLabel: "ゆったり・トーク" },
+    mind: { key: "mind", label: "心理戦・推理", shortLabel: "心理戦・推理" },
+    icebreak: { key: "icebreak", label: "アイスブレイク・初対面", shortLabel: "アイスブレイク・初対面" }
+  };
+
+  const CONCIERGE_MOOD_PROFILES = {
+    laugh: {
+      tagWeights: {
+        "大爆笑": 24,
+        "大喜利": 22,
+        "ジェスチャー": 22,
+        "スリル": 18,
+        "宴会": 16,
+        "リズム": 15,
+        "リズムマシン": 15,
+        "早押し": 14,
+        "連打": 14,
+        "アクション": 14,
+        "反射神経": 14,
+        "体感": 14,
+        "創作": 12,
+        "チーム対戦": 12,
+        "爽快": 10,
+        "爆発": 10,
+        "飲み会": 8,
+        "勝負": 8,
+        "パーティー": 16
+      },
+      categoryWeights: { action: 10, talk: 2, mystery: -4 },
+      gameBoosts: {
+        "yomibito": 22,
+        "silent-gesture": 22,
+        "asa-sore": 28,
+        "katakana-ban": 24,
+        "bomb-timer": 18,
+        "rhythm-box": 20,
+        "duel-reflex": 20,
+        "duel-mash": 20,
+        "duel-color": 16,
+        "ten-seconds": 16,
+        "ping-pong-pang": 10,
+        "good-and-bad-news": 14,
+        "takenoko-nyokki": 12,
+        "word-chain-limit": 12,
+        "stand-up-game": 10,
+        "sea-turtle": -24,
+        "twenty-questions": -20,
+        "counting-game-30": -18,
+        "high-and-low-guess": -14,
+        "talk-gacha": -6
+      },
+      reasonText: "笑いとテンポで場が一気に盛り上がります"
+    },
+    chill: {
+      tagWeights: {
+        "じっくり": 24,
+        "トーク": 22,
+        "価値観": 20,
+        "質問": 18,
+        "ドライブ": 16,
+        "協力": 14,
+        "自己紹介": 14,
+        "水平思考": 12,
+        "20の扉": 12,
+        "語彙力": 8,
+        "発想力": 8,
+        "まったり": 20
+      },
+      categoryWeights: { talk: 14, mystery: 4, action: -10 },
+      gameBoosts: {
+        "talk-gacha": 24,
+        "ito": 24,
+        "sea-turtle": 22,
+        "twenty-questions": 16,
+        "two-truths-one-lie": 18,
+        "good-and-bad-news": 12,
+        "katakana-ban": 10,
+        "asa-sore": 10,
+        "ng-word": 10,
+        "word-chain-limit": 6,
+        "high-and-low-guess": 8,
+        "duel-mash": -32,
+        "duel-reflex": -28,
+        "duel-color": -22,
+        "bomb-timer": -30,
+        "ping-pong-pang": -26,
+        "silent-gesture": -24,
+        "rhythm-box": -22,
+        "stand-up-game": -18,
+        "one-night-werewolf": -14,
+        "ten-seconds": -8
+      },
+      reasonText: "落ち着いたペースで会話ややり取りを楽しめます"
+    },
+    mind: {
+      tagWeights: {
+        "心理戦": 26,
+        "人狼": 24,
+        "推理": 24,
+        "騙し合い": 22,
+        "ブラフ": 22,
+        "水平思考": 20,
+        "頭脳戦": 20,
+        "謎解き": 18,
+        "嘘見抜き": 16,
+        "空気読み": 16,
+        "必勝法": 14,
+        "数当て": 14,
+        "20の扉": 14
+      },
+      categoryWeights: { mystery: 16, talk: -4, action: -10 },
+      gameBoosts: {
+        "word-wolf": 24,
+        "one-night-werewolf": 22,
+        "ng-word": 20,
+        "indian-poker": 24,
+        "sea-turtle": 20,
+        "counting-game-30": 18,
+        "twenty-questions": 14,
+        "high-and-low-guess": 12,
+        "takenoko-nyokki": 22,
+        "two-truths-one-lie": 10,
+        "duel-color": 4,
+        "duel-mash": -32,
+        "duel-reflex": -24,
+        "silent-gesture": -26,
+        "ping-pong-pang": -24,
+        "rhythm-box": -24,
+        "bomb-timer": -22,
+        "yomibito": -18,
+        "talk-gacha": -16
+      },
+      reasonText: "読み合いや推理の駆け引きを味わえます"
+    },
+    icebreak: {
+      tagWeights: {
+        "アイスブレイク": 28,
+        "初対面": 28,
+        "自己紹介": 26,
+        "合コン": 20,
+        "協力": 18,
+        "手軽": 14,
+        "価値観": 14,
+        "質問": 14,
+        "手ぶら": 10,
+        "トーク": 10,
+        "声だけ": 8
+      },
+      categoryWeights: { talk: 10, action: 2, mystery: -4 },
+      gameBoosts: {
+        "ito": 24,
+        "talk-gacha": 24,
+        "two-truths-one-lie": 26,
+        "asa-sore": 18,
+        "katakana-ban": 14,
+        "rhythm-box": 10,
+        "ten-seconds": 20,
+        "ng-word": 10,
+        "takenoko-nyokki": 12,
+        "word-chain-limit": 10,
+        "duel-reflex": 10,
+        "duel-color": 10,
+        "high-and-low-guess": 8,
+        "twenty-questions": 8,
+        "one-night-werewolf": -24,
+        "word-wolf": -6,
+        "duel-mash": -20,
+        "silent-gesture": -14,
+        "counting-game-30": -16,
+        "indian-poker": -12,
+        "bomb-timer": -10
+      },
+      reasonText: "ルールがわかりやすく、初対面でも打ち解けやすい定番です"
+    }
+  };
+
+  function getConciergeConditionMeta(playersKey, moodKey) {
+    const player = CONCIERGE_PLAYER_META[playersKey] || CONCIERGE_PLAYER_META["2"];
+    const mood = CONCIERGE_MOOD_META[moodKey] || CONCIERGE_MOOD_META.laugh;
+    return { player, mood };
+  }
+
+  function matchesConciergePlayers(game, playersKey) {
+    const min = Number(game && game.minPlayers);
+    const max = Number(game && game.maxPlayers);
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return false;
+    if (playersKey === "2") return min <= 2 && max >= 2;
+    if (playersKey === "3-4") return min <= 4 && max >= 3;
+    if (playersKey === "5+") return max >= 5;
+    return true;
+  }
+
+  function scoreConciergePlayerFit(game, playersKey) {
+    const min = Number(game.minPlayers || 2);
+    const max = Number(game.maxPlayers || 10);
+    const tags = Array.isArray(game.tags) ? game.tags : [];
+    const id = String(game.id || "");
+
+    if (playersKey === "2") {
+      if (game.isDuo || max === 2 || tags.includes("2人専用") || tags.includes("2人対戦")) {
+        return { score: 32, reason: "2人対戦向けに設計された一作" };
+      }
+      if (["ng-word", "sea-turtle", "ito", "talk-gacha", "ten-seconds", "counting-game-30", "twenty-questions", "high-and-low-guess"].includes(id)) {
+        return { score: 24, reason: "2人でもテンポよく遊べる構成" };
+      }
+      if (max >= 12) {
+        return { score: 10, reason: "2人から遊べる定番" };
+      }
+      return { score: 17, reason: "2人で手軽に始められる構成" };
+    }
+
+    if (playersKey === "3-4") {
+      if (min >= 3 && max <= 10) {
+        return { score: 28, reason: "3〜4人で最も盛り上がる人数設計" };
+      }
+      if (min <= 3 && max >= 4) {
+        return { score: 22, reason: "3〜4人の少人数グループに好相性" };
+      }
+      return { score: 15, reason: "少人数でそのまま遊べる構成" };
+    }
+
+    if (playersKey === "5+") {
+      if (id === "counting-game-30") {
+        return { score: 2, reason: "少人数〜中人数向けの頭脳戦" };
+      }
+      if (max >= 12 || tags.includes("大人数") || tags.includes("チーム対戦")) {
+        return { score: 30, reason: "5人以上の大人数でも一体感が出る設計" };
+      }
+      if (max >= 8) {
+        return { score: 23, reason: "5人以上の集まりにちょうどよい規模" };
+      }
+      return { score: 14, reason: "5〜7人規模の集まりに対応" };
+    }
+
+    return { score: 15, reason: "人数に合わせて遊びやすい構成" };
+  }
+
+  function scoreConciergeMoodFit(game, moodKey) {
+    const profile = CONCIERGE_MOOD_PROFILES[moodKey] || CONCIERGE_MOOD_PROFILES.laugh;
+    const tags = Array.isArray(game.tags) ? game.tags : [];
+    const cat = String(game.category || "").toLowerCase();
+    const id = String(game.id || "");
+
+    let tagScore = 0;
+    const matchedTags = [];
+    for (const tag of tags) {
+      const w = profile.tagWeights[tag];
+      if (typeof w === "number") {
+        tagScore += w;
+        if (w > 0) matchedTags.push(tag);
+      }
+    }
+    // Cap raw tag stacking so games with many tags don't unfairly drown out focused classics
+    tagScore = Math.min(tagScore, 42);
+
+    const catScore = typeof profile.categoryWeights[cat] === "number" ? profile.categoryWeights[cat] : 0;
+    const boost = typeof profile.gameBoosts[id] === "number" ? profile.gameBoosts[id] : 0;
+
+    return {
+      score: tagScore + catScore + boost,
+      matchedTags,
+      reason: profile.reasonText
+    };
+  }
+
+  function rankConciergeGames(games, options = {}) {
+    const list = Array.isArray(games) ? games : [];
+    const playersKey = CONCIERGE_PLAYER_META[options.players] ? options.players : "2";
+    const moodKey = CONCIERGE_MOOD_META[options.mood] ? options.mood : "laugh";
+    const conditionMeta = getConciergeConditionMeta(playersKey, moodKey);
+
+    const eligible = list.filter((game) => {
+      if (!game || !game.id) return false;
+      if (game.section === "merged" || game.section === "U") return false;
+      return matchesConciergePlayers(game, playersKey);
+    });
+
+    const scored = eligible.map((game) => {
+      const playerFit = scoreConciergePlayerFit(game, playersKey);
+      const moodFit = scoreConciergeMoodFit(game, moodKey);
+      const ratingBonus = Math.max(0, Math.min(6, (Number(game.rating || 4.5) - 4.4) * 10));
+      const sectionBonus = game.section === "main" ? 4 : 0;
+      const totalScore = Math.round((playerFit.score + moodFit.score + ratingBonus + sectionBonus) * 10) / 10;
+
+      return {
+        game,
+        score: totalScore,
+        playerScore: playerFit.score,
+        moodScore: moodFit.score,
+        matchedTags: moodFit.matchedTags,
+        reason: `${playerFit.reason}。${moodFit.reason}。`,
+        conditions: conditionMeta
+      };
+    });
+
+    scored.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (b.moodScore !== a.moodScore) return b.moodScore - a.moodScore;
+      if (b.playerScore !== a.playerScore) return b.playerScore - a.playerScore;
+      return String(a.game.id).localeCompare(String(b.game.id));
+    });
+
+    // Prefer genuine mood matches; fall back cleanly to top player-compatible games only if < 3 exist.
+    const primary = scored.filter((item) => item.moodScore >= 8);
+    let results = primary.length >= 3 ? primary : scored.slice(0, Math.max(primary.length, Math.min(5, scored.length)));
+
+    const topScore = results.length > 0 ? results[0].score : 0;
+    results = results.map((item, idx) => ({
+      ...item,
+      rank: idx + 1,
+      matchTier: idx === 0 || item.score >= topScore - 8 ? "best" : "good"
+    }));
+
+    return results;
+  }
+
+  /**
+   * プレイ人数の表示文言を整形（例: 2, 99 -> "2人〜" / 2, 2 -> "2人" / 3, 10 -> "3〜10人"）
+   */
+  function formatPlayersRange(minPlayers, maxPlayers) {
+    const min = Number(minPlayers);
+    const max = Number(maxPlayers);
+    const safeMin = Number.isFinite(min) && min > 0 ? Math.floor(min) : 2;
+    if (!Number.isFinite(max) || max >= 99) {
+      return `${safeMin}人〜`;
+    }
+    const safeMax = Math.max(safeMin, Math.floor(max));
+    if (safeMin === safeMax) {
+      return `${safeMin}人`;
+    }
+    return `${safeMin}〜${safeMax}人`;
+  }
+
+  /**
+   * ホーム画面「今日のお題プレビュー」用：実在するプリセットからワクワクする1題を抽出
+   */
+  function collectSpotlightTopics(games = []) {
+    const list = Array.isArray(games) ? games : [];
+    const byId = new Map(list.filter(Boolean).map((g) => [g.id, g]));
+    const pool = [];
+
+    const addEntries = (gameId, gameLabel, kicker, mapper) => {
+      const game = byId.get(gameId);
+      if (!game || !Array.isArray(game.presets)) return;
+      game.presets.forEach((preset, idx) => {
+        const prompt = mapper(preset);
+        if (!prompt || prompt.length > 56) return;
+        pool.push({
+          key: `${gameId}:${idx}`,
+          gameId,
+          gameLabel,
+          kicker,
+          prompt
+        });
+      });
+    };
+
+    addEntries("ito", "ito（価値観）", "価値観トーク", (p) => {
+      const text = typeof p === "string" ? p : (p && p.text);
+      return text ? String(text).trim() : "";
+    });
+    addEntries("asa-sore", "朝までそれ正解", "大喜利トーク", (p) => {
+      const text = typeof p === "string" ? p : (p && p.text);
+      return text ? String(text).trim() : "";
+    });
+    addEntries("talk-gacha", "トークガチャ", "会話のきっかけ", (p) => {
+      const text = typeof p === "string" ? p : (p && (p.q || p.text));
+      return text ? String(text).trim() : "";
+    });
+    addEntries("katakana-ban", "カタカナ禁止", "言葉あそび", (p) => {
+      if (!p || typeof p !== "object" || !p.word) return "";
+      return `カタカナを使わずに「${String(p.word).trim()}」を説明してみよう`;
+    });
+    addEntries("sea-turtle", "ウミガメのスープ", "水平思考クイズ", (p) => {
+      if (!p || typeof p !== "object" || !p.title) return "";
+      const title = String(p.title).trim();
+      const q = String(p.question || "").trim();
+      if (!q) return "";
+      const shortQ = q.length > 34 ? `${q.slice(0, 33)}…` : q;
+      return `『${title}』${shortQ}`;
+    });
+
+    return pool;
+  }
+
+  function pickSpotlightTopic(games = [], options = {}) {
+    const pool = collectSpotlightTopics(games);
+    if (pool.length === 0) return null;
+    const excludeKey = options.excludeKey || null;
+    const candidates = excludeKey && pool.length > 1
+      ? pool.filter((item) => item.key !== excludeKey)
+      : pool;
+    const rng = typeof options.rng === "function" ? options.rng : Math.random;
+    const raw = Number(rng());
+    const clamped = Number.isFinite(raw) ? Math.min(0.999999, Math.max(0, raw)) : 0;
+    return candidates[Math.floor(clamped * candidates.length)];
+  }
+
   const api = {
     judgeTenSeconds,
     judgeItoOrder,
@@ -553,6 +959,11 @@
     dealIndianPokerPair,
     validateWordChainEntry,
     splitRhythmBoxTopics,
+    formatPlayersRange,
+    collectSpotlightTopics,
+    pickSpotlightTopic,
+    getConciergeConditionMeta,
+    rankConciergeGames,
     copyText,
     confirmAction,
     renderCrestSvg,

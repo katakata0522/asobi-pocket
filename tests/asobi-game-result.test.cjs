@@ -152,3 +152,110 @@ test("renderResultCard escapes untrusted text and renders emoji-free editorial m
   assert.equal(html.includes("<svg class=\"result-crest-svg\""), true);
   assert.equal(EMOJI_PATTERN.test(html), false);
 });
+
+function loadGamesData() {
+  const filePath = path.resolve(__dirname, "../my-webservice/asobi-pocket/data/games.js");
+  const source = fs.readFileSync(filePath, "utf8") + "\nwindow.GAMES_DATA = GAMES_DATA;";
+  const sandbox = { window: {} };
+  vm.runInNewContext(source, sandbox, { filename: filePath });
+  return sandbox.window.GAMES_DATA;
+}
+
+const ALL_GAMES = loadGamesData();
+
+test("getConciergeConditionMeta returns clean Japanese labels for all player and mood keys", () => {
+  const meta = GameResult.getConciergeConditionMeta("3-4", "mind");
+  assert.equal(meta.player.label, "3〜4人");
+  assert.equal(meta.mood.label, "心理戦・推理");
+
+  const fallback = GameResult.getConciergeConditionMeta("unknown", "unknown");
+  assert.equal(fallback.player.key, "2");
+  assert.equal(fallback.mood.key, "laugh");
+});
+
+test("rankConciergeGames enforces player eligibility, excludes merged/utility items, and ranks all 12 combinations", () => {
+  const playersKeys = ["2", "3-4", "5+"];
+  const moodKeys = ["laugh", "chill", "mind", "icebreak"];
+
+  for (const players of playersKeys) {
+    for (const mood of moodKeys) {
+      const results = GameResult.rankConciergeGames(ALL_GAMES, { players, mood });
+      assert.ok(results.length >= 3, `Expected >= 3 matches for ${players} x ${mood}, got ${results.length}`);
+
+      // Verify strict player eligibility, no merged/U tools, descending score order, and non-empty reason
+      for (let i = 0; i < results.length; i++) {
+        const entry = results[i];
+        const g = entry.game;
+        assert.notEqual(g.section, "merged", `merged game leaked into ${players} x ${mood}: ${g.id}`);
+        assert.notEqual(g.section, "U", `utility tool leaked into ${players} x ${mood}: ${g.id}`);
+        if (players === "2") {
+          assert.ok(g.minPlayers <= 2 && g.maxPlayers >= 2, `${g.id} invalid for 2 players`);
+        } else if (players === "3-4") {
+          assert.ok(g.minPlayers <= 4 && g.maxPlayers >= 3, `${g.id} invalid for 3-4 players`);
+        } else if (players === "5+") {
+          assert.ok(g.maxPlayers >= 5, `${g.id} invalid for 5+ players`);
+        }
+        assert.ok(entry.reason.length > 0);
+        assert.equal(EMOJI_PATTERN.test(entry.reason), false);
+        if (i > 0) {
+          assert.ok(results[i - 1].score >= entry.score, `Results not sorted descending for ${players} x ${mood}`);
+        }
+      }
+    }
+  }
+});
+
+test("rankConciergeGames surfaces high-precision domain matches at the top of each mood", () => {
+  const twoLaugh = GameResult.rankConciergeGames(ALL_GAMES, { players: "2", mood: "laugh" }).slice(0, 3).map(r => r.game.id);
+  assert.ok(twoLaugh.includes("duel-reflex") && twoLaugh.includes("duel-mash"), `2 x laugh top3: ${twoLaugh.join(",")}`);
+
+  const twoMind = GameResult.rankConciergeGames(ALL_GAMES, { players: "2", mood: "mind" }).slice(0, 3).map(r => r.game.id);
+  assert.ok(twoMind.includes("indian-poker"), `2 x mind should highlight indian-poker: ${twoMind.join(",")}`);
+
+  const groupMind = GameResult.rankConciergeGames(ALL_GAMES, { players: "3-4", mood: "mind" }).slice(0, 3).map(r => r.game.id);
+  assert.ok(groupMind.includes("word-wolf") && groupMind.includes("one-night-werewolf"), `3-4 x mind top3: ${groupMind.join(",")}`);
+
+  const groupChill = GameResult.rankConciergeGames(ALL_GAMES, { players: "3-4", mood: "chill" });
+  const groupChillTop3 = groupChill.slice(0, 3).map(r => r.game.id);
+  assert.ok(groupChillTop3.includes("ito") && groupChillTop3.includes("talk-gacha"), `3-4 x chill top3: ${groupChillTop3.join(",")}`);
+  assert.equal(groupChill.some(r => r.game.id === "bomb-timer" || r.game.id === "duel-mash"), false, "frantic action games should not appear in chill");
+
+  const partyIcebreak = GameResult.rankConciergeGames(ALL_GAMES, { players: "5+", mood: "icebreak" }).slice(0, 3).map(r => r.game.id);
+  assert.ok(partyIcebreak.includes("two-truths-one-lie") && partyIcebreak.includes("talk-gacha"), `5+ x icebreak top3: ${partyIcebreak.join(",")}`);
+
+  const partyLaugh = GameResult.rankConciergeGames(ALL_GAMES, { players: "5+", mood: "laugh" }).slice(0, 4).map(r => r.game.id);
+  assert.ok(partyLaugh.includes("silent-gesture") && partyLaugh.includes("asa-sore"), `5+ x laugh top4: ${partyLaugh.join(",")}`);
+});
+
+test("formatPlayersRange formats single, ranged, and open-ended player counts cleanly without typos", () => {
+  assert.equal(GameResult.formatPlayersRange(2, 99), "2人〜");
+  assert.equal(GameResult.formatPlayersRange(2, 2), "2人");
+  assert.equal(GameResult.formatPlayersRange(3, 10), "3〜10人");
+  assert.equal(GameResult.formatPlayersRange(3, 15), "3〜15人");
+  for (const game of ALL_GAMES) {
+    const label = GameResult.formatPlayersRange(game.minPlayers, game.maxPlayers);
+    assert.equal(label.includes("大人数人"), false, `${game.id} produced broken player label: ${label}`);
+    assert.match(label, /^\d+(〜\d+人|人〜|人)$/, `${game.id} unexpected player label: ${label}`);
+  }
+});
+
+test("pickSpotlightTopic returns real, emoji-free presets across multiple games and avoids repeating excludeKey", () => {
+  const pool = GameResult.collectSpotlightTopics(ALL_GAMES);
+  assert.ok(pool.length >= 40, `Expected rich spotlight topic pool, got ${pool.length}`);
+  const gameIds = new Set(pool.map((item) => item.gameId));
+  assert.ok(gameIds.has("ito") && gameIds.has("asa-sore") && gameIds.has("talk-gacha") && gameIds.has("katakana-ban"));
+
+  for (const item of pool) {
+    assert.ok(item.prompt.length > 0 && item.prompt.length <= 56);
+    assert.equal(EMOJI_PATTERN.test(item.prompt), false, `Spotlight prompt contains emoji: ${item.prompt}`);
+    assert.equal(EMOJI_PATTERN.test(item.gameLabel), false);
+  }
+
+  const first = GameResult.pickSpotlightTopic(ALL_GAMES, { rng: () => 0 });
+  assert.ok(first && first.key);
+  const second = GameResult.pickSpotlightTopic(ALL_GAMES, { excludeKey: first.key, rng: () => 0 });
+  assert.ok(second && second.key);
+  assert.notEqual(second.key, first.key);
+});
+
+

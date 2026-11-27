@@ -6,12 +6,29 @@
 class SoundEngine {
   constructor() {
     this.ctx = null;
+    this._noiseBuffers = new Map();
     this.isMuted = true;
     try {
       this.isMuted = localStorage.getItem("asobi_sound_muted") !== "false";
     } catch (e) {
       this.isMuted = true;
     }
+  }
+
+  _getNoiseBuffer(key, durationSec, decayRatio = null) {
+    if (!this.ctx) return null;
+    const cacheKey = `${key}:${this.ctx.sampleRate}`;
+    const cached = this._noiseBuffers.get(cacheKey);
+    if (cached) return cached;
+    const bufferSize = Math.max(1, Math.floor(this.ctx.sampleRate * durationSec));
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const sample = Math.random() * 2 - 1;
+      data[i] = decayRatio ? sample * Math.exp(-i / (bufferSize * decayRatio)) : sample;
+    }
+    this._noiseBuffers.set(cacheKey, buffer);
+    return buffer;
   }
 
   init() {
@@ -139,13 +156,7 @@ class SoundEngine {
     try {
       this.vibrate([100, 50, 200, 50, 400]);
 
-      const bufferSize = Math.floor(this.ctx.sampleRate * 1.5);
-      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = Math.random() * 2 - 1;
-      }
-
+      const buffer = this._getNoiseBuffer("explosion", 1.5);
       const noise = this.ctx.createBufferSource();
       noise.buffer = buffer;
 
@@ -318,24 +329,18 @@ class SoundEngine {
 
     try {
       const now = this.ctx.currentTime;
-      const totalHits = Math.floor(durationSec * 16); // 16分音符感覚の細かい連打
-      const hitInterval = durationSec / totalHits;
+      const safeDuration = Math.max(0.1, Number(durationSec) || 2.0);
+      const totalHits = Math.max(1, Math.floor(safeDuration * 16)); // 16分音符感覚の細かい連打
+      const hitInterval = safeDuration / totalHits;
+      const snareBuffer = this._getNoiseBuffer("snare", 0.04, 0.4);
 
       for (let i = 0; i < totalHits; i++) {
         const hitTime = now + i * hitInterval;
         const progress = i / totalHits;
         const volume = 0.08 + progress * 0.22; // 徐々に盛り上がる
 
-        // ノイズバッファでスネアの質感を再現
-        const bufferSize = Math.floor(this.ctx.sampleRate * 0.04);
-        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let j = 0; j < bufferSize; j++) {
-          data[j] = (Math.random() * 2 - 1) * Math.exp(-j / (bufferSize * 0.4));
-        }
-
         const noise = this.ctx.createBufferSource();
-        noise.buffer = buffer;
+        noise.buffer = snareBuffer;
 
         const filter = this.ctx.createBiquadFilter();
         filter.type = "highpass";
@@ -392,14 +397,8 @@ class SoundEngine {
       });
 
       // シンバルのような高域ノイズ
-      const bufferSize = Math.floor(this.ctx.sampleRate * 0.5);
-      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3));
-      }
       const noise = this.ctx.createBufferSource();
-      noise.buffer = buffer;
+      noise.buffer = this._getNoiseBuffer("cymbal", 0.5, 0.3);
 
       const filter = this.ctx.createBiquadFilter();
       filter.type = "highpass";
@@ -490,14 +489,8 @@ class SoundEngine {
     try {
       this.hapticLight();
       const now = this.ctx.currentTime;
-      const bufferSize = Math.floor(this.ctx.sampleRate * 0.08);
-      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.25));
-      }
       const noise = this.ctx.createBufferSource();
-      noise.buffer = buffer;
+      noise.buffer = this._getNoiseBuffer("clap", 0.08, 0.25);
 
       const filter = this.ctx.createBiquadFilter();
       filter.type = "bandpass";

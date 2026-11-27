@@ -86,7 +86,7 @@ test('random roulette chooses only from the currently visible discovery set', as
   await expect(cards).toHaveCount(1);
   await expect(cards.first()).toHaveAttribute('data-id', 'finger-roulette');
 
-  await page.locator('#btn-random-roulette').click();
+  await page.locator('#btn-hero-roulette').click();
   await page.locator('#btn-spin-roulette').click();
   await expect(page.locator('#btn-roulette-go')).toBeVisible({ timeout: 4_000 });
   await expect(page.locator('#roulette-result-title')).toContainText('指置き');

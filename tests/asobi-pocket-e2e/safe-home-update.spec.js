@@ -40,10 +40,9 @@ test('配信をまたいでトップだけが更新され、進行中の得点�
     const gameStart = await game.evaluate(() => performance.timeOrigin);
     const roulette = await context.newPage();
     await roulette.goto(url);
-    const headerButton = roulette.locator('#btn-header-finger');
-    const finger = await headerButton.isVisible();
-    const dialog = roulette.locator(finger ? '#modal-finger-roulette' : '#modal-roulette');
-    await press(finger ? headerButton : roulette.locator('#btm-nav-roulette'));
+    const heroRoulette = roulette.locator('#btn-hero-roulette');
+    const dialog = roulette.locator('#modal-roulette');
+    await press(await heroRoulette.isVisible() ? heroRoulette : roulette.locator('#btm-nav-roulette'));
     await expect(dialog).toBeVisible();
     const homeStart = await page.evaluate(() => performance.timeOrigin);
     release = 'asobi-pocket-test-two';

@@ -419,10 +419,10 @@
 
   const syncVisiblePublicCopy = () => {
     const popularOption = document.querySelector('#sort-select option[value="popular"]');
-    if (popularOption) popularOption.textContent = "⭐ 編集部おすすめ順";
+    if (popularOption) popularOption.textContent = "編集部おすすめ順";
 
     const footerTitle = document.querySelector(".footer-seo-links-row strong");
-    if (footerTitle) footerTitle.textContent = "💡 お題集・ゲーム特集:";
+    if (footerTitle) footerTitle.textContent = "お題集・ゲーム特集:";
 
     const footerLabels = new Map([
       ["seo/ito-odai.html", "ito 自作お題60選"],
@@ -438,8 +438,8 @@
 
   const syncDynamicPublicCopy = () => {
     const topicManagerButton = document.querySelector("#btn-open-topic-custom");
-    if (topicManagerButton && topicManagerButton.textContent !== "⚙️ お題を追加・管理する") {
-      topicManagerButton.textContent = "⚙️ お題を追加・管理する";
+    if (topicManagerButton && topicManagerButton.textContent !== "お題を追加・管理する") {
+      topicManagerButton.textContent = "お題を追加・管理する";
     }
 
     if (location.hash === "#game/twenty-questions") {

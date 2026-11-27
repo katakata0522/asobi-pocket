@@ -89,9 +89,9 @@
       hubLink.textContent = 'ゲーム特集';
       breadcrumb.replaceChildren(
         rootLink,
-        document.createTextNode(' ➔ '),
+        document.createTextNode(' / '),
         hubLink,
-        document.createTextNode(` ➔ ${heading.textContent.trim()}`)
+        document.createTextNode(` / ${heading.textContent.trim()}`)
       );
     }
 

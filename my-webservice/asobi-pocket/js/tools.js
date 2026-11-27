@@ -938,9 +938,9 @@ const GameTools = {
 
           <label class="text-xs text-sub"><input type="checkbox" id="asa-all-kana" ${allKana ? "checked" : ""}> 難しい頭文字も使う</label>
           <div class="asa-controls-grid">
-            <button class="btn btn-outline btn-sm" id="btn-shuffle-both">お題を全抽選</button>
-            <button class="btn btn-outline btn-sm" id="btn-shuffle-kana">文字だけ変える (「${escapeHTML(currentKana)}」)</button>
-            <button class="btn btn-outline btn-sm" id="btn-shuffle-topic">テーマだけ変える</button>
+            <button class="btn btn-outline btn-sm" id="btn-shuffle-both">全部シャッフル</button>
+            <button class="btn btn-outline btn-sm" id="btn-shuffle-kana">頭文字だけ変更</button>
+            <button class="btn btn-outline btn-sm" id="btn-shuffle-topic">テーマだけ変更</button>
           </div>
 
           <!-- タイマー -->
@@ -1172,9 +1172,9 @@ const GameTools = {
               <div class="time-mode-selector mb-3">
                 <span class="filter-label">時間設定:</span>
                 <div class="btn-toggle-group">
-                  <button class="btn-toggle ${timeMode === 'short' ? 'active' : ''}" data-mode="short">ショート (15-30秒)</button>
-                  <button class="btn-toggle ${timeMode === 'normal' ? 'active' : ''}" data-mode="normal">ノーマル (30-60秒)</button>
-                  <button class="btn-toggle ${timeMode === 'long' ? 'active' : ''}" data-mode="long">ロング (60-100秒)</button>
+                  <button class="btn-toggle ${timeMode === 'short' ? 'active' : ''}" data-mode="short">15〜30秒</button>
+                  <button class="btn-toggle ${timeMode === 'normal' ? 'active' : ''}" data-mode="normal">30〜60秒</button>
+                  <button class="btn-toggle ${timeMode === 'long' ? 'active' : ''}" data-mode="long">60〜100秒</button>
                 </div>
               </div>
             ` : ''}
@@ -1214,8 +1214,7 @@ const GameTools = {
         });
         container.querySelector("#btn-bomb-batsu")?.addEventListener("click", () => {
           Sound.playClick();
-          const batsuTrigger = document.getElementById("btn-header-batsu") || document.getElementById("btn-quick-batsu");
-          if (batsuTrigger) batsuTrigger.click();
+          if (typeof window.openBatsuModal === "function") window.openBatsuModal();
           else window.location.hash = "#game/batsu-roulette";
         });
       } else if (!isRunning) {
@@ -1657,7 +1656,7 @@ const GameTools = {
             </button>
           </div>
 
-          <div class="my-3 p-3 rounded border" style="background: rgba(0,0,0,0.02);">
+          <div class="my-3 p-3 rounded border two-choice-panel">
             <div id="choice-countdown-box" style="min-height: 38px; display: flex; align-items: center; justify-content: center;">
               <span class="text-xs font-bold text-muted">「せーの」で全員一斉に指差し</span>
             </div>
@@ -1666,27 +1665,27 @@ const GameTools = {
             </button>
           </div>
 
-          <div class="my-3 p-3 rounded border text-left" style="background: rgba(0,0,0,0.02);">
+          <div class="my-3 p-3 rounded border text-left two-choice-panel">
             <div class="flex justify-between items-center text-xs font-bold text-muted mb-2">
               <span>多数決集計（合計 ${totalVotes}票）</span>
-              ${totalVotes > 0 ? `<span class="badge badge-info">${pctA}% vs ${pctB}%</span>` : ''}
+              ${totalVotes > 0 ? `<span class="choice-ratio-label">${pctA}% vs ${pctB}%</span>` : ''}
             </div>
 
-            <div style="height: 12px; border-radius: 6px; background: #e5e7eb; overflow: hidden; display: flex;" class="mb-2">
-              <div style="width: ${totalVotes > 0 ? pctA : 50}%; background: #3b82f6; transition: width 0.3s;"></div>
-              <div style="width: ${totalVotes > 0 ? pctB : 50}%; background: #ef4444; transition: width 0.3s;"></div>
+            <div class="choice-meter-track mb-3">
+              <div class="choice-meter-a" style="width: ${totalVotes > 0 ? pctA : 50}%;"></div>
+              <div class="choice-meter-b" style="width: ${totalVotes > 0 ? pctB : 50}%;"></div>
             </div>
 
-            <div class="flex justify-between items-center text-xs">
+            <div class="flex justify-between items-center text-xs gap-2">
               <div class="flex items-center gap-1">
-                <span class="font-bold text-primary">A: ${state.votesA}票</span>
-                <button class="btn btn-xs btn-outline" id="btn-vote-a-minus">-</button>
-                <button class="btn btn-xs btn-primary" id="btn-vote-a-plus">+</button>
+                <span class="font-bold choice-text-a">A: ${state.votesA}票</span>
+                <button class="btn btn-xs btn-outline" id="btn-vote-a-minus" aria-label="Aから1票減らす">−</button>
+                <button class="btn btn-xs btn-choice-a" id="btn-vote-a-plus" aria-label="Aに1票追加">＋</button>
               </div>
               <div class="flex items-center gap-1">
-                <button class="btn btn-xs btn-outline" id="btn-vote-b-minus">-</button>
-                <button class="btn btn-xs btn-danger" id="btn-vote-b-plus">+</button>
-                <span class="font-bold text-danger">B: ${state.votesB}票</span>
+                <button class="btn btn-xs btn-outline" id="btn-vote-b-minus" aria-label="Bから1票減らす">−</button>
+                <button class="btn btn-xs btn-choice-b" id="btn-vote-b-plus" aria-label="Bに1票追加">＋</button>
+                <span class="font-bold choice-text-b">B: ${state.votesB}票</span>
               </div>
             </div>
 
@@ -1805,7 +1804,7 @@ const GameTools = {
 
       container.innerHTML = `
         <div class="tool-card sea-turtle-card">
-          <div class="card-header-flex">
+          <div class="card-header-flex sea-turtle-head">
             <span class="puzzle-num">問題 ${currentIndex + 1} / ${presets.length}</span>
             <div class="nav-btn-group">
               <button class="btn btn-sm btn-outline" id="btn-prev-q">前へ</button>
@@ -1813,7 +1812,7 @@ const GameTools = {
             </div>
           </div>
 
-          ${!game.articleTopic && currentIndex === 0 ? '<p class="text-sm mt-2"><a href="seo/sea-turtle-quiz.html#quiz-beginner">初めての方へ：身近な出来事から解く問題を選ぶ</a></p>' : ''}
+          ${!game.articleTopic && currentIndex === 0 ? '<p class="sea-beginner-link"><a href="seo/sea-turtle-quiz.html#quiz-beginner">初めての方へ：身近な出来事から解く問題を選ぶ ↗</a></p>' : ''}
           <h3 class="puzzle-title">${escapeHTML(q.title || "自作問題")}</h3>
           <div class="puzzle-question-box">
             <p>${escapeHTML(q.question)}</p>
@@ -1856,9 +1855,9 @@ const GameTools = {
 
             <div class="btn-group-row mt-3">
               <button class="btn btn-warning flex-1" id="btn-toggle-answer">
-                ${showAnswer ? '解答を隠す' : '出題者用：真相（解答）を見る'}
+                ${showAnswer ? '解答を隠す' : '真相（解答）を見る'}
               </button>
-              ${!solved ? '<button class="btn btn-success flex-1" id="btn-sea-solved">正解・クリアにする</button>' : ''}
+              ${!solved ? '<button class="btn btn-success flex-1" id="btn-sea-solved">正解・クリア</button>' : ''}
             </div>
           </div>
 
@@ -2208,15 +2207,15 @@ const GameTools = {
             <div class="two-choices-box my-3">
               <span class="badge badge-warning text-xs font-black">究極の2択</span>
               <div class="grid grid-cols-2 gap-2 my-3">
-                <div class="p-3 border rounded text-center choice-opt-a" style="background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.4);">
-                  <span class="font-black text-xs text-primary">A</span>
+                <div class="p-3 border rounded text-center choice-opt-a">
+                  <span class="font-black text-xs choice-text-a">A</span>
                   <div class="font-bold text-sm my-2">${escapeHTML(choiceState.item.a)}</div>
-                  <button class="btn btn-xs btn-outline" id="btn-vote-a">投票 (${choiceState.votesA})</button>
+                  <button class="btn btn-xs btn-choice-a" id="btn-vote-a">投票 (${choiceState.votesA})</button>
                 </div>
-                <div class="p-3 border rounded text-center choice-opt-b" style="background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.4);">
-                  <span class="font-black text-xs text-danger">B</span>
+                <div class="p-3 border rounded text-center choice-opt-b">
+                  <span class="font-black text-xs choice-text-b">B</span>
                   <div class="font-bold text-sm my-2">${escapeHTML(choiceState.item.b)}</div>
-                  <button class="btn btn-xs btn-outline" id="btn-vote-b">投票 (${choiceState.votesB})</button>
+                  <button class="btn btn-xs btn-choice-b" id="btn-vote-b">投票 (${choiceState.votesB})</button>
                 </div>
               </div>
 
@@ -2440,8 +2439,8 @@ const GameTools = {
           <div class="flex justify-between items-center mb-2 flex-wrap gap-2">
             <h3 class="tool-title text-base" style="margin:0;">NGワードゲーム</h3>
             <div class="btn-toggle-group">
-              <button class="btn-toggle btn-sm ${state.mode === 'duel' ? 'active' : ''}" data-ngmode="duel">2人対面バトル</button>
-              <button class="btn-toggle btn-sm ${state.mode === 'gacha' ? 'active' : ''}" data-ngmode="gacha">複数人・お題ガチャ</button>
+              <button class="btn-toggle btn-sm ${state.mode === 'duel' ? 'active' : ''}" data-ngmode="duel">2人対面</button>
+              <button class="btn-toggle btn-sm ${state.mode === 'gacha' ? 'active' : ''}" data-ngmode="gacha">複数人（お題）</button>
             </div>
           </div>
 
@@ -3919,13 +3918,13 @@ const GameTools = {
           </div>
 
           <div class="flex gap-2 mt-3">
-            <button class="btn btn-danger flex-1 font-bold" id="btn-yamanote-foul">アウト判定（詰まり・重複）</button>
-            <button class="btn btn-secondary font-bold" id="btn-yamanote-batsu">ソフトミッション</button>
+            <button class="btn btn-danger flex-1 font-bold" id="btn-yamanote-foul">アウト判定</button>
+            <button class="btn btn-secondary flex-1 font-bold" id="btn-yamanote-batsu">ソフトミッション</button>
           </div>
         `;
       } else if (currentSubTab === "magical-banana") {
         subMarkup = `
-          <div class="p-3 my-3 border rounded text-center" style="background: rgba(234,179,8,0.06); border-color: rgba(234,179,8,0.3);">
+          <div class="p-3 my-3 border rounded text-center rhythm-accent-panel rhythm-accent-amber">
             <span class="topic-tag">最初のお題ワード</span>
             <div class="font-black text-2xl text-warning my-1">${escapeHTML(bananaState.currentWord)}</div>
             <p class="text-xs text-muted">「${escapeHTML(bananaState.currentWord)}と言ったら〇〇！」と連想を繋ぎましょう。</p>
@@ -3935,14 +3934,14 @@ const GameTools = {
           <div class="setting-group my-2">
             <label class="setting-label text-xs">テンポ (BPM)</label>
             <div class="btn-toggle-group">
-              <button class="btn-toggle ${bananaState.bpm === 90 ? 'active' : ''}" data-banana-bpm="90">ゆっくり (90)</button>
-              <button class="btn-toggle ${bananaState.bpm === 120 ? 'active' : ''}" data-banana-bpm="120">普通 (120)</button>
-              <button class="btn-toggle ${bananaState.bpm === 150 ? 'active' : ''}" data-banana-bpm="150">高速 (150)</button>
+              <button class="btn-toggle ${bananaState.bpm === 90 ? 'active' : ''}" data-banana-bpm="90">ゆっくり 90</button>
+              <button class="btn-toggle ${bananaState.bpm === 120 ? 'active' : ''}" data-banana-bpm="120">普通 120</button>
+              <button class="btn-toggle ${bananaState.bpm === 150 ? 'active' : ''}" data-banana-bpm="150">高速 150</button>
             </div>
           </div>
 
           <div class="my-2">
-            <div id="banana-beat-indicator" style="padding: 10px; border-radius: 8px; font-weight: 800; font-size: 1rem; background: rgba(0,0,0,0.03); min-height: 44px; display: flex; align-items: center; justify-content: center;">
+            <div id="banana-beat-indicator" class="rhythm-beat-indicator">
               ${bananaState.isPlaying ? 'リズムに合わせて復唱＆連想' : 'スタートを押してリズム開始'}
             </div>
           </div>
@@ -3956,14 +3955,14 @@ const GameTools = {
           </div>
 
           <div class="flex gap-2">
-            <button class="btn btn-danger flex-1 font-bold" id="btn-banana-foul">詰まった・ミス（アウト）</button>
-            <button class="btn btn-secondary font-bold" id="btn-banana-batsu">ソフトミッション</button>
+            <button class="btn btn-danger flex-1 font-bold" id="btn-banana-foul">アウト判定</button>
+            <button class="btn btn-secondary flex-1 font-bold" id="btn-banana-batsu">ソフトミッション</button>
           </div>
         `;
       } else if (currentSubTab === "doremi") {
         const note = noteDefs[doremiIndex];
         subMarkup = `
-          <div class="my-3 p-3 rounded border text-center" style="background: rgba(59,130,246,0.06); border-color: rgba(59,130,246,0.3);">
+          <div class="my-3 p-3 rounded border text-center rhythm-accent-panel rhythm-accent-blue">
             <span class="topic-tag">指定された音階</span>
             <div class="font-black text-3xl text-primary my-1">${note.name}</div>
             <button class="btn btn-xs btn-outline mt-1" id="btn-play-doremi-tone">音階を鳴らす (${note.key})</button>
@@ -3972,14 +3971,14 @@ const GameTools = {
           <div class="setting-group my-2">
             <label class="setting-label text-xs">テンポ (BPM)</label>
             <div class="btn-toggle-group">
-              <button class="btn-toggle ${doremiState.bpm === 100 ? 'active' : ''}" data-doremi-bpm="100">通常 (100)</button>
-              <button class="btn-toggle ${doremiState.bpm === 130 ? 'active' : ''}" data-doremi-bpm="130">高速 (130)</button>
-              <button class="btn-toggle ${doremiState.bpm === 160 ? 'active' : ''}" data-doremi-bpm="160">激ムズ (160)</button>
+              <button class="btn-toggle ${doremiState.bpm === 100 ? 'active' : ''}" data-doremi-bpm="100">通常 100</button>
+              <button class="btn-toggle ${doremiState.bpm === 130 ? 'active' : ''}" data-doremi-bpm="130">高速 130</button>
+              <button class="btn-toggle ${doremiState.bpm === 160 ? 'active' : ''}" data-doremi-bpm="160">上級 160</button>
             </div>
           </div>
 
           <div class="my-2">
-            <div id="doremi-beat-indicator" style="padding: 10px; border-radius: 8px; font-weight: 800; font-size: 1rem; background: rgba(0,0,0,0.03); min-height: 44px; display: flex; align-items: center; justify-content: center;">
+            <div id="doremi-beat-indicator" class="rhythm-beat-indicator">
               ${doremiState.isPlaying ? 'テンポを刻み中...' : 'リズムに合わせて指定の音階を歌いましょう'}
             </div>
           </div>
@@ -3995,8 +3994,8 @@ const GameTools = {
                 ${doremiState.isPlaying ? 'リズム停止' : 'リズム開始'}
               </button>
               <button class="btn btn-danger flex-1 font-bold" id="btn-doremi-foul">歌詞・音程ミス</button>
-              <button class="btn btn-secondary font-bold" id="btn-doremi-batsu">ソフトミッション</button>
             </div>
+            <button class="btn btn-secondary btn-block font-bold" id="btn-doremi-batsu">ソフトミッション</button>
           </div>
         `;
       }
@@ -4005,8 +4004,8 @@ const GameTools = {
         <div class="tool-card text-center rhythm-box-card">
           <h3 class="tool-title mb-2">リズムゲームボックス</h3>
 
-          <div class="btn-toggle-group mb-3" style="width: 100%; display: flex;">
-            <button class="btn-toggle flex-1 ${currentSubTab === 'yamanote' ? 'active' : ''}" data-subtab="yamanote">山手線・古今東西</button>
+          <div class="btn-toggle-group rhythm-subtab-group mb-3">
+            <button class="btn-toggle flex-1 ${currentSubTab === 'yamanote' ? 'active' : ''}" data-subtab="yamanote">古今東西</button>
             <button class="btn-toggle flex-1 ${currentSubTab === 'magical-banana' ? 'active' : ''}" data-subtab="magical-banana">マジカルバナナ</button>
             <button class="btn-toggle flex-1 ${currentSubTab === 'doremi' ? 'active' : ''}" data-subtab="doremi">ドレミの歌</button>
           </div>
@@ -4841,8 +4840,8 @@ const GameTools = {
           ${finishCard}
 
           <div class="flex gap-2 justify-center my-3">
-            <button class="btn btn-success flex-1" id="btn-log-yes" ${state.remaining === 0 || state.outcome ? "disabled" : ""}>はい (YES)</button>
-            <button class="btn btn-danger flex-1" id="btn-log-no" ${state.remaining === 0 || state.outcome ? "disabled" : ""}>いいえ (NO)</button>
+            <button class="btn btn-success flex-1" id="btn-log-yes" aria-label="はい (YES)" ${state.remaining === 0 || state.outcome ? "disabled" : ""}>はい</button>
+            <button class="btn btn-danger flex-1" id="btn-log-no" aria-label="いいえ (NO)" ${state.remaining === 0 || state.outcome ? "disabled" : ""}>いいえ</button>
             <button class="btn btn-outline flex-1" id="btn-log-irrelevant" ${state.remaining === 0 || state.outcome ? "disabled" : ""}>関係ない</button>
           </div>
 
@@ -5173,9 +5172,9 @@ const GameTools = {
 
           ${state.finished ? finishCard : `
             <div class="flex gap-2 justify-center my-3">
-              <button class="btn btn-primary btn-lg flex-1" data-add="1">+1進める</button>
-              <button class="btn btn-primary btn-lg flex-1" data-add="2">+2進める</button>
-              <button class="btn btn-primary btn-lg flex-1" data-add="3">+3進める</button>
+              <button class="btn btn-primary btn-lg flex-1 font-mono" data-add="1" aria-label="1進める">+1</button>
+              <button class="btn btn-primary btn-lg flex-1 font-mono" data-add="2" aria-label="2進める">+2</button>
+              <button class="btn btn-primary btn-lg flex-1 font-mono" data-add="3" aria-label="3進める">+3</button>
             </div>
             <button class="btn btn-outline btn-block mt-3" id="btn-reset-count30">ゲームやり直し</button>
           `}
@@ -5362,15 +5361,15 @@ const GameTools = {
           <div class="setting-group my-2">
             <label class="setting-label text-xs">制限時間</label>
             <div class="btn-toggle-group">
-              <button class="btn-toggle ${state.timerMax === 3 ? 'active' : ''}" data-timer-sec="3">3秒（上級）</button>
-              <button class="btn-toggle ${state.timerMax === 5 ? 'active' : ''}" data-timer-sec="5">5秒（標準）</button>
-              <button class="btn-toggle ${state.timerMax === 10 ? 'active' : ''}" data-timer-sec="10">10秒（ゆったり）</button>
+              <button class="btn-toggle ${state.timerMax === 3 ? 'active' : ''}" data-timer-sec="3">3秒</button>
+              <button class="btn-toggle ${state.timerMax === 5 ? 'active' : ''}" data-timer-sec="5">5秒</button>
+              <button class="btn-toggle ${state.timerMax === 10 ? 'active' : ''}" data-timer-sec="10">10秒</button>
             </div>
           </div>
 
           ${foulCard}
 
-          <div class="p-4 my-3 border rounded text-center" style="background: rgba(0,0,0,0.02);">
+          <div class="p-4 my-3 border rounded text-center two-choice-panel">
             <div id="word-chain-timer" class="font-black font-mono text-4xl text-primary my-2">${state.timerSec}秒</div>
             <button class="btn ${state.timerRunning ? 'btn-warning pulse-scale' : 'btn-primary'} btn-block btn-lg font-black py-4 mt-2" id="btn-timer-toggle">
               ${state.timerRunning ? '次の人へ（タイマーリセット）' : 'タイマースタート'}
@@ -5381,8 +5380,8 @@ const GameTools = {
           </div>
 
           <div class="flex gap-2 mt-3">
-            <button class="btn btn-danger flex-1 font-bold" id="btn-chain-foul">詰まり・アウト判定</button>
-            <button class="btn btn-secondary font-bold" id="btn-chain-batsu">ソフトミッション</button>
+            <button class="btn btn-danger flex-1 font-bold" id="btn-chain-foul">アウト判定</button>
+            <button class="btn btn-secondary flex-1 font-bold" id="btn-chain-batsu">ソフトミッション</button>
           </div>
         </div>
       `;

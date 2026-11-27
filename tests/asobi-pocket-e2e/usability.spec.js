@@ -33,14 +33,19 @@ test('mobile search opens the filters and places the input in view', async ({ pa
 
 test('mute is the initial setting and an explicit sound choice persists', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('#btn-header-mute')).toContainText('音なし');
-  await page.locator('#btn-header-mute').click();
-  await expect(page.locator('#btn-header-mute')).toContainText('音あり');
-  await page.reload();
-  await expect(page.locator('#btn-header-mute')).toContainText('音あり');
-  await page.locator('#btn-header-mute').click();
   await page.locator('#btn-open-settings').click();
   await expect(page.locator('#setting-sound-toggle')).not.toBeChecked();
+  await expect(page.locator('#menu-sound-status')).toHaveText('音なし');
+  await page.locator('#setting-sound-toggle').click();
+  await expect(page.locator('#setting-sound-toggle')).toBeChecked();
+  await expect(page.locator('#menu-sound-status')).toHaveText('音あり');
+  await page.reload();
+  await page.locator('#btn-open-settings').click();
+  await expect(page.locator('#setting-sound-toggle')).toBeChecked();
+  await expect(page.locator('#menu-sound-status')).toHaveText('音あり');
+  await page.locator('#setting-sound-toggle').click();
+  await expect(page.locator('#setting-sound-toggle')).not.toBeChecked();
+  await expect(page.locator('#menu-sound-status')).toHaveText('音なし');
 });
 
 test('opening and configuring a game needs no exit confirmation and restores the list position', async ({ page }) => {

@@ -8,7 +8,10 @@
       const link = event.target.closest('a.btn-affiliate');
       const match = location.hash.match(/^#game\/([a-z0-9-]+)(?:\?|$)/);
       if (link && match && typeof Analytics !== 'undefined') {
-        const merchant = new URL(link.href).hostname.includes('amazon') ? 'amazon' : 'rakuten';
+        let merchant = 'rakuten';
+        try {
+          if (new URL(link.href, location.href).hostname.includes('amazon')) merchant = 'amazon';
+        } catch (e) {}
         Analytics.track('asobi_product_click', { game_id: match[1], merchant, surface: link.closest('.tab-pane')?.id || 'detail' });
       }
       const toolAction = event.target.closest('#tool-mount-point button');
@@ -23,7 +26,7 @@
       location.hash = 'game/' + gameId;
     }));
     document.getElementById('btn-hero-choose')?.addEventListener('click', () => {
-      document.getElementById('btn-quick-concierge')?.click();
+      document.getElementById('btn-hero-concierge')?.click();
     });
     document.getElementById('btn-share-pocket')?.addEventListener('click', async () => {
       const data = { title: 'あそびポケット', text: '次の集まり、何して遊ぶ？ スマホ1台でみんなと遊べる「あそびポケット」。', url: 'https://katakatalab.com/asobi-pocket/' };

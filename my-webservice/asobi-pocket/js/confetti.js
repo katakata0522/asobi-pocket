@@ -9,6 +9,7 @@ class ConfettiEngine {
     this.ctx = null;
     this.particles = [];
     this.animId = null;
+    this.maxParticles = 140;
     // あそびポケットの温かみあるカラーパレットに合わせた祝福色
     this.colors = ["#E54B36", "#D8EE52", "#E6B84C", "#2F855A", "#2B6CB0", "#F0C892"];
   }
@@ -28,7 +29,7 @@ class ConfettiEngine {
       document.body.appendChild(this.canvas);
       this.ctx = this.canvas.getContext("2d");
       this.resize();
-      window.addEventListener("resize", () => this.resize());
+      window.addEventListener("resize", () => this.resize(), { passive: true });
     }
   }
 
@@ -74,6 +75,10 @@ class ConfettiEngine {
         gravity: 0.16 + Math.random() * 0.06,
         friction: 0.985
       });
+    }
+
+    if (this.particles.length > this.maxParticles) {
+      this.particles.splice(0, this.particles.length - this.maxParticles);
     }
 
     if (!this.animId) {

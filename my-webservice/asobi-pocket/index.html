@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>あそびポケット｜スマホ1台で遊べる無料パーティーゲーム</title>
-  <meta name="description" content="スマホ1台で、2人の待ち時間も友達との集まりも。人数と時間から遊びを選び、ワードウルフ・価値観ゲーム・反射神経対決を登録なしで楽しめます。遊び方とお題集も掲載。">
+  <meta name="description" content="スマホ1台で、2人の待ち時間も友達との集まりもすぐ遊びの時間に。人数と気分から選べて、ワードウルフ・ito・反射神経対決・ウミガメのスープなど全32種のパーティーゲームを登録なし・無料で楽しめます。遊び方とお題集も充実。">
   <link rel="canonical" href="https://katakatalab.com/asobi-pocket/">
   
   <!-- PWA Manifest & Icons -->
@@ -18,8 +18,8 @@
   <meta name="mobile-web-app-capable" content="yes">
 
   <!-- OGP & Social Cards -->
-  <meta property="og:title" content="あそびポケット｜今日のひまを、みんなのいい時間に。">
-  <meta property="og:description" content="スマホ1台で、2人の待ち時間も友達との集まりも。人数と時間から遊びを選び、ワードウルフ・価値観ゲーム・反射神経対決を登録なしで楽しめます。遊び方とお題集も掲載。">
+  <meta property="og:title" content="あそびポケット｜スマホ1台で遊べる無料パーティーゲーム">
+  <meta property="og:description" content="スマホ1台で、2人の待ち時間も友達との集まりもすぐ遊びの時間に。人数と気分から選べて、ワードウルフ・ito・反射神経対決・ウミガメのスープなど全32種のパーティーゲームを登録なし・無料で楽しめます。遊び方とお題集も充実。">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://katakatalab.com/asobi-pocket/">
   <meta property="og:locale" content="ja_JP">
@@ -28,8 +28,10 @@
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="あそびポケット。スマホ1台、みんなで遊ぼう。">
-  <meta name="twitter:image" content="https://katakatalab.com/asobi-pocket/assets/share-card.png">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="あそびポケット｜スマホ1台で遊べる無料パーティーゲーム">
+  <meta name="twitter:description" content="スマホ1台で、2人の待ち時間も友達との集まりもすぐ遊びの時間に。人数と気分から選べて、ワードウルフ・ito・反射神経対決など全32種を登録なし・無料で楽しめます。">
+  <meta name="twitter:image" content="https://katakatalab.com/asobi-pocket/assets/share-card.png">
   <meta name="theme-color" content="#F7F5EE">
 
   <!-- 読みやすいゴシック体（オフライン時は端末フォントへ即座にフォールバック） -->
@@ -37,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
 
-  <link rel="stylesheet" href="style.css?v=20261001">
+  <link rel="stylesheet" href="style.css?v=20261126-ux7">
 
   <!-- Google Analytics: KatakataLab共通プロパティ。SPAのhash遷移もpage_viewとして送信 -->
   <script>
@@ -89,7 +91,7 @@
     }());
   </script>
   <link rel="stylesheet" href="quality-ui.css">
-  <link rel="stylesheet" href="evolution.css?v=20261001-ux1">
+  <link rel="stylesheet" href="evolution.css?v=20261126-ux6">
 </head>
 <body>
   <a class="skip-link" href="#discovery">ゲーム選びへスキップ</a>
@@ -104,26 +106,14 @@
           <span class="tagline">スマホひとつ。遊びはいろいろ。</span>
         </div>
       </a>
-      <div class="header-actions"><a href="seo/" class="header-guide">遊び方・お題集 <span aria-hidden="true">↗</span></a>
-        <button class="btn-header-action btn-header-pwa" id="btn-header-pwa-install" title="アプリをインストール" aria-label="アプリをホーム画面に追加">
-          <span>アプリ追加</span>
-        </button>
-        <button class="btn-header-action" id="btn-header-finger" title="親決めルーレット" aria-label="親決めルーレットを開く">
-          <span>親決め</span>
-        </button>
-        <button class="btn-header-action" id="btn-header-batsu" title="罰ゲームルーレット" aria-label="罰ゲームルーレットを開く">
-          <span>罰ゲーム</span>
-        </button>
+      <div class="header-actions">
         <button class="btn-header-action" id="btn-toggle-fav-filter" title="お気に入り一覧" aria-label="お気に入りゲームの絞り込み">
           <span>お気に入り</span>
           <span class="badge-counter hidden" id="fav-count-badge">0</span>
         </button>
-        <span class="header-divider" aria-hidden="true"></span>
-        <button class="btn-icon-toggle" id="btn-header-mute" title="音声をミュート切替" aria-label="音声をミュートにする">
-          <svg class="ui-svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8v4h3.2l4.3 3.5V4.5L7.2 8H4z"/><path d="M14.5 7.5a3.5 3.5 0 010 5"/></svg>
-        </button>
-        <button class="btn-icon-toggle" id="btn-open-settings" title="設定 ＆ 便利機能" aria-label="アプリ設定を開く">
-          <svg class="ui-svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="2.7"/><path d="M10 2.5v2M10 15.5v2M3.5 6.25l1.7 1M14.8 12.75l1.7 1M3.5 13.75l1.7-1M14.8 7.25l1.7-1"/></svg>
+        <button class="btn-menu-trigger" id="btn-open-settings" title="メニュー・設定" aria-label="メニューと設定を開く" aria-haspopup="dialog" aria-expanded="false" aria-controls="modal-settings">
+          <svg class="ui-svg menu-burger-svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13"/></svg>
+          <span class="menu-trigger-label">メニュー</span>
         </button>
       </div>
     </div>
@@ -143,10 +133,40 @@
   <div id="view-home">
     <!-- メインコンテンツ (コンテンツファースト設計) -->
     <main class="main-container">
-      <div class="discovery-heading" id="discovery" tabindex="-1"><h1>今日は、何して遊ぶ？</h1><p>気になる遊びをタップ。迷ったら、人数や時間で絞れます。</p></div>
+      <div class="discovery-heading" id="discovery" tabindex="-1"><h1>今日は、何して遊ぶ？</h1><p>気になる遊びをタップ。迷ったら人数や3秒診断で決められます。</p></div>
+      <!-- ファーストビュー即決バー（1タップ人数絞り込み＋3秒診断＋おまかせ） -->
+      <section class="quick-pick-bar" id="quick-pick-bar" aria-label="人数からすぐ選ぶ・3秒診断">
+        <div class="quick-pick-players" role="group" aria-label="人数で絞り込み">
+          <button type="button" class="quick-chip" data-quick-players="2" aria-pressed="false">2人</button>
+          <button type="button" class="quick-chip" data-quick-players="3-4" aria-pressed="false">3〜4人</button>
+          <button type="button" class="quick-chip" data-quick-players="5+" aria-pressed="false">5人以上</button>
+        </div>
+        <div class="quick-pick-actions">
+          <button type="button" class="quick-cta-primary" id="btn-hero-concierge" aria-label="3秒で診断：人数と気分からおすすめゲームを提案">
+            <span>3秒で診断</span>
+          </button>
+          <button type="button" class="quick-cta-secondary" id="btn-hero-roulette" aria-label="おまかせ：表示中の遊びからランダムに選ぶ">
+            <span>おまかせ</span>
+          </button>
+        </div>
+      </section>
+      <!-- 今日のお題プレビュー（ワクワク体験フック） -->
+      <section class="topic-spotlight" id="topic-spotlight" aria-label="今日のお題プレビュー">
+        <div class="spotlight-body">
+          <div class="spotlight-head">
+            <span class="spotlight-eyebrow">今日のお題</span>
+            <span class="spotlight-game-tag" id="spotlight-game">ito（価値観）</span>
+          </div>
+          <p class="spotlight-prompt" id="spotlight-prompt">気になるお題を読み込み中…</p>
+        </div>
+        <div class="spotlight-actions">
+          <button type="button" class="spotlight-btn-shuffle" id="btn-spotlight-next" aria-label="別のお題を見る">別のお題</button>
+          <a class="spotlight-btn-play" id="btn-spotlight-play" href="#game/ito">これで遊ぶ <span aria-hidden="true">↗</span></a>
+        </div>
+      </section>
       <!-- 検索 ＆ 厳選スマートタグコントロール -->
       <details class="filter-disclosure" id="discovery-filters">
-        <summary><span>遊びを絞る</span><span class="filter-hint">人数・時間・気分</span><svg class="disclosure-arrow ui-svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 7.75L10 12.25l4.5-4.5"/></svg></summary>
+        <summary><span>もっと詳しく絞る</span><span class="filter-hint">時間・キーワード・並び替え</span><svg class="disclosure-arrow ui-svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 7.75L10 12.25l4.5-4.5"/></svg></summary>
       <section class="controls-wrapper" aria-label="検索と絞り込み">
         <!-- 人数と時間を同時に指定できる選択導線 -->
         <div class="pocket-fit-filters"><label>何人で？<select id="fit-players"><option value="all">人数を選ぶ</option><option value="2">2人</option><option value="3">3人</option><option value="4">4人</option><option value="5">5人</option><option value="6">6人</option><option value="7">7人</option><option value="8">8人</option><option value="10">10人</option><option value="12">12人</option><option value="15">15人</option><option value="20">20人</option></select></label><label>どのくらい？<select id="fit-duration"><option value="all">時間を選ぶ</option><option value="3">3分くらい</option><option value="5">5分くらい</option><option value="10">10分くらい</option></select></label><button type="button" id="fit-reset" class="fit-reset">条件をリセット</button></div>
@@ -176,7 +196,7 @@
               <option value="players-few">少人数向き (2人〜)</option>
               <option value="players-many">大人数向き (5人〜)</option>
               <option value="has-tool">ツール付き優先</option>
-              <option value="popular">⭐ 編集部おすすめ順</option>
+              <option value="popular">編集部おすすめ順</option>
             </select>
           </div>
         </div>
@@ -188,18 +208,6 @@
       <div class="grid-heading play-grid-heading"><h2 id="games-grid-title">みんなで遊ぶ おすすめ7選</h2><button type="button" id="jump-to-duels" aria-controls="games-grid" hidden>2人で対決へ ↓</button></div>
       <!-- ゲームカードタイル一覧 -->
       <section class="games-grid" id="games-grid" aria-label="ゲーム一覧"></section>
-      <div class="pocket-decisions" aria-label="遊び選びのお手伝い"><button class="btn-roulette-inline btn-quick-finger" id="btn-quick-finger" title="親決めルーレット" aria-label="親決めルーレットを開く">
-              <span>親決め</span>
-            </button>
-<button class="btn-roulette-inline btn-quick-batsu" id="btn-quick-batsu" title="罰ゲームルーレット" aria-label="罰ゲームルーレットを開く">
-              <span>罰ゲーム</span>
-            </button>
-<button class="btn-roulette-inline" id="btn-random-roulette" title="ランダムルーレット" aria-label="おまかせで選ぶ：ランダムにゲームを選ぶ">
-              <span>おまかせで選ぶ</span>
-            </button>
-<button class="btn-concierge-inline" id="btn-quick-concierge" title="ぴったりゲーム診断" aria-label="条件でおすすめ：人数と気分からゲームを選ぶ">
-              <span>条件でおすすめ</span>
-            </button></div>
       <details class="pocket-about"><summary><span>あそびポケットって？</span><svg class="disclosure-arrow ui-svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 7.75L10 12.25l4.5-4.5"/></svg></summary>
       <section class="pocket-hero quality-home-intro" id="quality-home-intro" aria-labelledby="pocket-hero-title">
         <div class="hero-copy">
@@ -234,7 +242,7 @@
               <span class="classic-toggle-subtitle">たけのこニョッキ・ピンポンパン・30数えたら負け ほか</span>
             </div>
           </div>
-          <span class="classic-toggle-arrow" aria-hidden="true">▾</span>
+          <svg class="disclosure-arrow ui-svg classic-toggle-arrow" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 7.75L10 12.25l4.5-4.5"/></svg>
         </button>
         <div class="classic-rules-panel hidden" id="classic-rules-panel">
           <p class="classic-rules-desc">スマホツール不要でいつでもどこでも遊べる、飲み会・ドライブ・待ち時間の定番ルール一覧です。</p>
@@ -244,7 +252,7 @@
       <section class="pocket-guides" aria-labelledby="guide-heading"><div class="guide-intro"><h2 id="guide-heading">遊ぶ前の「どうしよう？」に。</h2><p>はじめてでも、幹事でも。人数や場面に合う遊び方とお題を。</p></div><div class="guide-grid"><a href="seo/two-player-games.html"><h3>2人で、サクッと。</h3><p>待ち時間やデートに。対戦も、会話も。</p><span class="guide-arrow" aria-hidden="true">↗</span></a><a href="seo/party-games-no-tools.html"><h3>道具なしで、みんなと。</h3><p>友達の集まりや旅行で、そのまま遊ぼう。</p><span class="guide-arrow" aria-hidden="true">↗</span></a><a href="seo/icebreaker-games.html"><h3>はじめましての、その後に。</h3><p>初対面の会話を、ゆっくりほぐす。</p><span class="guide-arrow" aria-hidden="true">↗</span></a></div></section>
       <details class="pocket-how-fold"><summary><span>はじめての方へ：遊び方と使い方</span><svg class="disclosure-arrow ui-svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 7.75L10 12.25l4.5-4.5"/></svg></summary><section class="pocket-how" aria-labelledby="how-heading"><div><h2 id="how-heading">遊ぶまで、たった3ステップ。</h2></div><ol><li><b>1</b><span><strong>人数と気分で選ぶ</strong>迷ったら「条件でおすすめ」で。</span></li><li><b>2</b><span><strong>ルールをみんなで確認</strong>各ゲームの「遊び方」を読む。</span></li><li><b>3</b><span><strong>スマホを囲んで始める</strong>答えにくいお題はパスしてOK。</span></li></ol></section></details>
       <section class="pocket-share"><div><h2>次の集まりにも、このポケットを。</h2><p>友達に送るか、ホーム画面に置いておこう。</p></div><button type="button" id="btn-share-pocket">友達に教える <span aria-hidden="true">↗</span></button></section>
-      <section class="pocket-faq" aria-labelledby="faq-title"><h2 id="faq-title">気になること</h2><details><summary>ダウンロードや登録は必要？</summary><p>無料で遊べます。ブラウザでそのまま使え、アカウント登録は不要です。スマホ1台で始められます。よく遊ぶならホーム画面への追加もできます。</p></details><details><summary>電波がない場所でも遊べる？</summary><p>オンラインで一度読み込み、オフライン用の保存が完了した後は、ゲーム本体を使えます。外部の商品ページや初めて開く特集記事には通信が必要です。</p></details><details><summary>市販ゲームの公式アプリ？</summary><p>このサイトは個人運営の遊び補助ツールです。掲載された市販ゲームの公式アプリではありません。商品の詳しいルールは各販売元でご確認ください。</p></details></section>
+      <section class="pocket-faq" aria-labelledby="faq-title"><h2 id="faq-title">気になること</h2><details><summary><span>ダウンロードや登録は必要？</span><svg class="disclosure-arrow ui-svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 7.75L10 12.25l4.5-4.5"/></svg></summary><p>無料で遊べます。ブラウザでそのまま使え、アカウント登録は不要です。スマホ1台で始められます。よく遊ぶならホーム画面への追加もできます。</p></details><details><summary><span>電波がない場所でも遊べる？</span><svg class="disclosure-arrow ui-svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 7.75L10 12.25l4.5-4.5"/></svg></summary><p>オンラインで一度読み込み、オフライン用の保存が完了した後は、ゲーム本体を使えます。外部の商品ページや初めて開く特集記事には通信が必要です。</p></details><details><summary><span>市販ゲームの公式アプリ？</span><svg class="disclosure-arrow ui-svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 7.75L10 12.25l4.5-4.5"/></svg></summary><p>このサイトは個人運営の遊び補助ツールです。掲載された市販ゲームの公式アプリではありません。商品の詳しいルールは各販売元でご確認ください。</p></details></section>
     </main>
   </div>
 
@@ -252,7 +260,7 @@
   <div id="view-detail" class="main-container hidden" role="region" aria-label="ゲーム詳細"></div>
 
   <!-- ⚡ 人数と気分でおすすめ（幹事即決コンシェルジュ）モーダル -->
-  <div class="modal-backdrop hidden" id="modal-concierge" role="dialog" aria-modal="true" aria-labelledby="concierge-modal-title">
+  <div class="modal-backdrop hidden" id="modal-concierge" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="concierge-modal-title">
     <div class="modal-card modal-card-concierge">
       <button class="modal-close-btn" id="btn-close-concierge" aria-label="閉じる">✕</button>
       <div class="text-center mb-3">
@@ -263,38 +271,55 @@
       <!-- Step 1: 参加人数 -->
       <div class="concierge-step-box mb-3">
         <label class="concierge-step-label">参加人数は？</label>
-        <div class="concierge-options-grid" id="concierge-players-group">
-          <button type="button" class="btn-concierge-opt active" data-players="2">2人（対戦・サシ飲み）</button>
-          <button type="button" class="btn-concierge-opt" data-players="3-4">3〜4人（友達・少人数）</button>
-          <button type="button" class="btn-concierge-opt" data-players="5+">5人以上（集まり・大人数）</button>
+        <div class="concierge-options-grid" id="concierge-players-group" role="group" aria-label="参加人数">
+          <button type="button" class="btn-concierge-opt active" data-players="2" aria-pressed="true">2人（対戦・サシ飲み）</button>
+          <button type="button" class="btn-concierge-opt" data-players="3-4" aria-pressed="false">3〜4人（友達・少人数）</button>
+          <button type="button" class="btn-concierge-opt" data-players="5+" aria-pressed="false">5人以上（集まり・大人数）</button>
         </div>
       </div>
 
       <!-- Step 2: 今の気分 -->
       <div class="concierge-step-box mb-3">
         <label class="concierge-step-label">今の気分・雰囲気は？</label>
-        <div class="concierge-options-grid" id="concierge-mood-group">
-          <button type="button" class="btn-concierge-opt active" data-mood="laugh">盛り上がり・笑い</button>
-          <button type="button" class="btn-concierge-opt" data-mood="chill">ゆったり・トーク</button>
-          <button type="button" class="btn-concierge-opt" data-mood="mind">心理戦・推理</button>
-          <button type="button" class="btn-concierge-opt" data-mood="icebreak">アイスブレイク・初対面</button>
+        <div class="concierge-options-grid" id="concierge-mood-group" role="group" aria-label="今の気分・雰囲気">
+          <button type="button" class="btn-concierge-opt active" data-mood="laugh" aria-pressed="true">盛り上がり・笑い</button>
+          <button type="button" class="btn-concierge-opt" data-mood="chill" aria-pressed="false">ゆったり・トーク</button>
+          <button type="button" class="btn-concierge-opt" data-mood="mind" aria-pressed="false">心理戦・推理</button>
+          <button type="button" class="btn-concierge-opt" data-mood="icebreak" aria-pressed="false">アイスブレイク・初対面</button>
         </div>
       </div>
 
-      <button class="btn btn-primary btn-lg btn-block mb-3 font-bold" id="btn-concierge-submit">
+      <button type="button" class="btn btn-primary btn-lg btn-block mb-3 font-bold" id="btn-concierge-submit">
         おすすめを見る
       </button>
 
       <!-- 診断結果表示エリア -->
-      <div class="concierge-result-card hidden animate-scale p-3 border rounded text-center my-2" id="concierge-result-area">
+      <div class="concierge-result-card hidden animate-scale my-2" id="concierge-result-area" aria-live="polite">
+        <div class="concierge-res-head">
+          <div class="concierge-cond-tags" id="concierge-res-tags" aria-label="選択中の診断条件">
+            <span class="concierge-cond-tag is-players">
+              <span class="concierge-cond-key">人数</span>
+              <strong class="concierge-cond-val" id="concierge-tag-players">2人</strong>
+            </span>
+            <span class="concierge-cond-tag is-mood">
+              <span class="concierge-cond-key">気分</span>
+              <strong class="concierge-cond-val" id="concierge-tag-mood">盛り上がり・笑い</strong>
+            </span>
+          </div>
+          <span class="concierge-res-rank" id="concierge-res-rank">おすすめ 1 / 1</span>
+        </div>
+
         <div class="concierge-res-icon hidden" id="concierge-res-icon" aria-hidden="true"></div>
-        <h4 class="concierge-res-title font-black text-lg" id="concierge-res-title">ゲームタイトル</h4>
-        <p class="concierge-res-catch text-xs text-muted mt-1 mb-3" id="concierge-res-catch">キャッチコピー</p>
-        <div class="flex gap-2">
-          <button class="btn btn-success btn-block flex-1 py-2 font-bold" id="btn-concierge-play">
+        <h4 class="concierge-res-title" id="concierge-res-title">ゲームタイトル</h4>
+        <p class="concierge-res-catch" id="concierge-res-catch">キャッチコピー</p>
+        <p class="concierge-res-reason" id="concierge-res-reason"></p>
+        <div class="concierge-res-meta" id="concierge-res-meta"></div>
+
+        <div class="concierge-res-actions">
+          <button type="button" class="btn btn-success btn-block flex-1 py-2 font-bold" id="btn-concierge-play">
             このゲームを開く →
           </button>
-          <button class="btn btn-outline btn-sm" id="btn-concierge-reroll" title="別のゲームを提案">
+          <button type="button" class="btn btn-outline btn-sm" id="btn-concierge-reroll" title="別のゲームを提案">
             別の提案
           </button>
         </div>
@@ -303,7 +328,7 @@
   </div>
 
   <!-- ランダム即決ルーレットモーダル -->
-  <div class="modal-backdrop hidden" id="modal-roulette" role="dialog" aria-modal="true" aria-labelledby="roulette-modal-title">
+  <div class="modal-backdrop hidden" id="modal-roulette" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="roulette-modal-title">
     <div class="modal-card">
       <button class="modal-close-btn" id="btn-close-roulette" aria-label="閉じる">✕</button>
       <h3 class="modal-title" id="roulette-modal-title">今すぐ遊ぶルーレット</h3>
@@ -333,6 +358,7 @@
   </button>
 
   <!-- スコアボード・ドロワー（スライドアップ式） -->
+  <div class="scoreboard-backdrop hidden" id="scoreboard-backdrop" aria-hidden="true"></div>
   <div class="scoreboard-drawer hidden" id="scoreboard-drawer" role="region" aria-label="ミニスコアボード">
     <div class="scoreboard-header">
       <div class="scoreboard-title-row">
@@ -353,7 +379,7 @@
   </div>
 
   <!-- 親決めルーレット（常設モーダル） -->
-  <div class="modal-backdrop hidden" id="modal-finger-roulette" role="dialog" aria-modal="true" aria-labelledby="finger-modal-title">
+  <div class="modal-backdrop hidden" id="modal-finger-roulette" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="finger-modal-title">
     <div class="modal-card modal-card-tool">
       <button class="modal-close-btn" id="btn-close-finger-modal" aria-label="閉じる">✕</button>
       <div class="modal-tool-header text-center mb-2">
@@ -364,7 +390,7 @@
   </div>
 
   <!-- ソフトミッションルーレット（常設モーダル） -->
-  <div class="modal-backdrop hidden" id="modal-batsu-roulette" role="dialog" aria-modal="true" aria-labelledby="batsu-modal-title">
+  <div class="modal-backdrop hidden" id="modal-batsu-roulette" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="batsu-modal-title">
     <div class="modal-card modal-card-tool">
       <button class="modal-close-btn" id="btn-close-batsu-modal" aria-label="閉じる">✕</button>
       <div class="modal-tool-header text-center mb-2">
@@ -374,93 +400,159 @@
     </div>
   </div>
 
-  <!-- アプリ設定 ＆ 便利機能モーダル -->
-  <div class="modal-backdrop hidden" id="modal-settings" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
-    <div class="modal-card modal-card-settings">
-      <button class="modal-close-btn" id="btn-close-settings" aria-label="閉じる">✕</button>
-      <h3 class="modal-title" id="settings-modal-title">設定・表示環境</h3>
-      <p class="modal-desc">音・配色・画面設定をプレイ環境に合わせて切り替えられます。</p>
-
-      <div class="settings-list mt-3">
-        <!-- 1. 効果音 -->
-        <div class="setting-item-row">
-          <div class="setting-item-info">
-            <div class="setting-item-text">
-              <strong>効果音（サウンド）</strong>
-              <span>ボタン操作音やカウントダウン音を再生</span>
-            </div>
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="setting-sound-toggle">
-            <span class="toggle-slider"></span>
-          </label>
+  <!-- ハンバーガーメニュー ＆ 設定ドロワー -->
+  <div class="modal-backdrop modal-backdrop-drawer hidden" id="modal-settings" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="settings-modal-title">
+    <div class="modal-card modal-card-settings modal-card-menu">
+      <div class="menu-drawer-header">
+        <div>
+          <h3 class="modal-title" id="settings-modal-title">メニュー・設定</h3>
+          <p class="menu-drawer-sub">便利ツールと表示環境</p>
         </div>
-
-        <!-- 2. ダークモード -->
-        <div class="setting-item-row">
-          <div class="setting-item-info">
-            <div class="setting-item-text">
-              <strong>ダークモード</strong>
-              <span>目に優しい暗い配色に切り替え</span>
-            </div>
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="setting-theme-toggle">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-
-        <!-- 3. 画面常時点灯（デフォルトOFF） -->
-        <div class="setting-item-row">
-          <div class="setting-item-info">
-            <div class="setting-item-text">
-              <strong>画面の自動消灯防止（スリープ防止）</strong>
-              <span>ゲームプレイ中に画面が勝手に暗くならないようにします</span>
-            </div>
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="setting-wakelock-toggle">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-
-        <!-- 4. ふりがなモード (キッズ・子供向け) -->
-        <div class="setting-item-row">
-          <div class="setting-item-info">
-            <div class="setting-item-text">
-              <strong>ふりがなモード（キッズ対応）</strong>
-              <span>ゲームのタイトルや言葉にルビ（ふりがな）を表示</span>
-            </div>
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="setting-kids-toggle">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-
-        <!-- 5. 保存データ管理 / 一括初期化 -->
-        <div class="setting-item-row">
-          <div class="setting-item-info">
-            <div class="setting-item-text">
-              <strong>保存データの一括初期化</strong>
-              <span>お気に入り、スコア、スタンプ、カスタムお題をリセット</span>
-            </div>
-          </div>
-          <button class="btn btn-sm btn-danger" id="btn-reset-app-data">初期化</button>
-        </div>
+        <button class="modal-close-btn" id="btn-close-settings" aria-label="メニューを閉じる">✕</button>
       </div>
 
-      <div class="settings-footer-info mt-4">
-        <div class="settings-app-meta">
-          <span><strong>あそびポケット</strong> v6.4.8</span>
-          <span class="text-sub">© 2026 katakata / はじっこぐらし</span>
-        </div>
-        <div class="settings-links-row mt-2">
-          <a href="terms.html" class="settings-link">利用規約</a>
-          <span class="footer-sep">|</span>
-          <a href="privacy.html" class="settings-link">プライバシーポリシー</a>
-          <span class="footer-sep">|</span>
-          <a href="https://katakatalab.com/" target="_blank" rel="noopener noreferrer" class="settings-link">公式サイト</a>
+      <div class="menu-drawer-body">
+        <!-- 1. アプリ追加アピールカード（インストール済み時は自動で非表示） -->
+        <section class="menu-pwa-card" id="menu-pwa-card" aria-label="ホーム画面への追加案内">
+          <div class="menu-pwa-copy">
+            <strong>ホーム画面に追加してアプリ化</strong>
+            <p>1タップですぐ起動。電波がない場所でも遊べます。</p>
+          </div>
+          <button type="button" class="btn-menu-pwa" id="btn-menu-pwa-install">
+            <span>ホーム画面に追加する</span>
+            <span aria-hidden="true">↗</span>
+          </button>
+        </section>
+
+        <!-- 2. 便利ツール -->
+        <section class="menu-section" aria-labelledby="menu-sec-tools">
+          <h4 class="menu-section-title" id="menu-sec-tools">便利ツール</h4>
+          <div class="menu-nav-list">
+            <button type="button" class="menu-nav-item" id="btn-menu-finger">
+              <span class="menu-nav-text">
+                <strong>親決めルーレット</strong>
+                <span>指を置いて先攻や親をすぐ決定</span>
+              </span>
+              <span class="menu-nav-arrow" aria-hidden="true">›</span>
+            </button>
+            <button type="button" class="menu-nav-item" id="btn-menu-batsu">
+              <span class="menu-nav-text">
+                <strong>ソフトミッション</strong>
+                <span>パスOKのやさしい罰ゲーム・お題</span>
+              </span>
+              <span class="menu-nav-arrow" aria-hidden="true">›</span>
+            </button>
+            <button type="button" class="menu-nav-item" id="btn-menu-scoreboard">
+              <span class="menu-nav-text">
+                <strong>スコアボード</strong>
+                <span>みんなの得点をまとめて記録</span>
+              </span>
+              <span class="menu-nav-arrow" aria-hidden="true">›</span>
+            </button>
+            <button type="button" class="menu-nav-item" id="btn-menu-roulette">
+              <span class="menu-nav-text">
+                <strong>おまかせルーレット</strong>
+                <span>表示中の遊びからランダムに選ぶ</span>
+              </span>
+              <span class="menu-nav-arrow" aria-hidden="true">›</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- 3. 表示・音の設定 -->
+        <section class="menu-section" aria-labelledby="menu-sec-prefs">
+          <h4 class="menu-section-title" id="menu-sec-prefs">表示・音の設定</h4>
+          <div class="settings-list">
+            <div class="setting-item-row">
+              <div class="setting-item-info">
+                <div class="setting-item-text">
+                  <strong>効果音（サウンド） <span class="menu-sound-state" id="menu-sound-status">音なし</span></strong>
+                  <span>初期設定は音なし。操作音やタイマー音を再生</span>
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="setting-sound-toggle" aria-label="効果音のオン・オフ">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-item-row">
+              <div class="setting-item-info">
+                <div class="setting-item-text">
+                  <strong>ダークモード</strong>
+                  <span>目に優しい暗い配色に切り替え</span>
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="setting-theme-toggle" aria-label="ダークモードのオン・オフ">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-item-row">
+              <div class="setting-item-info">
+                <div class="setting-item-text">
+                  <strong>画面の自動消灯防止</strong>
+                  <span>プレイ中に画面が暗くならないようにする</span>
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="setting-wakelock-toggle" aria-label="画面の自動消灯防止のオン・オフ">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-item-row">
+              <div class="setting-item-info">
+                <div class="setting-item-text">
+                  <strong>ふりがなモード（キッズ対応）</strong>
+                  <span>ゲーム名や言葉にふりがなを表示</span>
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="setting-kids-toggle" aria-label="ふりがなモードのオン・オフ">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-item-row">
+              <div class="setting-item-info">
+                <div class="setting-item-text">
+                  <strong>保存データの初期化</strong>
+                  <span>お気に入り・スコア・カスタムお題をリセット</span>
+                </div>
+              </div>
+              <button type="button" class="btn btn-sm btn-danger" id="btn-reset-app-data">初期化</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. 遊び方・お題集 ＆ サイト情報 -->
+        <section class="menu-section" aria-labelledby="menu-sec-guides">
+          <h4 class="menu-section-title" id="menu-sec-guides">ガイド・読みもの</h4>
+          <div class="menu-nav-list">
+            <a href="seo/" class="menu-nav-item">
+              <span class="menu-nav-text">
+                <strong>遊び方・お題集一覧</strong>
+                <span>人数別・シーン別のまとめ記事とお題リスト</span>
+              </span>
+              <span class="menu-nav-arrow" aria-hidden="true">↗</span>
+            </a>
+          </div>
+        </section>
+
+        <div class="settings-footer-info">
+          <div class="settings-links-row">
+            <a href="terms.html" class="settings-link">利用規約</a>
+            <span class="footer-sep">/</span>
+            <a href="privacy.html" class="settings-link">プライバシーポリシー</a>
+            <span class="footer-sep">/</span>
+            <a href="https://katakatalab.com/" target="_blank" rel="noopener noreferrer" class="settings-link">公式サイト</a>
+          </div>
+          <div class="settings-app-meta">
+            <span><strong>あそびポケット</strong></span>
+            <span class="text-sub">© 2026 katakata / はじっこぐらし</span>
+          </div>
         </div>
       </div>
     </div>
@@ -502,7 +594,7 @@
   </aside>
 
   <!-- iOS向け PWA追加ガイドモーダル -->
-  <div class="modal-overlay hidden" id="modal-pwa-guide" role="dialog" aria-modal="true" aria-labelledby="pwa-guide-title">
+  <div class="modal-overlay hidden" id="modal-pwa-guide" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="pwa-guide-title">
     <div class="modal-card">
       <div class="modal-header">
         <h3 id="pwa-guide-title">ホーム画面に追加する方法</h3>
@@ -514,21 +606,21 @@
           <div class="rule-step-item">
             <div class="step-badge">1</div>
             <div class="step-content">
-              <h4 class="step-title">Safariの「共有ボタン」をタップ</h4>
+              <p class="step-title">Safariの「共有ボタン」をタップ</p>
               <p class="step-desc">画面下部の四角から上矢印が出ているアイコン［⎋］をタップします。</p>
             </div>
           </div>
           <div class="rule-step-item">
             <div class="step-badge">2</div>
             <div class="step-content">
-              <h4 class="step-title">「ホーム画面に追加」を選択</h4>
+              <p class="step-title">「ホーム画面に追加」を選択</p>
               <p class="step-desc">メニューをスクロールして「ホーム画面に追加」をタップします。</p>
             </div>
           </div>
           <div class="rule-step-item">
             <div class="step-badge">3</div>
             <div class="step-content">
-              <h4 class="step-title">右上の「追加」をタップして完了</h4>
+              <p class="step-title">右上の「追加」をタップして完了</p>
               <p class="step-desc">全画面表示でいつでもすぐ開けるようになります。</p>
             </div>
           </div>
@@ -541,7 +633,7 @@
   </div>
 
   <!-- ④ トーク集中モード（全画面テレビモニター風UI） -->
-  <div class="modal-overlay hidden talk-focus-overlay" id="modal-talk-focus" role="dialog" aria-modal="true">
+  <div class="modal-overlay hidden talk-focus-overlay" id="modal-talk-focus" role="dialog" aria-modal="true" aria-hidden="true" aria-label="トーク集中モード">
     <div class="talk-focus-container">
       <div class="talk-focus-header">
         <span class="badge badge-warning">トーク集中モード</span>
@@ -549,7 +641,7 @@
       </div>
       <div class="talk-focus-body">
         <div class="talk-focus-topic-tag">現在のお題</div>
-        <h2 class="talk-focus-topic-text" id="talk-focus-topic">お題がここに表示されます</h2>
+        <p class="talk-focus-topic-text" id="talk-focus-topic">お題がここに表示されます</p>
         <div class="talk-focus-timer font-mono" id="talk-focus-timer">03:00</div>
         <p class="talk-focus-hint">スマホを机の真ん中に置いて、みんなの顔を見て話しましょう</p>
       </div>
@@ -570,16 +662,20 @@
         <span class="footer-sep">/</span>
         <a href="https://katakatalab.com/" target="_blank" rel="noopener noreferrer" class="footer-link">運営・お問い合わせ</a>
       </div>
-      <div class="footer-seo-links-row mt-2 text-xs text-sub">
-        <strong>お題集・ゲーム特集</strong>
-        <a href="seo/ito-odai.html" class="footer-link">ito 自作お題60選</a> ·
-        <a href="seo/wordwolf-odai.html" class="footer-link">ワードウルフ 自作お題60ペア</a> ·
-        <a href="seo/asa-sore-odai.html" class="footer-link">朝までそれ正解 自作お題50選</a> ·
-        <a href="seo/sea-turtle-quiz.html" class="footer-link">ウミガメのスープ 自作12問</a>
-      </div>
-      <div class="footer-pwa-link mt-2">
-        <button class="btn btn-sm btn-outline" id="btn-footer-pwa-install">ホーム画面に追加してアプリにする</button>
-      </div>
+      <details class="footer-seo-fold">
+        <summary>
+          <span>お題集・ゲーム特集</span>
+          <svg class="disclosure-arrow ui-svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 7.75L10 12.25l4.5-4.5"/></svg>
+        </summary>
+        <div class="footer-seo-links-row">
+          <strong class="sr-only">お題集・ゲーム特集</strong>
+          <a href="seo/ito-odai.html" class="footer-link">ito 自作お題60選</a>
+          <a href="seo/wordwolf-odai.html" class="footer-link">ワードウルフ 自作お題60ペア</a>
+          <a href="seo/asa-sore-odai.html" class="footer-link">朝までそれ正解 自作お題50選</a>
+          <a href="seo/sea-turtle-quiz.html" class="footer-link">ウミガメのスープ 自作12問</a>
+          <a href="seo/" class="footer-link">すべての記事を見る ↗</a>
+        </div>
+      </details>
       <p class="footer-copy mt-2">© 2026 katakata / はじっこぐらし. All rights reserved.</p>
     </div>
   </footer>
@@ -588,15 +684,55 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "あそびポケット",
-    "url": "https://katakatalab.com/asobi-pocket/",
-    "description": "スマホ1台で、2人の待ち時間も友達との集まりも。人数と時間から遊びを選び、ワードウルフ・価値観ゲーム・反射神経対決を登録なしで楽しめます。遊び方とお題集も掲載。",
-    "applicationCategory": "GameApplication",
-    "operatingSystem": "All",
-    "inLanguage": "ja",
-    "isAccessibleForFree": true,
-    "offers": {"@type": "Offer", "price": "0", "priceCurrency": "JPY"}
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "name": "あそびポケット",
+        "url": "https://katakatalab.com/asobi-pocket/",
+        "inLanguage": "ja-JP",
+        "description": "スマホ1台で、2人の待ち時間も友達との集まりもすぐ遊びの時間に。人数と気分から選べて、ワードウルフ・ito・反射神経対決・ウミガメのスープなど全32種のパーティーゲームを登録なし・無料で楽しめます。"
+      },
+      {
+        "@type": "WebApplication",
+        "name": "あそびポケット",
+        "url": "https://katakatalab.com/asobi-pocket/",
+        "description": "スマホ1台で、2人の待ち時間も友達との集まりもすぐ遊びの時間に。人数と気分から選べて、ワードウルフ・ito・反射神経対決・ウミガメのスープなど全32種のパーティーゲームを登録なし・無料で楽しめます。遊び方とお題集も充実。",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "All",
+        "inLanguage": "ja-JP",
+        "isAccessibleForFree": true,
+        "offers": {"@type": "Offer", "price": "0", "priceCurrency": "JPY"}
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "ダウンロードや登録は必要？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "無料で遊べます。ブラウザでそのまま使え、アカウント登録は不要です。スマホ1台で始められます。よく遊ぶならホーム画面への追加もできます。"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "電波がない場所でも遊べる？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "オンラインで一度読み込み、オフライン用の保存が完了した後は、ゲーム本体を使えます。外部の商品ページや初めて開く特集記事には通信が必要です。"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "市販ゲームの公式アプリ？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "このサイトは個人運営の遊び補助ツールです。掲載された市販ゲームの公式アプリではありません。商品の詳しいルールは各販売元でご確認ください。"
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 

@@ -153,10 +153,13 @@
       card.tabIndex = 0;
       card.setAttribute("role", "button");
       card.setAttribute("aria-label", `${game.title}を開く`);
+      const playersLabel = typeof GameResult !== "undefined" && typeof GameResult.formatPlayersRange === "function"
+        ? GameResult.formatPlayersRange(game.minPlayers, game.maxPlayers)
+        : (Number(game.maxPlayers) >= 99 ? `${game.minPlayers}人〜` : (game.minPlayers === game.maxPlayers ? `${game.minPlayers}人` : `${game.minPlayers}〜${game.maxPlayers}人`));
       card.innerHTML = `
         <div class="rec-info">
           <strong class="rec-title">${esc(game.title)}</strong>
-          <span class="rec-meta">${game.minPlayers}〜${Number(game.maxPlayers) === 99 ? "大人数" : `${game.maxPlayers}人`} · ${esc(game.duration)}</span>
+          <span class="rec-meta">${esc(playersLabel)} · ${esc(game.duration)}</span>
         </div>`;
       const open = () => { location.hash = `game/${game.id}`; };
       card.addEventListener("click", open);
@@ -245,6 +248,10 @@
       const maxCount = 20;
       let selected = candidates[0];
       spinTimer = setInterval(() => {
+        if (modal.classList.contains("hidden")) {
+          clearSpin();
+          return;
+        }
         count += 1;
         selected = candidates[Math.floor(Math.random() * candidates.length)];
         resultIcon.textContent = "";
@@ -254,6 +261,7 @@
 
         if (count >= maxCount) {
           clearSpin();
+          if (modal.classList.contains("hidden")) return;
           if (typeof Sound !== "undefined") Sound.playFanfare();
           if (typeof Confetti !== "undefined" && typeof Confetti.burst === "function") Confetti.burst(80);
           if (typeof Toast !== "undefined") Toast.success(`「${selected.title}」に決まりました`);
@@ -271,6 +279,12 @@
     }, true);
 
     document.getElementById("btn-close-roulette")?.addEventListener("click", clearSpin);
+    modal.addEventListener("click", (event) => {
+      if (event.target === modal) clearSpin();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") clearSpin();
+    });
     window.addEventListener("hashchange", clearSpin);
   };
 
@@ -312,7 +326,7 @@
     };
 
     document.addEventListener("click", (event) => {
-      const trigger = event.target.closest('#btn-random-roulette,#btn-open-settings,#btn-open-topic-custom,#btn-toggle-scoreboard');
+      const trigger = event.target.closest('#btn-hero-roulette,#btn-hero-concierge,#btn-menu-roulette,#btn-open-settings,#btn-open-topic-custom,#btn-toggle-scoreboard');
       if (!trigger) return;
       const previous = trigger;
       queueMicrotask(() => {
@@ -368,8 +382,17 @@
 
     let players = normalize(storageGet(KEY, null));
     const drawer = document.getElementById("scoreboard-drawer");
+    const backdrop = document.getElementById("scoreboard-backdrop");
     const list = document.getElementById("scoreboard-players-list");
     const toggleButton = document.getElementById("btn-toggle-scoreboard");
+
+    const setDrawerOpen = (open) => {
+      drawer?.classList.toggle("hidden", !open);
+      drawer?.setAttribute("aria-hidden", String(!open));
+      backdrop?.classList.toggle("hidden", !open);
+      backdrop?.setAttribute("aria-hidden", String(!open));
+      toggleButton?.setAttribute("aria-expanded", String(Boolean(open)));
+    };
 
     const save = () => storageSet(KEY, players);
     const render = () => {
@@ -387,9 +410,11 @@
     };
 
     const interceptClick = (event) => {
-      const id = event.target.id;
-      const scoreAction = event.target.closest("[data-quality-score]");
-      const managed = ["btn-toggle-scoreboard", "btn-close-scoreboard", "btn-reset-scores", "btn-add-player"].includes(id) || Boolean(scoreAction);
+      const targetEl = event.target instanceof Element ? event.target : null;
+      const control = targetEl ? targetEl.closest("#btn-toggle-scoreboard, #btn-close-scoreboard, #scoreboard-backdrop, #btn-reset-scores, #btn-add-player") : null;
+      const id = control ? control.id : "";
+      const scoreAction = targetEl ? targetEl.closest("[data-quality-score]") : null;
+      const managed = Boolean(id || scoreAction);
       if (!managed) return;
 
       event.preventDefault();
@@ -397,10 +422,11 @@
       event.stopImmediatePropagation();
 
       if (id === "btn-toggle-scoreboard") {
-        drawer?.classList.toggle("hidden");
+        const willOpen = Boolean(drawer?.classList.contains("hidden"));
+        setDrawerOpen(willOpen);
         render();
-      } else if (id === "btn-close-scoreboard") {
-        drawer?.classList.add("hidden");
+      } else if (id === "btn-close-scoreboard" || id === "scoreboard-backdrop") {
+        setDrawerOpen(false);
       } else if (id === "btn-reset-scores") {
         const ask = typeof window.GameResult !== "undefined" && typeof window.GameResult.confirmAction === "function"
           ? window.GameResult.confirmAction({
@@ -434,6 +460,11 @@
     };
 
     document.addEventListener("click", interceptClick, true);
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && drawer && !drawer.classList.contains("hidden")) {
+        setDrawerOpen(false);
+      }
+    });
     document.addEventListener("change", (event) => {
       const input = event.target.closest(".score-player-name");
       if (!input || !list?.contains(input)) return;
@@ -449,7 +480,7 @@
     const updateVisibility = () => {
       const inGame = /^#game\//.test(location.hash);
       toggleButton?.classList.toggle("quality-utility-hidden", !inGame);
-      if (!inGame) drawer?.classList.add("hidden");
+      if (!inGame) setDrawerOpen(false);
     };
     window.addEventListener("hashchange", updateVisibility);
     updateVisibility();

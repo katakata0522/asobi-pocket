@@ -101,7 +101,75 @@ const FALLBACK_ASSETS = new Map([
   ['/assets/share-card.png', { contentType: 'image/png', body: () => createSolidPng(1200, 630, 0xf8, 0xf6, 0xef) }],
 ]);
 
+const COMPRESSIBLE_EXTS = new Set([
+  '.html',
+  '.js',
+  '.mjs',
+  '.cjs',
+  '.css',
+  '.json',
+  '.svg',
+  '.xml',
+  '.txt',
+]);
+const GZIP_MIN_BYTES = 1024;
+const GZIP_CACHE_LIMIT = 120;
 const fallbackCache = new Map();
+const gzipCache = new Map();
+
+function getGzipBuffer(cacheKey, mtimeMs, rawBody) {
+  const cached = gzipCache.get(cacheKey);
+  if (cached && cached.mtimeMs === mtimeMs) {
+    return cached.gz;
+  }
+  const gz = zlib.gzipSync(rawBody, { level: 6 });
+  if (gzipCache.size >= GZIP_CACHE_LIMIT) {
+    const oldestKey = gzipCache.keys().next().value;
+    if (oldestKey !== undefined) gzipCache.delete(oldestKey);
+  }
+  gzipCache.set(cacheKey, { mtimeMs, gz });
+  return gz;
+}
+
+function sendAsset(req, res, { contentType, body, etag, cacheKey, mtimeMs, compressible }) {
+  const baseHeaders = {
+    'Content-Type': contentType,
+    'Cache-Control': 'no-cache',
+    'X-Content-Type-Options': 'nosniff',
+  };
+  if (etag) {
+    baseHeaders.ETag = etag;
+    if (req.headers['if-none-match'] === etag) {
+      res.writeHead(304, baseHeaders);
+      res.end();
+      return;
+    }
+  }
+
+  const acceptEncoding = String(req.headers['accept-encoding'] || '');
+  const canGzip = compressible && body.length >= GZIP_MIN_BYTES && /\bgzip\b/i.test(acceptEncoding);
+
+  if (canGzip) {
+    const gz = getGzipBuffer(cacheKey, mtimeMs, body);
+    res.writeHead(200, {
+      ...baseHeaders,
+      'Content-Encoding': 'gzip',
+      'Vary': 'Accept-Encoding',
+      'Content-Length': gz.length,
+    });
+    res.end(req.method === 'HEAD' ? undefined : gz);
+    return;
+  }
+
+  if (compressible) {
+    baseHeaders.Vary = 'Accept-Encoding';
+  }
+  res.writeHead(200, {
+    ...baseHeaders,
+    'Content-Length': body.length,
+  });
+  res.end(req.method === 'HEAD' ? undefined : body);
+}
 
 export function createAppServer(rootDir = APP_ROOT) {
   return http.createServer((req, res) => {
@@ -134,29 +202,45 @@ export function createAppServer(rootDir = APP_ROOT) {
     }
 
     let targetFile = resolvedPath;
-    if (fs.existsSync(targetFile) && fs.statSync(targetFile).isDirectory()) {
-      if (!pathname.endsWith('/')) {
-        res.writeHead(301, { Location: pathname + '/' });
+    let stat = null;
+    try {
+      stat = fs.statSync(targetFile);
+      if (stat.isDirectory()) {
+        if (!pathname.endsWith('/')) {
+          res.writeHead(301, { Location: pathname + '/' });
+          res.end();
+          return;
+        }
+        targetFile = path.join(targetFile, 'index.html');
+        stat = fs.statSync(targetFile);
+      }
+    } catch {
+      stat = null;
+    }
+
+    if (stat && stat.isFile()) {
+      const ext = path.extname(targetFile).toLowerCase();
+      const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+      const etag = `W/"${stat.size}-${Math.trunc(stat.mtimeMs)}"`;
+      if (req.headers['if-none-match'] === etag) {
+        res.writeHead(304, {
+          'Content-Type': contentType,
+          'Cache-Control': 'no-cache',
+          'ETag': etag,
+          'X-Content-Type-Options': 'nosniff',
+        });
         res.end();
         return;
       }
-      targetFile = path.join(targetFile, 'index.html');
-    }
-
-    if (fs.existsSync(targetFile) && fs.statSync(targetFile).isFile()) {
-      const ext = path.extname(targetFile).toLowerCase();
-      const contentType = MIME_TYPES[ext] || 'application/octet-stream';
       const body = fs.readFileSync(targetFile);
-      res.writeHead(200, {
-        'Content-Type': contentType,
-        'Content-Length': body.length,
-        'Cache-Control': 'no-cache',
+      sendAsset(req, res, {
+        contentType,
+        body,
+        etag,
+        cacheKey: targetFile,
+        mtimeMs: stat.mtimeMs,
+        compressible: COMPRESSIBLE_EXTS.has(ext),
       });
-      if (req.method === 'HEAD') {
-        res.end();
-      } else {
-        res.end(body);
-      }
       return;
     }
 
@@ -168,20 +252,22 @@ export function createAppServer(rootDir = APP_ROOT) {
         body = fallbackSpec.body();
         fallbackCache.set(pathname, body);
       }
-      res.writeHead(200, {
-        'Content-Type': fallbackSpec.contentType,
-        'Content-Length': body.length,
-        'Cache-Control': 'no-cache',
+      const ext = path.extname(pathname).toLowerCase();
+      sendAsset(req, res, {
+        contentType: fallbackSpec.contentType,
+        body,
+        etag: `W/"fb-${body.length}"`,
+        cacheKey: `fallback:${pathname}`,
+        mtimeMs: 0,
+        compressible: COMPRESSIBLE_EXTS.has(ext),
       });
-      if (req.method === 'HEAD') {
-        res.end();
-      } else {
-        res.end(body);
-      }
       return;
     }
 
-    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.writeHead(404, {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'X-Content-Type-Options': 'nosniff',
+    });
     res.end('Not Found');
   });
 }

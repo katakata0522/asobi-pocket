@@ -21,7 +21,7 @@ test('home exposes canonical editorial labels and current article counts', async
   const errors = collectRuntimeErrors(page);
   await page.goto('/');
 
-  await expect(page.locator('#sort-select option[value="popular"]')).toHaveText('⭐ 編集部おすすめ順');
+  await expect(page.locator('#sort-select option[value="popular"]')).toHaveText('編集部おすすめ順');
   const footer = page.locator('.footer-seo-links-row');
   await expect(footer).toContainText('お題集・ゲーム特集');
   await expect(footer).toContainText('ito 自作お題60選');
@@ -80,7 +80,7 @@ test('preset manager button does not promise unsupported built-in exclusion crea
   await page.goto('/#game/ito');
   await page.locator('[data-tab="presets"]').click();
 
-  await expect(page.locator('#btn-open-topic-custom')).toHaveText('⚙️ お題を追加・管理する');
+  await expect(page.locator('#btn-open-topic-custom')).toHaveText('お題を追加・管理する');
   await expect(page.locator('#btn-open-topic-custom')).not.toContainText('除外する');
 
   expect(errors).toEqual([]);

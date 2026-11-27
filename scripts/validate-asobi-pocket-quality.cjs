@@ -435,12 +435,12 @@ for (const signal of [
   'GameTools.renderBatsuRoulette =',
   'btn-batsu-pass',
   'BRAND_OLD = "あそびばポケット"',
-  '⭐ 編集部おすすめ順',
+  '編集部おすすめ順',
   'ito 自作お題60選',
   '朝までそれ正解 自作お題50選',
   '__normalizeAsobiShareUrl',
   'syncDynamicPublicCopy',
-  'topicManagerButton.textContent !== "⚙️ お題を追加・管理する"',
+  'topicManagerButton.textContent !== "お題を追加・管理する"',
   'historyTitle.textContent !== "回答履歴:"'
 ]) {
   if (!contractSource.includes(signal)) fail(`data-contract.js is missing compatibility/public-copy signal: ${signal}`);

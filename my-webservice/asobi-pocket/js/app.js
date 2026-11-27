@@ -157,11 +157,16 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!modal) return;
       this.lastActiveElement = document.activeElement;
       modal.classList.remove("hidden");
+      modal.setAttribute("aria-hidden", "false");
       this.activeModal = modal;
       document.body.classList.add("modal-open");
       Sound.playClick();
 
       this._setInertBackground(true);
+      if (modal.id === "modal-settings") {
+        const opener = document.getElementById("btn-open-settings");
+        if (opener) opener.setAttribute("aria-expanded", "true");
+      }
 
       // フォーカス移動（最初のインタラクティブ要素へ）
       const focusables = this._getFocusables(modal);
@@ -172,10 +177,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     close(modalOrId) {
       const modal = modalOrId ? (typeof modalOrId === "string" ? document.getElementById(modalOrId) : modalOrId) : this.activeModal;
-      if (!modal) return false;
+      if (!modal || modal.classList.contains("hidden")) return false;
       modal.classList.add("hidden");
+      modal.setAttribute("aria-hidden", "true");
       if (this.activeModal === modal) {
         this.activeModal = null;
+      }
+      if (modal.id === "modal-settings") {
+        const opener = document.getElementById("btn-open-settings");
+        if (opener) opener.setAttribute("aria-expanded", "false");
       }
 
       // 開いている他のモーダルがないか確認
@@ -207,13 +217,28 @@ document.addEventListener("DOMContentLoaded", () => {
       modals.forEach(m => {
         if (!m.classList.contains("hidden")) {
           m.classList.add("hidden");
+          m.setAttribute("aria-hidden", "true");
+          if (m.id === "modal-settings") {
+            const opener = document.getElementById("btn-open-settings");
+            if (opener) opener.setAttribute("aria-expanded", "false");
+          }
           closedAny = true;
         }
       });
       const drawer = document.getElementById("scoreboard-drawer");
+      const scoreboardBackdrop = document.getElementById("scoreboard-backdrop");
+      const scoreboardToggle = document.getElementById("btn-toggle-scoreboard");
       if (drawer && !drawer.classList.contains("hidden")) {
         drawer.classList.add("hidden");
+        drawer.setAttribute("aria-hidden", "true");
         closedAny = true;
+      }
+      if (scoreboardBackdrop && !scoreboardBackdrop.classList.contains("hidden")) {
+        scoreboardBackdrop.classList.add("hidden");
+        scoreboardBackdrop.setAttribute("aria-hidden", "true");
+      }
+      if (scoreboardToggle) {
+        scoreboardToggle.setAttribute("aria-expanded", "false");
       }
       document.body.classList.remove("modal-open");
       this._setInertBackground(false);
@@ -687,12 +712,63 @@ document.addEventListener("DOMContentLoaded", () => {
     ["sea-turtle", "「はい」「いいえ」で答えられる質問で謎解き。"],
     ["silent-gesture", "声を出さずに演じて、チームで当てよう。"]
   ]);
+  const moreCardSummaries = new Map([
+    ["rhythm-box", "手拍子とテンポ音で即答。古今東西・マジカルバナナ・ドレミの歌を収録。"],
+    ["one-night-werewolf", "司会者なしで一晩で決着。役職交換が絡むスピーディな人狼ゲーム。"],
+    ["yomibito", "1人5文字ずつ回して詠む、思いがけない名句・迷句のリレー五七五。"],
+    ["ng-word", "相手にNGワードを言わせたら勝ち。対面バトルにも多人数にも対応。"],
+    ["talk-gacha", "話題に迷ったときのきっかけに。テーマを選んで質問をランダム表示。"],
+    ["ten-seconds", "画面を見ずに感覚だけでストップ。3秒・5秒・10秒の体内時計勝負。"],
+    ["indian-poker", "相手のカードだけを見て駆け引き。1台のスマホで遊べる対面心理戦。"],
+    ["word-chain-limit", "文字数やジャンルの縛り付き。制限時間内に答えるスリリングなしりとり。"],
+    ["good-and-bad-news", "良いニュースと悪いニュースを交互につなぐ、掛け合い大喜利トーク。"]
+  ]);
   const duelModes = new Map([
     ["duel-reflex", {label: "反射", description: "合図が出たら先にタップ"}],
     ["duel-color", {label: "色判断", description: "文字と色が一致する？"}],
     ["duel-mash", {label: "連打", description: "15秒の連打で押し合い"}]
   ]);
+
+  function formatPlayersText(game) {
+    if (!game) return "";
+    if (typeof GameResult !== "undefined" && typeof GameResult.formatPlayersRange === "function") {
+      return GameResult.formatPlayersRange(game.minPlayers, game.maxPlayers);
+    }
+    const min = Number(game.minPlayers) || 2;
+    const max = Number(game.maxPlayers);
+    if (!Number.isFinite(max) || max >= 99) return `${min}人〜`;
+    return min === max ? `${min}人` : `${min}〜${max}人`;
+  }
   const savedFavorites = Storage.get("asobi_favorites", []);
+
+  const GAME_STYLE_LABELS = {
+    "ito": "価値観",
+    "word-wolf": "心理戦",
+    "katakana-ban": "言葉",
+    "bomb-timer": "瞬発",
+    "asa-sore": "大喜利",
+    "sea-turtle": "推理",
+    "silent-gesture": "演技",
+    "rhythm-box": "リズム",
+    "one-night-werewolf": "人狼",
+    "yomibito": "創作",
+    "ng-word": "心理戦",
+    "talk-gacha": "トーク",
+    "ten-seconds": "体感",
+    "indian-poker": "心理戦",
+    "word-chain-limit": "言葉",
+    "good-and-bad-news": "掛け合い",
+    "duel-reflex": "瞬発",
+    "duel-color": "瞬発",
+    "duel-mash": "連打"
+  };
+
+  function getGameStyleLabel(game) {
+    if (!game) return "";
+    if (GAME_STYLE_LABELS[game.id]) return GAME_STYLE_LABELS[game.id];
+    const genreMap = { talk: "トーク", mystery: "心理戦", laugh: "笑い", speed: "瞬発", quiz: "クイズ" };
+    return genreMap[game.genre] || "";
+  }
 
   // 状態管理
   const state = {
@@ -701,6 +777,7 @@ document.addEventListener("DOMContentLoaded", () => {
     filter: {
       tag: "all",
       player: "all",
+      quickPlayers: "all",
       exactPlayers: "all",
       maxDuration: "all",
       genre: "all",
@@ -726,7 +803,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (state.kidsMode && game.ruby) {
       return `<ruby>${escapeHTML(game.title)}<rt>${escapeHTML(game.ruby)}</rt></ruby>`;
     }
-    const shortTitles = { "ito": "ito（価値観）", "asa-sore": "朝までそれ正解", "rhythm-box": "リズムボックス", "indian-poker": "インディアンポーカー", "finger-roulette": "指置きルーレット", "duel-reflex": "反射神経対決", "duel-mash": "連打パワーバトル", "duel-color": "カラー早見分け", "bomb-timer": "爆弾タイマー", "ng-word": "NGワードゲーム" };
+    const shortTitles = { "ito": "ito（価値観）", "katakana-ban": "カタカナ禁止", "asa-sore": "朝までそれ正解", "rhythm-box": "リズムボックス", "indian-poker": "インディアンポーカー", "finger-roulette": "指置きルーレット", "duel-reflex": "反射神経対決", "duel-mash": "連打パワーバトル", "duel-color": "カラー早見分け", "bomb-timer": "爆弾タイマー", "ng-word": "NGワードゲーム" };
     const title = compact ? (shortTitles[game.id] || game.title.replace(/\s*[（(].*$/u, "").trim()) : game.title;
     return escapeHTML(title);
   }
@@ -772,7 +849,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const sortSelect = document.getElementById("sort-select");
   const favToggleBtn = document.getElementById("btn-toggle-fav-filter");
   const favCountBadge = document.getElementById("fav-count-badge");
-  const btnRandomRoulette = document.getElementById("btn-random-roulette");
   const modalRoulette = document.getElementById("modal-roulette");
   const btnCloseRoulette = document.getElementById("btn-close-roulette");
   const btnSpinRoulette = document.getElementById("btn-spin-roulette");
@@ -798,7 +874,7 @@ document.addEventListener("DOMContentLoaded", () => {
       Toast.info("お気に入りから解除しました");
     } else {
       state.favorites.push(gameId);
-      Toast.success("★ お気に入りに追加しました！");
+      Toast.success("★ お気に入りに追加しました");
     }
     Storage.set("asobi_favorites", state.favorites);
     updateFavBadge();
@@ -839,6 +915,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (game.section === "merged" && !state.filter.onlyFavorite) return false;
       }
 
+      if (state.filter.quickPlayers !== "all") {
+        const qp = state.filter.quickPlayers;
+        if (qp === "2" && (game.minPlayers > 2 || game.maxPlayers < 2)) return false;
+        if (qp === "3-4" && (game.minPlayers > 4 || game.maxPlayers < 3)) return false;
+        if (qp === "5+" && game.maxPlayers < 5) return false;
+      }
       if (state.filter.exactPlayers !== "all") {
         const players = Number(state.filter.exactPlayers);
         if (game.minPlayers > players || game.maxPlayers < players) return false;
@@ -922,9 +1004,11 @@ document.addEventListener("DOMContentLoaded", () => {
   function syncDiscoverySummary() {
     const summary = document.getElementById("active-filter-summary");
     if (!summary) return;
+    const quickLabels = { "2": "2人", "3-4": "3〜4人", "5+": "5人以上" };
     const conditions = [];
     if (state.filter.onlyFavorite) conditions.push({ key: "favorite", text: "お気に入り" });
     if (state.filter.search) conditions.push({ key: "search", text: "検索：" + state.filter.search });
+    if (state.filter.quickPlayers !== "all") conditions.push({ key: "quickPlayers", text: quickLabels[state.filter.quickPlayers] || state.filter.quickPlayers });
     if (state.filter.exactPlayers !== "all") conditions.push({ key: "players", text: state.filter.exactPlayers + "人" });
     if (state.filter.maxDuration !== "all") conditions.push({ key: "duration", text: state.filter.maxDuration + "分くらい" });
     if (state.filter.tag !== "all") conditions.push({ key: "tag", text: [...smartTagChips].find(c => c.dataset.filterTag === state.filter.tag)?.textContent.trim() || state.filter.tag });
@@ -938,6 +1022,7 @@ document.addEventListener("DOMContentLoaded", () => {
       button.addEventListener("click", () => {
         if (condition.key === "favorite") state.filter.onlyFavorite = false;
         if (condition.key === "search") { clearTimeout(searchDebounceTimer); state.filter.search = ""; searchInput.value = ""; clearSearchBtn.classList.add("hidden"); }
+        if (condition.key === "quickPlayers") { state.filter.quickPlayers = "all"; }
         if (condition.key === "players") { state.filter.exactPlayers = "all"; fitPlayers.value = "all"; }
         if (condition.key === "duration") { state.filter.maxDuration = "all"; fitDuration.value = "all"; }
         if (condition.key === "tag") state.filter.tag = "all";
@@ -947,6 +1032,11 @@ document.addEventListener("DOMContentLoaded", () => {
       summary.appendChild(button);
     });
     document.getElementById("btn-clear-filters")?.classList.toggle("hidden", conditions.length === 0);
+    document.querySelectorAll("[data-quick-players]").forEach(chip => {
+      const active = chip.dataset.quickPlayers === state.filter.quickPlayers;
+      chip.classList.toggle("active", active);
+      chip.setAttribute("aria-pressed", String(active));
+    });
     smartTagChips.forEach(chip => { const active = chip.dataset.filterTag === state.filter.tag; chip.classList.toggle("active", active); chip.setAttribute("aria-pressed", String(active)); });
     [favToggleBtn, document.getElementById("btm-nav-fav")].forEach(button => { button?.classList.toggle("active", state.filter.onlyFavorite); button?.setAttribute("aria-pressed", String(state.filter.onlyFavorite)); });
     renderRecentGames();
@@ -958,7 +1048,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!section || !list) return;
     const ids = Storage.get("asobi_recent_history", []);
     const games = (Array.isArray(ids) ? ids : []).map(id => state.games.find(game => game.id === id)).filter(Boolean).slice(0, 3);
-    const filtered = state.filter.onlyFavorite || state.filter.search || state.filter.tag !== "all" || state.filter.exactPlayers !== "all" || state.filter.maxDuration !== "all";
+    const filtered = state.filter.onlyFavorite || state.filter.search || state.filter.tag !== "all" || state.filter.quickPlayers !== "all" || state.filter.exactPlayers !== "all" || state.filter.maxDuration !== "all";
     section.classList.toggle("hidden", games.length === 0 || Boolean(filtered));
     list.innerHTML = games.map(game => '<a href="#game/' + game.id + '" class="recent-game-link">' + renderGameTitle(game, true) + '</a>').join("");
   }
@@ -1049,7 +1139,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const list = getFilteredGames();
     const f = state.filter;
     const browse = !f.onlyFavorite && !f.search.trim() && f.sort === "recommended";
-    const featured = browse && f.tag === "all" && f.exactPlayers === "all" && f.maxDuration === "all";
+    const featured = browse && f.tag === "all" && f.quickPlayers === "all" && f.exactPlayers === "all" && f.maxDuration === "all";
     const modes = browse ? [...duelModes.keys()].map(id => list.find(g => g.id === id)).filter(Boolean) : [];
     const groupDuels = modes.length > 1;
     document.getElementById("games-grid-title").textContent = featured ? "みんなで遊ぶ おすすめ7選" : f.onlyFavorite ? "お気に入りの遊び" : "遊びを選ぶ";
@@ -1078,7 +1168,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // DocumentFragmentで一括挿入
     const fragment = document.createDocumentFragment();
 
-    const partyPickOrder = [...partyPicks.keys()];
+    const featuredPickIds = featured
+      ? [...partyPicks.keys()].filter(id => list.some(item => item.id === id))
+      : [];
+    const lastFeaturedPickId = featuredPickIds.length % 2 === 1
+      ? featuredPickIds[featuredPickIds.length - 1]
+      : null;
 
     // 通常の一覧は7本、対決モード、その他の順。検索・お気に入りはゲーム単位で直接開く。
     const appendCard = game => {
@@ -1089,54 +1184,33 @@ document.addEventListener("DOMContentLoaded", () => {
       card.setAttribute("role", "group");
       card.setAttribute("aria-label", `${game.title}の詳細を見る`);
 
-      if (featured && partyPicks.has(game.id)) {
-        card.classList.add("party-pick");
-        card.innerHTML = `<div class="pick-top">
-            <h3><a class="card-title-link" href="#game/${game.id}">${renderGameTitle(game, true)}</a></h3>
-            ${favoriteButton(game)}
-          </div>
-          <p class="pick-prompt">${partyPicks.get(game.id)}</p>
-          <div class="pick-foot">
-            <p class="pick-meta">${game.minPlayers}〜${game.maxPlayers}人 · ${escapeHTML(game.duration)}${StampRally.played.includes(game.id) ? " · プレイ済" : ""}</p>
-            <span class="pick-arrow" aria-hidden="true">↗</span>
-          </div>`;
-        fragment.appendChild(card);
-        return;
-      }
+      const isFeaturedPick = featured && partyPicks.has(game.id);
+      const isPlayed = StampRally.played.includes(game.id);
+      const summary = partyPicks.get(game.id) || moreCardSummaries.get(game.id) || game.catchphrase || "";
+      const styleLabel = getGameStyleLabel(game);
+      const metaParts = [formatPlayersText(game), game.duration];
+      if (styleLabel) metaParts.push(styleLabel);
+      if (isPlayed) metaParts.push("プレイ済");
+      const metaText = metaParts.join(" · ");
 
-      // 先頭の殿堂入りゲーム (ito)
-      const isHero = (game.id === "ito" && state.filter.tag === "all" && !state.filter.search && state.filter.sort === "recommended");
-      if (isHero) {
+      if (isFeaturedPick) {
+        card.classList.add("party-pick");
+        if (game.id === lastFeaturedPickId) {
+          card.classList.add("party-pick-last");
+        }
+      } else if (game.id === "ito" && state.filter.tag === "all" && !state.filter.search && state.filter.sort === "recommended") {
         card.classList.add("hero-card");
       }
 
-      const hasTool = game.toolType !== "guide-only";
-      const isPlayed = StampRally.played.includes(game.id);
-      const kickerParts = [];
-      if (isHero) kickerParts.push("定番人気");
-      else if (game.badge) kickerParts.push(game.badge);
-      if (isPlayed) kickerParts.push("プレイ済");
-
       card.innerHTML = `
-        <div class="card-top">
-          <div class="card-badges-row">
-            ${kickerParts.length ? `<span class="card-badge">${escapeHTML(kickerParts.join(" · "))}</span>` : ''}
-          </div>
+        <div class="card-head-row">
+          <h3 class="card-title"><a class="card-title-link" href="#game/${game.id}">${renderGameTitle(game, true)}</a></h3>
           ${favoriteButton(game)}
         </div>
-        <div class="card-body">
-          <h3 class="card-title"><a href="#game/${game.id}" class="card-title-link">${renderGameTitle(game, true)}</a></h3>
-          <p class="card-catchphrase">${escapeHTML(game.catchphrase)}</p>
-          <div class="card-meta">
-            <span class="meta-pill pill-players">${game.minPlayers === game.maxPlayers ? game.minPlayers : `${game.minPlayers}〜${game.maxPlayers === 99 ? '大人数' : game.maxPlayers}`}人</span>
-            <span class="meta-pill pill-time">${game.duration}</span>
-            <span class="meta-pill pill-props">${hasTool ? 'スマホ1台' : '手ぶら'}</span>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-play-btn ${hasTool ? 'btn-tool' : 'btn-guide'}">
-            ${hasTool ? '遊ぶ' : 'ルールを見る'} <span class="play-arrow" aria-hidden="true">↗</span>
-          </span>
+        <p class="card-summary">${escapeHTML(summary)}</p>
+        <div class="card-foot">
+          <p class="card-meta">${escapeHTML(metaText)}</p>
+          <span class="card-arrow" aria-hidden="true">↗</span>
         </div>
       `;
 
@@ -1144,7 +1218,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     if (featured) {
-      for (const id of partyPicks.keys()) {
+      for (const id of featuredPickIds) {
         const game = list.find(item => item.id === id);
         if (game) appendCard(game);
       }
@@ -1154,14 +1228,21 @@ document.addEventListener("DOMContentLoaded", () => {
       more.textContent = "ほかの遊び";
       fragment.appendChild(more);
     }
+    const remainingGames = [];
     for (const game of list) {
       if (featured && partyPicks.has(game.id)) continue;
       if (groupDuels && duelModes.has(game.id)) {
         if (!featured && !fragment.querySelector(".duel-hub")) fragment.appendChild(makeDuelHub(modes));
         continue;
       }
-      appendCard(game);
+      remainingGames.push(game);
     }
+    remainingGames.forEach((game, idx) => {
+      appendCard(game);
+      if (remainingGames.length % 2 === 1 && idx === remainingGames.length - 1) {
+        fragment.lastElementChild?.classList.add("more-game-last");
+      }
+    });
 
     gamesGrid.innerHTML = "";
     gamesGrid.appendChild(fragment);
@@ -1216,7 +1297,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="classic-rule-card-header">
           <div class="classic-rule-header-info">
             <h4 class="classic-rule-title">${game.title}</h4>
-            <span class="classic-rule-meta">${game.minPlayers}〜${game.maxPlayers === 99 ? '大人数' : game.maxPlayers}人 · ${game.duration}</span>
+            <span class="classic-rule-meta">${escapeHTML(formatPlayersText(game))} · ${escapeHTML(game.duration)}</span>
           </div>
         </div>
         <p class="classic-rule-desc">${escapeHTML(game.catchphrase || game.overview || "")}</p>
@@ -1255,10 +1336,75 @@ document.addEventListener("DOMContentLoaded", () => {
     btnToggleClassicRules.addEventListener("click", () => {
       Sound.playClick();
       const isExpanded = btnToggleClassicRules.getAttribute("aria-expanded") === "true";
-      btnToggleClassicRules.setAttribute("aria-expanded", !isExpanded);
+      btnToggleClassicRules.setAttribute("aria-expanded", String(!isExpanded));
       classicRulesPanel.classList.toggle("hidden", isExpanded);
-      const arrow = btnToggleClassicRules.querySelector(".classic-toggle-arrow");
-      if (arrow) arrow.textContent = isExpanded ? "▼" : "▲";
+    });
+  }
+
+  // ==========================================
+  // ファーストビュー即決バー ＆ 今日のお題プレビュー
+  // ==========================================
+  document.querySelectorAll("[data-quick-players]").forEach(chip => {
+    chip.addEventListener("click", () => {
+      Sound.playClick();
+      const val = chip.dataset.quickPlayers || "all";
+      state.filter.quickPlayers = state.filter.quickPlayers === val ? "all" : val;
+      if (state.filter.quickPlayers !== "all" && fitPlayers) {
+        fitPlayers.value = "all";
+        state.filter.exactPlayers = "all";
+      }
+      renderGrid();
+      Analytics.track("asobi_quick_players", { players: state.filter.quickPlayers });
+    });
+  });
+
+  const btnHeroConcierge = document.getElementById("btn-hero-concierge");
+  const btnHeroRoulette = document.getElementById("btn-hero-roulette");
+  if (btnHeroRoulette) {
+    btnHeroRoulette.addEventListener("click", () => {
+      if (modalRoulette) ModalManager.open(modalRoulette);
+    });
+  }
+
+  // 今日のお題プレビュー（1タップ切り替え＋該当ゲームへ直行）
+  const spotlightSection = document.getElementById("topic-spotlight");
+  const spotlightGameEl = document.getElementById("spotlight-game");
+  const spotlightPromptEl = document.getElementById("spotlight-prompt");
+  const spotlightNextBtn = document.getElementById("btn-spotlight-next");
+  const spotlightPlayLink = document.getElementById("btn-spotlight-play");
+  let currentSpotlightKey = null;
+
+  function renderSpotlightTopic({ initial = false } = {}) {
+    if (!spotlightSection || typeof GameResult === "undefined" || typeof GameResult.pickSpotlightTopic !== "function") return;
+    const now = new Date();
+    const daySeed = ((now.getFullYear() * 372 + (now.getMonth() + 1) * 31 + now.getDate()) % 997) / 997;
+    const pick = GameResult.pickSpotlightTopic(state.games, {
+      excludeKey: initial ? null : currentSpotlightKey,
+      rng: initial ? () => daySeed : Math.random
+    });
+    if (!pick) {
+      spotlightSection.classList.add("hidden");
+      return;
+    }
+    currentSpotlightKey = pick.key;
+    if (spotlightGameEl) spotlightGameEl.textContent = pick.gameLabel;
+    if (spotlightPromptEl) spotlightPromptEl.textContent = pick.prompt;
+    if (spotlightPlayLink) {
+      spotlightPlayLink.href = `#game/${pick.gameId}`;
+      spotlightPlayLink.setAttribute("aria-label", `${pick.gameLabel}でこのお題を遊ぶ`);
+    }
+    if (!initial) {
+      spotlightSection.classList.remove("is-swapped");
+      void spotlightSection.offsetWidth;
+      spotlightSection.classList.add("is-swapped");
+    }
+  }
+  renderSpotlightTopic({ initial: true });
+
+  if (spotlightNextBtn) {
+    spotlightNextBtn.addEventListener("click", () => {
+      Sound.playClick();
+      renderSpotlightTopic({ initial: false });
     });
   }
 
@@ -1280,6 +1426,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const fitDuration = document.getElementById("fit-duration");
   const syncFit = () => {
     state.filter.exactPlayers = fitPlayers.value;
+    if (fitPlayers.value !== "all") state.filter.quickPlayers = "all";
     state.filter.maxDuration = fitDuration.value;
     renderGrid();
     Analytics.track("asobi_filter", { players: fitPlayers.value, duration: fitDuration.value });
@@ -1289,6 +1436,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("fit-reset")?.addEventListener("click", () => {
     fitPlayers.value = "all";
     fitDuration.value = "all";
+    state.filter.quickPlayers = "all";
     state.filter.exactPlayers = "all";
     state.filter.maxDuration = "all";
     document.getElementById("btn-empty-reset")?.click();
@@ -1327,6 +1475,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (searchInput) searchInput.value = "";
       if (clearSearchBtn) clearSearchBtn.classList.add("hidden");
       state.filter.search = "";
+      state.filter.quickPlayers = "all";
       state.filter.exactPlayers = "all";
       state.filter.maxDuration = "all";
       if (fitPlayers) fitPlayers.value = "all";
@@ -1353,32 +1502,32 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  if (favToggleBtn) {
-    favToggleBtn.addEventListener("click", () => {
-      const proceed = () => {
-        if (state.activeGameId) window.location.hash = "";
-        Sound.playClick();
-        state.filter.onlyFavorite = !state.filter.onlyFavorite;
-        favToggleBtn.classList.toggle("active", state.filter.onlyFavorite);
-        renderGrid();
-      };
-      if (state.activeGameId) {
-        requestLeaveGame(proceed);
-        return;
+  function toggleFavoriteFilter({ showToast = false } = {}) {
+    const proceed = () => {
+      Sound.playClick();
+      if (state.activeGameId || window.location.hash !== "") {
+        window.location.hash = "";
       }
-      proceed();
-    });
+      state.filter.onlyFavorite = !state.filter.onlyFavorite;
+      renderGrid();
+      if (showToast) {
+        Toast.info(state.filter.onlyFavorite ? "★ お気に入りのゲームを表示中" : "すべてのゲームを表示中");
+      }
+    };
+    if (state.activeGameId) {
+      requestLeaveGame(proceed);
+      return;
+    }
+    proceed();
+  }
+
+  if (favToggleBtn) {
+    favToggleBtn.addEventListener("click", () => toggleFavoriteFilter());
   }
 
   // ==========================================
   // ランダム即決ルーレットモーダル
   // ==========================================
-  if (btnRandomRoulette) {
-    btnRandomRoulette.addEventListener("click", () => {
-      if (modalRoulette) ModalManager.open(modalRoulette);
-    });
-  }
-
   if (btnCloseRoulette) {
     btnCloseRoulette.addEventListener("click", () => {
       if (modalRoulette) ModalManager.close(modalRoulette);
@@ -1400,6 +1549,12 @@ document.addEventListener("DOMContentLoaded", () => {
       let count = 0;
       const maxCount = 20;
       const interval = setInterval(() => {
+        if (!modalRoulette || modalRoulette.classList.contains("hidden")) {
+          clearInterval(interval);
+          resultBox.classList.remove("spinning");
+          btnSpinRoulette.disabled = false;
+          return;
+        }
         count++;
         const randomGame = state.games[Math.floor(Math.random() * state.games.length)];
         resultIcon.textContent = randomGame.icon;
@@ -1428,7 +1583,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================
   // ⚡ 幹事のための即決コンシェルジュ（3秒ゲーム診断）
   // ==========================================
-  const btnQuickConcierge = document.getElementById("btn-quick-concierge");
   const modalConcierge = document.getElementById("modal-concierge");
   const btnCloseConcierge = document.getElementById("btn-close-concierge");
   const btnConciergeSubmit = document.getElementById("btn-concierge-submit");
@@ -1436,19 +1590,133 @@ document.addEventListener("DOMContentLoaded", () => {
   const conciergeResIcon = document.getElementById("concierge-res-icon");
   const conciergeResTitle = document.getElementById("concierge-res-title");
   const conciergeResCatch = document.getElementById("concierge-res-catch");
+  const conciergeTagPlayers = document.getElementById("concierge-tag-players");
+  const conciergeTagMood = document.getElementById("concierge-tag-mood");
+  const conciergeResRank = document.getElementById("concierge-res-rank");
+  const conciergeResReason = document.getElementById("concierge-res-reason");
+  const conciergeResMeta = document.getElementById("concierge-res-meta");
   const btnConciergePlay = document.getElementById("btn-concierge-play");
   const btnConciergeReroll = document.getElementById("btn-concierge-reroll");
 
   let conciergeSelectedPlayers = "2";
   let conciergeSelectedMood = "laugh";
-  let conciergeMatchingGames = [];
+  let conciergeMatches = [];
   let conciergeCurrentIndex = 0;
 
-  if (btnQuickConcierge) {
-    btnQuickConcierge.addEventListener("click", () => {
-      Sound.playClick();
-      if (modalConcierge) ModalManager.open(modalConcierge);
-    });
+  function getConciergeRecommendations(playersKey, moodKey) {
+    if (typeof GameResult !== "undefined" && typeof GameResult.rankConciergeGames === "function") {
+      return GameResult.rankConciergeGames(state.games, {
+        players: playersKey,
+        mood: moodKey
+      });
+    }
+    return state.games
+      .filter(g => g.section !== "merged" && g.section !== "U")
+      .map((game, idx) => ({
+        game,
+        rank: idx + 1,
+        matchTier: idx === 0 ? "best" : "good",
+        reason: "",
+        conditions: {
+          player: { key: playersKey, label: playersKey === "5+" ? "5人以上" : playersKey === "3-4" ? "3〜4人" : "2人" },
+          mood: { key: moodKey, label: moodKey }
+        }
+      }));
+  }
+
+  function formatConciergePlayersRange(game) {
+    const min = Number(game.minPlayers);
+    const max = Number(game.maxPlayers);
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return "";
+    if (min === max) return `${min}人専用`;
+    if (max >= 99) return `${min}人〜`;
+    return `${min}〜${max}人`;
+  }
+
+  function displayConciergeMatch(entry, index, total) {
+    if (!entry || !entry.game) return;
+    const game = entry.game;
+    const cond = entry.conditions || (
+      typeof GameResult !== "undefined" && typeof GameResult.getConciergeConditionMeta === "function"
+        ? GameResult.getConciergeConditionMeta(conciergeSelectedPlayers, conciergeSelectedMood)
+        : null
+    );
+
+    if (conciergeResIcon) conciergeResIcon.textContent = "";
+    if (conciergeTagPlayers && cond && cond.player) {
+      conciergeTagPlayers.textContent = cond.player.label;
+    }
+    if (conciergeTagMood && cond && cond.mood) {
+      conciergeTagMood.textContent = cond.mood.label;
+    }
+    if (conciergeResRank) {
+      const tierPrefix = entry.matchTier === "best" && index === 0 ? "最適" : "候補";
+      conciergeResRank.textContent = `${tierPrefix} ${index + 1} / ${total}`;
+      conciergeResRank.classList.toggle("is-best", entry.matchTier === "best" && index === 0);
+    }
+
+    conciergeResTitle.textContent = game.title;
+    conciergeResCatch.textContent = game.catchphrase || "";
+
+    if (conciergeResReason) {
+      conciergeResReason.textContent = entry.reason || "";
+      conciergeResReason.classList.toggle("hidden", !entry.reason);
+    }
+
+    if (conciergeResMeta) {
+      const specs = [
+        formatConciergePlayersRange(game),
+        game.duration || "",
+        "スマホ1台"
+      ].filter(Boolean);
+      conciergeResMeta.textContent = specs.join(" · ");
+    }
+
+    if (btnConciergeReroll) {
+      btnConciergeReroll.disabled = total <= 1;
+    }
+
+    conciergeResultArea.classList.remove("hidden");
+    conciergeResultArea.classList.remove("is-updated");
+    void conciergeResultArea.offsetWidth;
+    conciergeResultArea.classList.add("is-updated");
+
+    btnConciergePlay.onclick = () => {
+      Sound.playSelect();
+      if (modalConcierge) ModalManager.close(modalConcierge);
+      navigateToGame(game.id);
+    };
+  }
+
+  function runConciergeDiagnosis({ celebrate = false } = {}) {
+    conciergeMatches = getConciergeRecommendations(conciergeSelectedPlayers, conciergeSelectedMood);
+    conciergeCurrentIndex = 0;
+    if (conciergeMatches.length === 0) return;
+
+    displayConciergeMatch(conciergeMatches[0], 0, conciergeMatches.length);
+    if (celebrate) {
+      Sound.playFanfare();
+      if (conciergeResultArea && typeof conciergeResultArea.scrollIntoView === "function") {
+        conciergeResultArea.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }
+  }
+
+  function openConciergeWithContext() {
+    Sound.playClick();
+    if (state.filter.quickPlayers && state.filter.quickPlayers !== "all") {
+      conciergeSelectedPlayers = state.filter.quickPlayers;
+      document.querySelectorAll("#concierge-players-group .btn-concierge-opt").forEach(b => {
+        const match = b.dataset.players === conciergeSelectedPlayers;
+        b.classList.toggle("active", match);
+        b.setAttribute("aria-pressed", String(match));
+      });
+    }
+    if (modalConcierge) ModalManager.open(modalConcierge);
+  }
+
+  if (btnHeroConcierge) {
+    btnHeroConcierge.addEventListener("click", openConciergeWithContext);
   }
 
   if (btnCloseConcierge) {
@@ -1460,88 +1728,48 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("#concierge-players-group .btn-concierge-opt").forEach(btn => {
     btn.addEventListener("click", () => {
       Sound.playClick();
-      document.querySelectorAll("#concierge-players-group .btn-concierge-opt").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll("#concierge-players-group .btn-concierge-opt").forEach(b => {
+        b.classList.remove("active");
+        b.setAttribute("aria-pressed", "false");
+      });
       btn.classList.add("active");
+      btn.setAttribute("aria-pressed", "true");
       conciergeSelectedPlayers = btn.dataset.players;
+      if (conciergeResultArea && !conciergeResultArea.classList.contains("hidden")) {
+        runConciergeDiagnosis({ celebrate: false });
+      }
     });
   });
 
   document.querySelectorAll("#concierge-mood-group .btn-concierge-opt").forEach(btn => {
     btn.addEventListener("click", () => {
       Sound.playClick();
-      document.querySelectorAll("#concierge-mood-group .btn-concierge-opt").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll("#concierge-mood-group .btn-concierge-opt").forEach(b => {
+        b.classList.remove("active");
+        b.setAttribute("aria-pressed", "false");
+      });
       btn.classList.add("active");
+      btn.setAttribute("aria-pressed", "true");
       conciergeSelectedMood = btn.dataset.mood;
+      if (conciergeResultArea && !conciergeResultArea.classList.contains("hidden")) {
+        runConciergeDiagnosis({ celebrate: false });
+      }
     });
   });
-
-  function getConciergeRecommendations(playersKey, moodKey) {
-    return state.games.filter(g => {
-      let matchesPlayers = false;
-      if (playersKey === "2") {
-        matchesPlayers = g.minPlayers <= 2 && g.maxPlayers >= 2;
-      } else if (playersKey === "3-4") {
-        matchesPlayers = g.minPlayers <= 4 && g.maxPlayers >= 3;
-      } else if (playersKey === "5+") {
-        matchesPlayers = g.maxPlayers >= 5;
-      }
-
-      if (!matchesPlayers || g.section === "merged" || g.section === "U") return false;
-
-      const tags = g.tags || [];
-      const cat = String(g.category || "").toLowerCase();
-      if (moodKey === "laugh") {
-        return tags.some(t => ["飲み会", "大喜利", "アクション", "パーティー", "アクション対決"].includes(t)) || ["action", "アクション", "大喜利"].includes(cat) || ["action", "アクション", "大喜利"].includes(g.category);
-      } else if (moodKey === "chill") {
-        return tags.some(t => ["トーク", "協力", "まったり", "定番"].includes(t)) || ["talk", "トーク"].includes(cat) || ["talk", "トーク"].includes(g.category);
-      } else if (moodKey === "mind") {
-        return tags.some(t => ["心理戦", "人狼", "推理"].includes(t)) || ["mystery", "心理戦", "推理"].includes(cat) || ["mystery", "心理戦", "推理"].includes(g.category);
-      } else if (moodKey === "icebreak") {
-        return tags.some(t => ["アイスブレイク", "初対面", "協力", "定番"].includes(t));
-      }
-      return true;
-    });
-  }
-
-  function displayConciergeGame(game) {
-    if (!game) return;
-    if (conciergeResIcon) conciergeResIcon.textContent = "";
-    conciergeResTitle.textContent = game.title;
-    conciergeResCatch.textContent = game.catchphrase;
-    conciergeResultArea.classList.remove("hidden");
-
-    btnConciergePlay.onclick = () => {
-      Sound.playSelect();
-      if (modalConcierge) ModalManager.close(modalConcierge);
-      navigateToGame(game.id);
-    };
-  }
 
   if (btnConciergeSubmit) {
     btnConciergeSubmit.addEventListener("click", () => {
       Sound.playSelect();
-      conciergeMatchingGames = getConciergeRecommendations(conciergeSelectedPlayers, conciergeSelectedMood);
-      if (conciergeMatchingGames.length === 0) {
-        conciergeMatchingGames = state.games.filter(g => {
-          if (conciergeSelectedPlayers === "2") return g.minPlayers <= 2 && g.maxPlayers >= 2;
-          if (conciergeSelectedPlayers === "3-4") return g.minPlayers <= 4 && g.maxPlayers >= 3;
-          return g.maxPlayers >= 5;
-        });
-      }
-      conciergeMatchingGames.sort(() => Math.random() - 0.5);
-      conciergeCurrentIndex = 0;
-      displayConciergeGame(conciergeMatchingGames[0]);
-      Sound.playFanfare();
-      if (typeof Confetti !== "undefined") Confetti.burst(60);
+      runConciergeDiagnosis({ celebrate: true });
     });
   }
 
   if (btnConciergeReroll) {
     btnConciergeReroll.addEventListener("click", () => {
       Sound.playClick();
-      if (conciergeMatchingGames.length > 0) {
-        conciergeCurrentIndex = (conciergeCurrentIndex + 1) % conciergeMatchingGames.length;
-        displayConciergeGame(conciergeMatchingGames[conciergeCurrentIndex]);
+      if (conciergeMatches.length > 1) {
+        conciergeCurrentIndex = (conciergeCurrentIndex + 1) % conciergeMatches.length;
+        displayConciergeMatch(conciergeMatches[conciergeCurrentIndex], conciergeCurrentIndex, conciergeMatches.length);
       }
     });
   }
@@ -1628,8 +1856,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnFav = document.getElementById("detail-fav-btn");
     if (!btnFav || !state.activeGameId) return;
     const isFav = state.favorites.includes(state.activeGameId);
+    const activeGame = state.games.find(g => g.id === state.activeGameId);
+    const title = activeGame ? activeGame.title : "このゲーム";
     btnFav.classList.toggle("active", isFav);
-    btnFav.innerHTML = isFav ? '★' : '☆';
+    btnFav.setAttribute("aria-pressed", String(isFav));
+    btnFav.setAttribute("aria-label", `${title}を${isFav ? "お気に入りから削除" : "お気に入りに追加"}`);
+    btnFav.textContent = isFav ? "★" : "☆";
   }
 
   function showGameDetail(game, requestedTab = null) {
@@ -1704,8 +1936,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const customTopics = TopicManager.getCustomTopics(game.id);
     const totalPresets = (game.presets ? game.presets.length : 0) + customTopics.length;
     const speechSummaryText = game.speechSummary || (() => {
-      const firstSentence = String(game.overview || "").split("。")[0].trim();
-      return firstSentence && firstSentence !== game.catchphrase ? `${firstSentence}。` : game.catchphrase;
+      const endSentence = (s) => (/[。！？!?]$/.test(s) ? s : `${s}。`);
+      const sentences = String(game.overview || "")
+        .split("。")
+        .map(s => s.trim())
+        .filter(Boolean);
+      if (sentences.length >= 2 && sentences[0].length < 44) {
+        return `${endSentence(sentences[0])}${endSentence(sentences[1])}`;
+      }
+      if (sentences.length >= 1 && sentences[0] !== game.catchphrase) {
+        return endSentence(sentences[0]);
+      }
+      return game.catchphrase;
     })();
 
     viewDetail.innerHTML = `
@@ -1723,7 +1965,6 @@ document.addEventListener("DOMContentLoaded", () => {
             <button type="button" class="btn-detail-scoreboard" id="btn-detail-scoreboard" aria-label="得点を記録する">得点</button>
             <button class="btn-mute-toggle" id="btn-detail-mute" aria-label="音声をミュート切替">音なし</button>
             ${game.isDuo ? '<span class="nav-pill pill-duo">2人用</span>' : ''}
-            <span class="nav-pill pill-category">${escapeHTML(game.badge || '定番')}</span>
           </div>
         </nav>
 
@@ -1734,7 +1975,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <h2 class="detail-compact-title">${renderGameTitle(game)}</h2>
               <p class="detail-compact-catch">${escapeHTML(game.catchphrase)}</p>
               <div class="detail-compact-meta">
-                <span>${game.minPlayers}〜${game.maxPlayers === 99 ? '大人数' : game.maxPlayers + '人'}</span>
+                <span>${escapeHTML(formatPlayersText(game))}</span>
                 <span>${game.duration}</span>
                 <span>${escapeHTML(game.preparation)}</span>
               </div>
@@ -1742,14 +1983,13 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
           <div class="detail-hero-actions">
             <button class="btn-compact-fav" id="detail-fav-btn" title="お気に入り"></button>
-            <button class="btn-compact-line" id="detail-line-btn" title="LINEで送る">LINE共有</button>
-
+            <button class="btn-compact-line" id="detail-line-btn" title="LINEで送る">LINEで送る</button>
           </div>
         </div>
 
-        <!-- 10秒口頭ルール説明バナー -->
-        <div class="speech-banner-box" role="region" aria-label="10秒口頭ルール説明">
-          <div class="speech-banner-badge">10秒ルール</div>
+        <!-- ひとことで言うと（口頭説明サマリー） -->
+        <div class="speech-banner-box" role="region" aria-label="ゲームの概要まとめ">
+          <div class="speech-banner-badge">ひとことで言うと</div>
           <p class="speech-banner-text">${escapeHTML(speechSummaryText)}</p>
         </div>
 
@@ -1830,7 +2070,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <div class="presets-section">
                 <div class="presets-header-bar">
                   <h3 class="section-title">収録お題一覧</h3>
-                  <button class="btn btn-sm btn-outline" id="btn-open-topic-custom" aria-expanded="false" aria-controls="custom-topic-editor">⚙️ お題を追加・管理する</button>
+                  <button class="btn btn-sm btn-outline" id="btn-open-topic-custom" aria-expanded="false" aria-controls="custom-topic-editor">お題を追加・管理する</button>
                 </div>
                 <div id="custom-topic-editor" class="section-box mt-3 hidden">
                   <label for="custom-topic-text">${game.id === "sea-turtle" ? "自作問題の問題文" : "自分たちのお題"}（この端末に保存）</label>
@@ -2116,7 +2356,7 @@ document.addEventListener("DOMContentLoaded", () => {
       rCard.innerHTML = `
         <div class="rec-info">
           <strong class="rec-title">${escapeHTML(rec.title)}</strong>
-          <span class="rec-meta">${rec.minPlayers}〜${rec.maxPlayers === 99 ? '大人数' : rec.maxPlayers + '人'} · ${escapeHTML(rec.duration)}</span>
+          <span class="rec-meta">${escapeHTML(formatPlayersText(rec))} · ${escapeHTML(rec.duration)}</span>
         </div>
       `;
       rCard.addEventListener("click", () => {
@@ -2154,24 +2394,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (btmNavFav) {
     btmNavFav.addEventListener("click", () => {
-      const proceed = () => {
-        Sound.playClick();
-        if (window.location.hash !== "") {
-          window.location.hash = "";
-        }
-        state.filter.onlyFavorite = !state.filter.onlyFavorite;
-        favToggleBtn.classList.toggle("active", state.filter.onlyFavorite);
-        btmNavFav.classList.toggle("active", state.filter.onlyFavorite);
-        renderGrid();
-        if (state.filter.onlyFavorite) {
-          Toast.info("★ お気に入りのゲームを表示中");
-        }
-      };
-      if (state.activeGameId) {
-        requestLeaveGame(proceed);
-        return;
-      }
-      proceed();
+      toggleFavoriteFilter({ showToast: !state.filter.onlyFavorite });
     });
   }
 
@@ -2205,7 +2428,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    if (!isTyping) {
+    // 修飾キー併用（Ctrl+R/F等）やモーダル表示中はアプリ固有ショートカットを発火させない
+    const hasOpenModal = Boolean(
+      ModalManager.activeModal ||
+      document.querySelector(".modal-backdrop:not(.hidden), .modal-overlay:not(.hidden)")
+    );
+    if (!isTyping && !hasOpenModal && !e.ctrlKey && !e.metaKey && !e.altKey) {
       if (e.key === "/") {
         e.preventDefault();
         if (searchInput) { revealSearch(); searchInput.select(); }
@@ -2214,22 +2442,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (modalRoulette) ModalManager.open(modalRoulette);
       } else if (e.key === "f" || e.key === "F") {
         e.preventDefault();
-        const proceedFav = () => {
-          Sound.playClick();
-          if (window.location.hash !== "") {
-            window.location.hash = "";
-          }
-          state.filter.onlyFavorite = !state.filter.onlyFavorite;
-          if (favToggleBtn) favToggleBtn.classList.toggle("active", state.filter.onlyFavorite);
-          if (btmNavFav) btmNavFav.classList.toggle("active", state.filter.onlyFavorite);
-          renderGrid();
-          Toast.info(state.filter.onlyFavorite ? "★ お気に入りのゲームを表示中" : "すべてのゲームを表示中");
-        };
-        if (state.activeGameId) {
-          requestLeaveGame(proceedFav);
-        } else {
-          proceedFav();
-        }
+        toggleFavoriteFilter({ showToast: true });
       } else if (e.key === "h" || e.key === "H") {
         e.preventDefault();
         requestLeaveGame(() => {
@@ -2248,19 +2461,24 @@ document.addEventListener("DOMContentLoaded", () => {
   const pwaInstallBanner = document.getElementById("pwa-install-banner");
   const btnPwaInstall = document.getElementById("btn-pwa-install");
   const btnPwaClose = document.getElementById("btn-pwa-close");
-  const btnFooterPwa = document.getElementById("btn-footer-pwa-install");
+  const btnMenuPwa = document.getElementById("btn-menu-pwa-install");
+  const menuPwaCard = document.getElementById("menu-pwa-card");
   const modalPwaGuide = document.getElementById("modal-pwa-guide");
   const btnClosePwaGuide = document.getElementById("btn-close-pwa-guide");
   const btnPwaGuideOk = document.getElementById("btn-pwa-guide-ok");
 
   const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
 
+  if (isStandalone && menuPwaCard) {
+    menuPwaCard.classList.add("hidden");
+  }
+
   if (!isStandalone) {
     window.addEventListener("beforeinstallprompt", (e) => {
       e.preventDefault();
       deferredPrompt = e;
       // ユーザーのゲーム選択・即プレイ体験を最優先し、画面を遮るバナーの自動表示は行わない。
-      // インストールはヘッダー・設定モーダル・フッターからいつでもスムーズに実行可能。
+      // インストールは右上のハンバーガーメニュー最上段からいつでも実行可能。
     });
   }
 
@@ -2272,6 +2490,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (outcome === "accepted") {
         Toast.success("アプリのインストールを開始しました");
         if (pwaInstallBanner) pwaInstallBanner.classList.add("hidden");
+        if (menuPwaCard) menuPwaCard.classList.add("hidden");
       }
       deferredPrompt = null;
     } else {
@@ -2281,17 +2500,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  const btnHeaderPwa = document.getElementById("btn-header-pwa-install");
-  if (btnHeaderPwa) {
-    btnHeaderPwa.addEventListener("click", triggerPwaInstall);
+  if (btnMenuPwa) {
+    btnMenuPwa.addEventListener("click", () => {
+      if (modalSettings && !modalSettings.classList.contains("hidden")) {
+        ModalManager.close(modalSettings);
+      }
+      triggerPwaInstall();
+    });
   }
 
   if (btnPwaInstall) {
     btnPwaInstall.addEventListener("click", triggerPwaInstall);
-  }
-
-  if (btnFooterPwa) {
-    btnFooterPwa.addEventListener("click", triggerPwaInstall);
   }
 
   if (btnPwaClose) {
@@ -2332,14 +2551,6 @@ document.addEventListener("DOMContentLoaded", () => {
       : '<svg class="ui-svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8v4h3.2l4.3 3.5V4.5L7.2 8H4z"/><path d="M14.5 7.5a3.5 3.5 0 010 5"/></svg>';
     const label = isMuted ? "音なし：効果音をオンにする" : "音あり：効果音をオフにする";
 
-    const headerMuteBtn = document.getElementById("btn-header-mute");
-    if (headerMuteBtn) {
-      headerMuteBtn.innerHTML = `<span class="mute-svg-wrap" aria-hidden="true">${icon}</span><span class="sound-state-label">${isMuted ? '音なし' : '音あり'}</span>`;
-      headerMuteBtn.setAttribute("aria-pressed", String(isMuted));
-      headerMuteBtn.setAttribute("aria-label", label);
-      headerMuteBtn.title = label;
-      headerMuteBtn.classList.toggle("is-muted", isMuted);
-    }
     const detailMuteBtn = document.getElementById("btn-detail-mute");
     if (detailMuteBtn) {
       detailMuteBtn.innerHTML = `<span class="mute-svg-wrap" aria-hidden="true">${icon}</span><span class="sound-state-label">${isMuted ? '音なし' : '音あり'}</span>`;
@@ -2347,6 +2558,11 @@ document.addEventListener("DOMContentLoaded", () => {
       detailMuteBtn.setAttribute("aria-label", label);
       detailMuteBtn.title = label;
       detailMuteBtn.classList.toggle("is-muted", isMuted);
+    }
+    const menuSoundStatus = document.getElementById("menu-sound-status");
+    if (menuSoundStatus) {
+      menuSoundStatus.textContent = isMuted ? "音なし" : "音あり";
+      menuSoundStatus.classList.toggle("is-on", !isMuted);
     }
   }
 
@@ -2361,10 +2577,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  const btnHeaderMute = document.getElementById("btn-header-mute");
-  if (btnHeaderMute) {
-    btnHeaderMute.addEventListener("click", handleMuteToggle);
-  }
   updateMuteButtons();
 
   function syncSettingsModal() {
@@ -2372,6 +2584,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (settingThemeToggle) settingThemeToggle.checked = state.isDark;
     if (settingWakeLockToggle) settingWakeLockToggle.checked = WakeLockManager.isEnabled;
     if (settingKidsToggle) settingKidsToggle.checked = state.kidsMode;
+    const menuSoundStatus = document.getElementById("menu-sound-status");
+    if (menuSoundStatus) {
+      menuSoundStatus.textContent = Sound.isMuted ? "音なし" : "音あり";
+      menuSoundStatus.classList.toggle("is-on", !Sound.isMuted);
+    }
   }
 
   if (btnOpenSettings) {
@@ -2557,14 +2774,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const modalFingerRoulette = document.getElementById("modal-finger-roulette");
   const btnCloseFingerModal = document.getElementById("btn-close-finger-modal");
   const fingerModalMount = document.getElementById("finger-modal-mount");
-  const btnHeaderFinger = document.getElementById("btn-header-finger");
-  const btnQuickFinger = document.getElementById("btn-quick-finger");
 
   const modalBatsuRoulette = document.getElementById("modal-batsu-roulette");
   const btnCloseBatsuModal = document.getElementById("btn-close-batsu-modal");
   const batsuModalMount = document.getElementById("batsu-modal-mount");
-  const btnHeaderBatsu = document.getElementById("btn-header-batsu");
-  const btnQuickBatsu = document.getElementById("btn-quick-batsu");
 
   let fingerModalCleanup = null;
   let batsuModalCleanup = null;
@@ -2611,21 +2824,48 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnCloseFingerModal && modalFingerRoulette) {
     btnCloseFingerModal.addEventListener("click", () => {
       ModalManager.close(modalFingerRoulette);
-      window.__cleanupActiveModal("modal-finger-roulette");
     });
   }
 
   if (btnCloseBatsuModal && modalBatsuRoulette) {
     btnCloseBatsuModal.addEventListener("click", () => {
       ModalManager.close(modalBatsuRoulette);
-      window.__cleanupActiveModal("modal-batsu-roulette");
     });
   }
 
-  if (btnHeaderFinger) btnHeaderFinger.addEventListener("click", () => { Sound.playClick(); openFingerModal(); });
-  if (btnQuickFinger) btnQuickFinger.addEventListener("click", () => { Sound.playClick(); openFingerModal(); });
-  if (btnHeaderBatsu) btnHeaderBatsu.addEventListener("click", () => { Sound.playClick(); openBatsuModal(); });
-  if (btnQuickBatsu) btnQuickBatsu.addEventListener("click", () => { Sound.playClick(); openBatsuModal(); });
+  // ハンバーガーメニュー内の便利ツール導線
+  const btnMenuFinger = document.getElementById("btn-menu-finger");
+  const btnMenuBatsu = document.getElementById("btn-menu-batsu");
+  const btnMenuScoreboard = document.getElementById("btn-menu-scoreboard");
+  const btnMenuRoulette = document.getElementById("btn-menu-roulette");
+
+  if (btnMenuFinger) {
+    btnMenuFinger.addEventListener("click", () => {
+      if (modalSettings) ModalManager.close(modalSettings);
+      openFingerModal();
+    });
+  }
+  if (btnMenuBatsu) {
+    btnMenuBatsu.addEventListener("click", () => {
+      if (modalSettings) ModalManager.close(modalSettings);
+      openBatsuModal();
+    });
+  }
+  if (btnMenuScoreboard) {
+    btnMenuScoreboard.addEventListener("click", () => {
+      if (modalSettings) ModalManager.close(modalSettings);
+      if (scoreboardDrawer && !scoreboardDrawer.classList.contains("hidden")) return;
+      const toggleBtn = document.getElementById("btn-toggle-scoreboard");
+      if (toggleBtn) toggleBtn.click();
+      else openScoreboard();
+    });
+  }
+  if (btnMenuRoulette) {
+    btnMenuRoulette.addEventListener("click", () => {
+      if (modalSettings) ModalManager.close(modalSettings);
+      if (modalRoulette) ModalManager.open(modalRoulette);
+    });
+  }
 
   // ==========================================
   // ④ トーク集中モードのイベントバインド
