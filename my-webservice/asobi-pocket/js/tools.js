@@ -10,8 +10,7 @@ const safeSetTimeout = (fn, ms) => (window.SafeTimer ? window.SafeTimer.setTimeo
 const safeClearTimeout = (id) => (window.SafeTimer ? window.SafeTimer.clearTimeout(id) : clearTimeout(id));
 
 function escapeHTML(str) {
-  if (typeof str !== "string") return String(str || "");
-  return str
+  return String(str ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -56,13 +55,28 @@ function bindSoundHintInContainer(container) {
   };
 }
 
+const MAX_SCORE_PLAYERS = 20;
+
+function scoreboardPoints(value) {
+  const n = typeof value === "number" || typeof value === "string" ? Number(value) : 0;
+  return Number.isFinite(n) ? Math.max(-999999, Math.min(999999, Math.trunc(n))) : 0;
+}
+
+function normalizeScorePlayers(saved) {
+  const rows = Array.isArray(saved) ? saved.filter(row => row && typeof row === "object" && !Array.isArray(row)) : [];
+  return (rows.length ? rows : [{}, {}]).map((row, index) => ({
+    name: (typeof row.name === "string" && row.name.trim().slice(0, 40)) || `プレイヤー${index + 1}`,
+    score: scoreboardPoints(row.score)
+  }));
+}
+
 // 得点表に名前がある席はその名前で始める。ゲーム内の変更はその卓で保持する。
 function tableRoster() {
   const edits = [];
   function scoreNames() {
     try {
       const saved = JSON.parse(localStorage.getItem("asobi_scoreboard_players") || "[]");
-      return Array.isArray(saved) ? saved.map(p => String(p?.name || "").trim()) : [];
+      return normalizeScorePlayers(saved).map(p => p.name);
     } catch { return []; }
   }
   function nameAt(index, scores) {
@@ -334,7 +348,8 @@ function extractTopicText(item) {
 class GameTimer {
   constructor({ totalSeconds = 60, onTick = null, onFinish = null, tickSoundInterval = null, title = null, gameId = null, isFloating = false }) {
     this.totalSeconds = totalSeconds;
-    this.remaining = totalSeconds;
+    this.remainingMs = totalSeconds * 1000;
+    this.deadline = 0;
     this.isRunning = false;
     this.timerId = null;
     this.onTick = onTick;
@@ -345,41 +360,54 @@ class GameTimer {
     this.isFloating = isFloating;
   }
 
+  get remaining() {
+    const ms = this.isRunning ? this.deadline - Date.now() : this.remainingMs;
+    return Math.max(0, Math.ceil(ms / 1000));
+  }
+
   start() {
-    if (this.isRunning) return;
+    if (this.isRunning || this.remainingMs <= 0) return;
+    this.deadline = Date.now() + this.remainingMs;
     this.isRunning = true;
     if (!this.isFloating) {
       GameTimer.activeTimer = this;
     }
-    this.timerId = safeSetInterval(() => {
-      this.remaining--;
-      if (this.tickSoundInterval && this.remaining <= this.tickSoundInterval && this.remaining > 0) {
-        if (typeof Sound !== "undefined" && typeof Sound.playTick === "function") {
-          Sound.playTick(900);
-        }
-      }
-      if (typeof this.onTick === "function") {
-        this.onTick(this.remaining, this.totalSeconds);
-      }
-      if (this.remaining <= 0) {
-        this.stop();
-        if (typeof this.onFinish === "function") {
-          this.onFinish();
-        }
-      }
-    }, 1000);
+    this.scheduleTick();
   }
 
-  pause() {
+  scheduleTick() {
+    const ms = Math.max(0, this.deadline - Date.now());
+    this.timerId = safeSetTimeout(() => this.tick(), ms ? ms % 1000 || 1000 : 0);
+  }
+
+  tick() {
     if (!this.isRunning) return;
+    const seconds = this.remaining;
+    if (!seconds) this.stop();
+    else if (this.tickSoundInterval && seconds <= this.tickSoundInterval && typeof Sound !== "undefined") {
+      Sound.playTick?.(900);
+    }
+    this.onTick?.(seconds, this.totalSeconds);
+    if (!seconds) this.onFinish?.();
+    else if (this.isRunning) this.scheduleTick();
+  }
+
+  stop() {
+    if (!this.isRunning) return;
+    this.remainingMs = Math.max(0, this.deadline - Date.now());
     this.isRunning = false;
     if (GameTimer.activeTimer === this) {
       GameTimer.activeTimer = null;
     }
     if (this.timerId) {
-      safeClearInterval(this.timerId);
+      safeClearTimeout(this.timerId);
       this.timerId = null;
     }
+  }
+
+  pause() {
+    if (this.isRunning && !this.remaining) this.tick();
+    else this.stop();
   }
 
   toggle() {
@@ -392,16 +420,12 @@ class GameTimer {
   }
 
   reset(newSeconds = this.totalSeconds) {
-    this.pause();
+    this.stop();
     this.totalSeconds = newSeconds;
-    this.remaining = newSeconds;
+    this.remainingMs = newSeconds * 1000;
     if (typeof this.onTick === "function") {
       this.onTick(this.remaining, this.totalSeconds);
     }
-  }
-
-  stop() {
-    this.pause();
   }
 
   destroy() {
@@ -2981,6 +3005,7 @@ const GameTools = {
       currentPlayerIdx: 0,
       seerAction: null,
       robberAction: null,
+      ballots: [],
       timerSec: 180,
       timerInterval: null
     };
@@ -3041,6 +3066,7 @@ const GameTools = {
           state.players = [];
           state.executed = [];
           state.peaceVote = false;
+          state.ballots = [];
           const names = roster.labels(state.playerCount);
           for (let i = 0; i < state.playerCount; i++) {
             state.players.push({
@@ -3311,6 +3337,7 @@ const GameTools = {
             <button class="btn btn-warning btn-lg btn-block" id="btn-open-ww-result" disabled>
               <span>投票完了・結果発表</span>
             </button>
+            <button class="btn btn-outline btn-block mt-2" id="btn-ww-secret-vote">1台で順番に秘密投票</button>
           </div>
         `;
 
@@ -3329,24 +3356,51 @@ const GameTools = {
           open.disabled = !state.peaceVote && !state.executed.length;
         });
         open.addEventListener("click", () => {
-          const werewolves = state.players.filter(p => p.currentRole === "werewolf");
-          const hasWerewolf = werewolves.length > 0;
-          const executed = state.players.filter(p => state.executed.includes(p.id));
-          const caughtWerewolf = executed.some(p => p.currentRole === "werewolf");
-          const judgment = typeof GameResult !== "undefined"
-            ? GameResult.judgeOneNightOutcome({ hasWerewolf, peaceVote: state.peaceVote, caughtWerewolf })
-            : { shouldCelebrate: hasWerewolf || state.peaceVote };
-
-          if (judgment.shouldCelebrate) {
-            Sound.playFanfare();
-            if (typeof Confetti !== "undefined") Confetti.burst(54);
-          } else {
-            Sound.playWrong();
-          }
           state.step = "result";
           update();
         });
+        container.querySelector("#btn-ww-secret-vote").addEventListener("click", () => {
+          state.step = "secret-vote";
+          update();
+        });
 
+      } else if (state.step === "secret-vote") {
+        const voter = state.players[state.ballots.length];
+        container.innerHTML = `<div class="tool-card">
+          <h3 class="tool-title">${escapeHTML(voter.name)}の投票</h3>
+          <fieldset class="ww-votes"><legend>本人だけが画面を見て、怪しい人を1人選んでください。</legend>
+            ${state.players.filter(p => p.id !== voter.id).map(p =>
+              `<label><input type="radio" name="ww-secret-choice" value="${p.id}"> ${escapeHTML(p.name)}</label>`
+            ).join("")}
+          </fieldset>
+          <button class="btn btn-primary btn-block" id="btn-ww-cast" disabled>投票を確定する</button>
+        </div>`;
+        const choices = container.querySelector(".ww-votes");
+        const cast = container.querySelector("#btn-ww-cast");
+        choices.addEventListener("change", () => { cast.disabled = false; });
+        cast.addEventListener("click", () => {
+          const selected = choices.querySelector("input:checked");
+          if (!selected) return;
+          state.ballots.push(Number(selected.value));
+          if (state.ballots.length === state.players.length) {
+            const counts = state.players.map(p => state.ballots.filter(id => id === p.id).length);
+            const most = Math.max(...counts);
+            state.peaceVote = most === 1;
+            state.executed = state.players.filter((p, index) => most > 1 && counts[index] === most).map(p => p.id);
+            state.ballots = [];
+            state.step = "votes-ready";
+          }
+          update();
+        });
+      } else if (state.step === "votes-ready") {
+        container.innerHTML = `<div class="tool-card text-center">
+          <h3 class="tool-title">全員の投票が終わりました</h3>
+          <button class="btn btn-warning btn-block" id="btn-open-ww-result">みんなで結果を見る</button>
+        </div>`;
+        container.querySelector("#btn-open-ww-result").addEventListener("click", () => {
+          state.step = "result";
+          update();
+        });
       } else if (state.step === "result") {
         if (typeof window !== "undefined" && window.StampRally) {
           window.StampRally.markPlayed("one-night-werewolf");
@@ -3364,6 +3418,12 @@ const GameTools = {
                 ? (state.peaceVote ? "全員の勝利（平和村）" : "全員敗北（引き分け）")
                 : (caught ? "村人チームの勝利" : "人狼チームの勝利")
             };
+        if (judgment.shouldCelebrate ?? (hasWerewolf || state.peaceVote)) {
+          Sound.playFanfare();
+          if (typeof Confetti !== "undefined") Confetti.burst(54);
+        } else {
+          Sound.playWrong();
+        }
         const outcome = state.peaceVote
           ? "全員1票のため、処刑なし"
           : "最多票で処刑：" + executed.map(p => p.name + "（" + ROLE_DEFS[p.currentRole].name + "）").join("、");
@@ -4847,6 +4907,7 @@ const GameTools = {
     let state = {
       remaining: 20,
       logs: [],
+      questionDraft: "",
       secretTopic: null,
       showSecret: false,
       outcome: null // null | "solved" | "giveup" | "out"
@@ -4900,6 +4961,10 @@ const GameTools = {
 
           ${finishCard}
 
+          ${!state.outcome ? `<div class="setting-group text-left">
+            <label for="input-twenty-question">質問メモ（任意）</label>
+            <input type="text" id="input-twenty-question" maxlength="120" value="${escapeHTML(state.questionDraft)}">
+          </div>` : ""}
           <div class="flex gap-2 justify-center my-3">
             <button class="btn btn-success flex-1" id="btn-log-yes" aria-label="はい (YES)" ${state.remaining === 0 || state.outcome ? "disabled" : ""}>はい</button>
             <button class="btn btn-danger flex-1" id="btn-log-no" aria-label="いいえ (NO)" ${state.remaining === 0 || state.outcome ? "disabled" : ""}>いいえ</button>
@@ -4917,7 +4982,7 @@ const GameTools = {
             <h4 class="text-sm font-bold text-muted">回答履歴:</h4>
             ${state.logs.map((l, i) => `
               <div class="log-item">
-                Q${i + 1}: ${l.type === 'YES' ? '<span class="text-success font-bold">YES</span>' : l.type === 'NO' ? '<span class="text-danger font-bold">NO</span>' : '<span class="text-muted">関係なし</span>'}
+                Q${i + 1}: ${l.question ? escapeHTML(l.question) + " — " : ""}${l.type === 'YES' ? '<span class="text-success font-bold">YES</span>' : l.type === 'NO' ? '<span class="text-danger font-bold">NO</span>' : '<span class="text-muted">関係なし</span>'}
               </div>
             `).reverse().join('')}
           </div>
@@ -4929,6 +4994,7 @@ const GameTools = {
       const resetBoard = (drawNew) => {
         state.remaining = 20;
         state.logs = [];
+        state.questionDraft = "";
         state.outcome = null;
         state.showSecret = false;
         if (drawNew && topicList.length > 0) {
@@ -4965,6 +5031,9 @@ const GameTools = {
         });
       }
 
+      container.querySelector("#input-twenty-question")?.addEventListener("input", event => {
+        state.questionDraft = event.target.value;
+      });
       container.querySelector("#btn-log-yes").addEventListener("click", () => addLog("YES"));
       container.querySelector("#btn-log-no").addEventListener("click", () => addLog("NO"));
       container.querySelector("#btn-log-irrelevant").addEventListener("click", () => addLog("IRRELEVANT"));
@@ -5000,7 +5069,8 @@ const GameTools = {
     function addLog(type) {
       if (state.remaining <= 0 || state.outcome) return;
       state.remaining--;
-      state.logs.push({ type });
+      state.logs.push({ type, question: state.questionDraft.trim().slice(0, 120) });
+      state.questionDraft = "";
       if (typeof window !== "undefined" && window.StampRally) {
         window.StampRally.markPlayed("twenty-questions");
       }
@@ -5233,9 +5303,7 @@ const GameTools = {
 
           ${state.finished ? finishCard : `
             <div class="flex gap-2 justify-center my-3">
-              <button class="btn btn-primary btn-lg flex-1 font-mono" data-add="1" aria-label="1進める">+1</button>
-              <button class="btn btn-primary btn-lg flex-1 font-mono" data-add="2" aria-label="2進める">+2</button>
-              <button class="btn btn-primary btn-lg flex-1 font-mono" data-add="3" aria-label="3進める">+3</button>
+              ${[1, 2, 3].map(add => `<button class="btn btn-primary btn-lg flex-1 font-mono" data-add="${add}" aria-label="${add}進める" ${state.current + add > state.target ? "disabled" : ""}>+${add}</button>`).join("")}
             </div>
             <button class="btn btn-outline btn-block mt-3" id="btn-reset-count30">ゲームやり直し</button>
           `}
@@ -5261,7 +5329,8 @@ const GameTools = {
         btn.addEventListener("click", () => {
           if (state.finished) return;
           const add = parseInt(btn.dataset.add, 10);
-          state.current = Math.min(state.target, state.current + add);
+          if (state.current + add > state.target) return;
+          state.current += add;
           state.turns++;
           if (state.current >= state.target) {
             state.finished = true;
@@ -5325,8 +5394,9 @@ const GameTools = {
       Sound.playTick(1000);
       updateTimerDisplay();
 
+      const deadline = Date.now() + state.timerMax * 1000;
       state.timerInterval = safeSetInterval(() => {
-        state.timerSec--;
+        state.timerSec = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
         if (state.timerSec > 0) {
           Sound.playTick(800 + (state.timerMax - state.timerSec) * 50);
           updateTimerDisplay();
@@ -5417,6 +5487,7 @@ const GameTools = {
               <button class="btn btn-sm btn-outline">記録</button>
             </form>
             <p id="chain-word-list" aria-live="polite">${escapeHTML(state.words.join(" → "))}</p>
+            <button class="btn btn-sm btn-outline" id="chain-undo" ${state.words.length ? "" : "disabled"}>直前の言葉を取り消す</button>
             <button class="btn btn-sm btn-outline" id="chain-clear">履歴を消す</button>
           </details>
           <div class="setting-group my-2">
@@ -5501,6 +5572,13 @@ const GameTools = {
         field.value = "";
         render();
         container.querySelector("#chain-word")?.focus();
+      });
+      container.querySelector("#chain-undo").addEventListener("click", () => {
+        if (!state.words.length) return;
+        state.words.pop();
+        Sound.playClick();
+        render();
+        container.querySelector("#chain-word").focus();
       });
       container.querySelector("#chain-clear").addEventListener("click", () => {
         Sound.playClick();

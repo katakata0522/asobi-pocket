@@ -55,7 +55,16 @@ test('Twenty Questions describes only the logging features it actually has', asy
 
   await expect(page.locator('.detail-compact-catch')).toContainText('Yes/No');
   await expect(page.locator('#pane-rules')).toContainText('出題者が秘密の答えを決める');
-  await expect(page.locator('#pane-rules')).toContainText('質問文そのものは保存されない');
+  await expect(page.locator('#pane-rules')).toContainText('新しい局を始めると消えます');
+  await page.getByLabel('質問メモ（任意）').fill('水の中にいますか？');
+  await page.locator('#btn-log-yes').click();
+  await expect(page.locator('.log-item')).toContainText('水の中にいますか？ — YES');
+  await page.locator('#btn-log-no').click();
+  await expect(page.locator('.log-item').first()).toContainText('Q2: NO');
+  await page.locator('#btn-twenty-solved').click();
+  await page.locator('#btn-twenty-next-round').click();
+  await expect(page.locator('.log-item')).toHaveCount(0);
+  await expect(page.getByLabel('質問メモ（任意）')).toHaveValue('');
   await expect(page.locator('#pane-rules')).not.toContainText('お題ジェネレーター');
   await expect(page.locator('#tool-mount-point .history-list h4')).toHaveText('回答履歴:');
 

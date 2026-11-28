@@ -681,6 +681,7 @@
   };
 
   GameTools.renderDuelReflex = function renderDuelReflexFixed(container) {
+    let disposed = false;
     const state = {
       scoreP1: 0,
       scoreP2: 0,
@@ -702,12 +703,14 @@
     };
 
     const startRound = () => {
+      if (disposed) return;
       cleanup();
       state.phase = "waiting";
       state.message = "待て…";
       state.reactionMs = null;
       render();
       state.cueTimer = setTimeout(() => {
+        if (disposed) return;
         state.phase = "go";
         state.startAt = performance.now();
         state.message = "今だ！(GO!)";
@@ -735,6 +738,7 @@
     };
 
     const handleTap = (player) => {
+      if (disposed) return;
       if (state.phase === "waiting") {
         if (state.cueTimer) clearTimeout(state.cueTimer);
         state.cueTimer = null;
@@ -805,11 +809,15 @@
     }
 
     render();
-    return cleanup;
+    return () => {
+      disposed = true;
+      cleanup();
+    };
   };
 
   GameTools.renderDuelMash = function renderDuelMashFixed(container) {
     const state = { p1Taps: 0, p2Taps: 0, gauge: 50, timeLeft: 15, phase: "ready", timerId: null };
+    let deadline = 0;
 
     const cleanup = () => {
       if (state.timerId) clearInterval(state.timerId);
@@ -844,6 +852,7 @@
     const tap = (player, event) => {
       if (state.phase !== "playing") return;
       event.preventDefault();
+      if (Date.now() >= deadline) return finish();
       if (player === 1) {
         state.p1Taps += 1;
         state.gauge = Math.max(0, state.gauge - 1.2);
@@ -904,10 +913,11 @@
         state.gauge = 50;
         state.timeLeft = 15;
         state.phase = "playing";
+        deadline = Date.now() + state.timeLeft * 1000;
         play("playSelect");
         render();
         state.timerId = setInterval(() => {
-          state.timeLeft -= 1;
+          state.timeLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
           const badge = container.querySelector(".mash-gauge-center-line span");
           if (badge) badge.textContent = `${state.timeLeft}s`;
           if (state.timeLeft <= 0) finish();
@@ -941,6 +951,7 @@
   GameTools.renderGesture = function renderGestureFixed(container, game) {
     const state = { score: 0, passed: 0, timeLeft: 60, phase: "ready", timerId: null, currentTopic: "" };
 
+    let deadline = 0;
     const getTopic = () => {
       const source = typeof getActiveTopicsForGame === "function"
         ? getActiveTopicsForGame(game.id, game.presets)
@@ -963,6 +974,7 @@
     };
 
     const finish = () => {
+      if (state.phase !== "playing") return;
       cleanup();
       state.phase = "result";
       if (state.score > 0) celebrate(54);
@@ -1010,11 +1022,12 @@
         state.passed = 0;
         state.timeLeft = 60;
         state.phase = "playing";
+        deadline = Date.now() + state.timeLeft * 1000;
         state.currentTopic = getTopic();
         play("playSelect");
         render();
         state.timerId = setInterval(() => {
-          state.timeLeft -= 1;
+          state.timeLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
           const timer = container.querySelector(".timer-display");
           if (timer) {
             timer.textContent = `残り ${state.timeLeft} 秒`;
@@ -1024,9 +1037,19 @@
         }, 1000);
       });
       const correct = container.querySelector("#btn-gesture-correct");
-      if (correct) correct.addEventListener("click", () => { state.score += 1; play("playCorrect"); nextTopic(); });
+      if (correct) correct.addEventListener("click", () => {
+        if (Date.now() >= deadline) return finish();
+        state.score += 1;
+        play("playCorrect");
+        nextTopic();
+      });
       const pass = container.querySelector("#btn-gesture-pass");
-      if (pass) pass.addEventListener("click", () => { state.passed += 1; play("playClick"); nextTopic(); });
+      if (pass) pass.addEventListener("click", () => {
+        if (Date.now() >= deadline) return finish();
+        state.passed += 1;
+        play("playClick");
+        nextTopic();
+      });
       const retry = container.querySelector("#btn-gesture-retry");
       if (retry) retry.addEventListener("click", () => { state.phase = "ready"; state.score = 0; state.passed = 0; state.timeLeft = 60; render(); });
     }

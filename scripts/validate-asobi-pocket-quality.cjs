@@ -364,11 +364,11 @@ if (gamesSource && contractSource) {
     if (!twentyCopy.includes('回答履歴')) {
       fail('twenty-questions must describe the answer-history feature accurately');
     }
-    if (!twentyCopy.includes('質問文そのものは保存されない')) {
-      fail('twenty-questions must disclose that question text itself is not stored');
+    if (!twentyCopy.includes('質問文は任意でメモ') || !twentyCopy.includes('新しい局を始めると消えます')) {
+      fail('twenty-questions must explain that optional question notes last for one round');
     }
-    if (twentyCopy.includes('お題ジェネレーター') || twentyCopy.includes('質問・回答ログ')) {
-      fail('twenty-questions public copy still promises an unimplemented generator/question-text log');
+    if (twentyCopy.includes('お題ジェネレーター')) {
+      fail('twenty-questions public copy promises an unimplemented topic generator');
     }
 
     const fingerCopy = `${publicContracts.fingerOverview} ${publicContracts.fingerRuleText} ${publicContracts.fingerTipText}`;

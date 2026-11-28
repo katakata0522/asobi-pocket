@@ -26,7 +26,8 @@
   // Snapshot before app.js' DOMContentLoaded callback runs. This allows the
   // quality layer to undo the legacy "detail view = played" write on a direct
   // #game/* entry without touching previously earned stamps.
-  const playedBeforeInit = new Set(storageGet("asobi_played_games", []));
+  const savedPlayed = storageGet("asobi_played_games", []);
+  const playedBeforeInit = new Set(Array.isArray(savedPlayed) ? savedPlayed : []);
 
   const addQualityStylesheet = () => {
     if (document.querySelector('link[href*="quality-ui.css"], link[data-asobi-quality="true"]')) return;
@@ -179,8 +180,10 @@
 
   const decorateMonetization = () => {
     if (globalThis.AFFILIATE_CONFIG?.isAffiliateEnabled !== false) return;
-    document.querySelectorAll(".product-badge-pr").forEach((badge) => { badge.textContent = "関連商品"; });
-    document.querySelectorAll(".product-disclaimer").forEach((item) => { item.hidden = true; });
+    document.querySelectorAll(".product-badge-pr").forEach((badge) => {
+      if (badge.textContent !== "関連商品") badge.textContent = "関連商品";
+    });
+    document.querySelectorAll(".product-disclaimer:not([hidden])").forEach((item) => { item.hidden = true; });
   };
 
   const setupDetailObserver = () => {
@@ -369,17 +372,7 @@
 
   const setupScoreboard = () => {
     const KEY = "asobi_scoreboard_players";
-    const normalize = (players) => {
-      if (!Array.isArray(players) || players.length === 0) {
-        return [{ name: "プレイヤー1", score: 0 }, { name: "プレイヤー2", score: 0 }];
-      }
-      return players.slice(0, 20).map((player, index) => ({
-        name: String(player?.name || `プレイヤー${index + 1}`).slice(0, 40),
-        score: Number.isFinite(Number(player?.score)) ? Number(player.score) : 0
-      }));
-    };
-
-    let players = normalize(storageGet(KEY, null));
+    const players = normalizeScorePlayers(storageGet(KEY, null));
     const drawer = document.getElementById("scoreboard-drawer");
     const backdrop = document.getElementById("scoreboard-backdrop");
     const list = document.getElementById("scoreboard-players-list");
@@ -396,6 +389,11 @@
     const save = () => storageSet(KEY, players);
     const render = () => {
       if (!list) return;
+      const add = document.getElementById("btn-add-player");
+      if (add) {
+        add.disabled = players.length >= MAX_SCORE_PLAYERS;
+        add.title = `最大${MAX_SCORE_PLAYERS}人`;
+      }
       list.innerHTML = players.map((player, index) => `
         <div class="scoreboard-row">
           <input type="text" class="score-player-name" value="${esc(player.name)}" data-idx="${index}" placeholder="名前" maxlength="40">
@@ -443,6 +441,7 @@
           render();
         });
       } else if (id === "btn-add-player") {
+        if (players.length >= MAX_SCORE_PLAYERS) return;
         players.push({ name: `プレイヤー${players.length + 1}`, score: 0 });
         save();
         render();
@@ -450,8 +449,8 @@
         const index = Number(scoreAction.dataset.idx);
         if (!players[index]) return;
         const action = scoreAction.dataset.qualityScore;
-        if (action === "plus") players[index].score += 1;
-        if (action === "minus") players[index].score -= 1;
+        if (action === "plus") players[index].score = scoreboardPoints(players[index].score + 1);
+        if (action === "minus") players[index].score = scoreboardPoints(players[index].score - 1);
         if (action === "del" && players.length > 1) players.splice(index, 1);
         save();
         render();
