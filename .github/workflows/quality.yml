@@ -113,15 +113,4 @@ jobs:
           ASOBI_DEVICE: ${{ matrix.device }}
         run: |
           set -euo pipefail
-          npm run test:e2e -- --shard=${{ matrix.shard }}/3 --trace=retain-on-failure
-
-      - name: Upload failure diagnostics
-        if: failure()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: asobi-e2e-failure-${{ matrix.device }}-shard${{ matrix.shard }}-${{ github.run_id }}
-          path: |
-            test-results/
-            playwright-report/
-          if-no-files-found: ignore
-          retention-days: 7
+          npm run test:e2e -- --shard=${{ matrix.shard }}/3
