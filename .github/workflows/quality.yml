@@ -1,64 +1,116 @@
 name: Public Asobi Pocket QA
+
 on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
     types: [opened, reopened, synchronize, ready_for_review]
   workflow_dispatch:
+
 permissions:
   contents: read
+
 concurrency:
   # pushの配信合格記録を手動検証で取り消さず、Draft通知も実検証から分離する。
   group: asobi-qa-${{ github.event_name }}-${{ github.ref }}-${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.draft)) && github.run_id || 'active' }}
   cancel-in-progress: true
+
 defaults:
   run:
     shell: bash
+
+env:
+  NODE_VERSION: "22"
+
 jobs:
-  quality:
-    name: ${{ (github.event_name != 'pull_request' || !github.event.pull_request.draft) && format('quality ({0})', matrix.device) || format('Draft quality ({0})', matrix.device) }}
+  static-and-unit:
+    name: Source contracts and unit tests
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Prepare published CI dependencies
+        run: |
+          set -euo pipefail
+          python3 scripts/public-qa/prepare.py
+
+      - name: Run source contracts and unit tests
+        run: |
+          set -euo pipefail
+          npm run test:source
+          python3 scripts/sync-asobi-article-topics.py --check
+          shopt -s nullglob
+          test_files=(tests/*.test.cjs)
+          if [ "${#test_files[@]}" -gt 0 ]; then
+            node --test "${test_files[@]}"
+          fi
+
+  quality:
+    name: ${{ (github.event_name != 'pull_request' || !github.event.pull_request.draft) && format('quality ({0} {1}/3)', matrix.device, matrix.shard) || format('Draft quality ({0} {1}/3)', matrix.device, matrix.shard) }}
+    needs: static-and-unit
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-24.04
     # lockfileと同版の公式イメージ。ブラウザと日本語font/OS依存を毎回取得しない。
     container:
       image: mcr.microsoft.com/playwright:v1.60.0-noble@sha256:9bd26ad900bb5e0f4dee75839e957a89ae89c2b7ab1e76050e559790e946b948
       options: --ipc=host
-    timeout-minutes: 20
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         device: [desktop, pixel]
+        shard: [1, 2, 3]
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
+          fetch-depth: 1
           persist-credentials: false
-      - name: Prepare command-line tools and checkout identity
+
+      - name: Prepare command-line tools and safe git directory
         run: |
+          set -euo pipefail
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           test "$(git rev-parse --is-inside-work-tree)" = true
           if ! command -v python3 >/dev/null; then
             apt-get update
             apt-get install -y --no-install-recommends python3
           fi
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+
+      - name: Setup Node.js with npm cache
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
-          node-version: '22'
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
+
       - name: Prepare published CI dependencies
-        run: python3 scripts/public-qa/prepare.py
-      - name: Source contracts and regression tests
         run: |
-          npm run test:source
-          python3 scripts/sync-asobi-article-topics.py --check
-          if ls tests/*.test.cjs >/dev/null 2>&1; then node --test tests/*.test.cjs; fi
-      - name: Install locked browser tools and discover tests
+          set -euo pipefail
+          python3 scripts/public-qa/prepare.py
+
+      - name: Install browser tools and verify Playwright runtime
         run: |
-          npm ci --ignore-scripts --no-audit --no-fund
-          npx playwright test --list
-      - name: Install Chromium headless shell
-        run: node .github/scripts/verify-playwright-runtime.cjs
-      - name: Game browser regression
+          set -euo pipefail
+          npm ci --ignore-scripts --prefer-offline --no-audit --no-fund
+          node .github/scripts/verify-playwright-runtime.cjs
+
+      - name: Run sharded game browser regression
         env:
-          CI: 'true'
+          CI: "true"
           ASOBI_DEVICE: ${{ matrix.device }}
-        run: npm run test:e2e
+        run: |
+          set -euo pipefail
+          npm run test:e2e -- --shard=${{ matrix.shard }}/3
