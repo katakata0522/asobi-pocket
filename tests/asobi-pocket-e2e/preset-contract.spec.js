@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { acceptGameExits } from './game-navigation';
 
 // 本番計測へ自動テストを混ぜず、ゲーム自身の処理だけを検証する。
 test.beforeEach(async ({ page }) => {
@@ -43,7 +44,7 @@ test('TPO text presets render as text in legacy tools', async ({ page }) => {
 });
 
 test('word wolf, two choices, and katakana-ban consume the canonicalized preset schema', async ({ page }) => {
-  page.on('dialog', dialog => dialog.accept());
+  await acceptGameExits(page);
   const errors = collectRuntimeErrors(page);
 
   await page.goto('/#game/word-wolf');
@@ -62,8 +63,11 @@ test('word wolf, two choices, and katakana-ban consume the canonicalized preset 
 
   await page.goto('/#game/katakana-ban');
   await expectUsefulText(page.locator('.katakana-target-word'));
+  await expect(page.locator('.katakana-subhint')).toHaveCount(0);
+  await page.getByRole('button', { name: '困ったときの言い換えヒント' }).click();
   await expectUsefulText(page.locator('.katakana-subhint'));
-  const hint = (await page.locator('.katakana-subhint').textContent() || '').replace(/^※例:\s*[「"]?|[」"]?$/g, '');
+  const displayedHint = await page.locator('.katakana-subhint').innerText();
+  const hint = displayedHint.match(/^ヒント例: 「(.+)」$/)[1];
   expect(hint).not.toMatch(/[ァ-ヶー]/);
 
   expect(errors).toEqual([]);

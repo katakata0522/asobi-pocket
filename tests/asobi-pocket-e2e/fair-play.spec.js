@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { acceptGameExits } from './game-navigation';
 
 test.beforeEach(async ({ page, baseURL }) => {
   const origin = new URL(baseURL).origin;
   await page.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort());
-  page.on('dialog', dialog => dialog.accept());
+  await acceptGameExits(page);
 });
 const open = (page, id = '') => page.goto('./?asobi_test=1' + (id ? '#game/' + id : ''));
 
@@ -169,6 +170,8 @@ test('紹介された上限人数で全員に配る',async ({page})=>{
     await page.locator('#btn-reveal-role').click();
     await page.clock.runFor(2100);
     await page.locator('#btn-next-ww-player').click();
+    const skipAbility = page.getByRole('button', { name: 'そのまま進む' });
+    if (await skipAbility.isVisible()) await skipAbility.click();
   }
   await expect(page.locator('#btn-ww-finish')).toBeVisible();
 });

@@ -33,7 +33,6 @@ test('配信をまたいでトップだけが更新され、進行中の得点�
     const favorites = page.locator(info.project.use.hasTouch ? '#btm-nav-fav' : '#btn-toggle-fav-filter');
     await press(favorites);
     const game = await context.newPage();
-    game.on('dialog', dialog => dialog.accept());
     await game.goto(url + '?asobi_test=1#game/katakana-ban');
     await press(game.locator('#btn-kata-correct'));
     const word = await game.locator('.katakana-target-word').innerText();
@@ -62,6 +61,7 @@ test('配信をまたいでトップだけが更新され、進行中の得点�
     await press(game.locator('#btn-kata-correct'));
     await expect(game.locator('.score-badge strong')).toHaveText('2');
     await press(game.locator('#btn-back-home'));
+    await press(game.getByRole('button', { name: '終了して移動' }));
     await expect(game.locator('html')).toHaveAttribute('data-asobi-release', release);
     await expect(game.locator('.party-pick[data-id="ito"] .btn-card-fav')).toHaveAttribute('aria-pressed', 'true');
     await game.close();

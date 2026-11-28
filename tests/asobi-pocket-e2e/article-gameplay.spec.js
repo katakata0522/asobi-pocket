@@ -26,9 +26,8 @@ test('記事のお題でitoを始め、秘密の数字をキーボードで順�
     await page.keyboard.press('Enter');
   }
   await expect(page.locator('#ito-talk-topic')).toContainText('休日にしたいこと');
-  const leavePrompt = page.waitForEvent('dialog', { timeout: 5000 }).then(dialog => dialog.dismiss());
   await page.evaluate(() => { location.hash = '#game/asa-sore'; });
-  await leavePrompt;
+  await page.getByRole('button', { name: 'ゲームを続ける' }).press('Enter');
   await expect(page).toHaveURL(/#game\/ito\?topic=2$/);
   await page.evaluate(() => new Promise(resolve => {
     requestAnimationFrame(() => requestAnimationFrame(resolve));
@@ -36,7 +35,7 @@ test('記事のお題でitoを始め、秘密の数字をキーボードで順�
   await expect(page.locator('#ito-talk-topic')).toBeFocused();
   if (numbers[0] > numbers[1]) await page.locator('.btn-move-up').last().press('Enter');
   await page.locator('#btn-ito-open-cards').press('Enter');
-  await expect(page.locator('.result-celebration')).toContainText('完全クリア');
+  await expect(page.getByRole('heading', { name: '完全クリア！' })).toBeVisible();
 });
 
 async function enterWolfGuess(page) {
@@ -94,15 +93,15 @@ test('NGワードは勝者を次の対戦まで保持する', async ({ page }) =
   const playerOneSaid = page.locator('#btn-p1-said');
   const playerTwoSaid = page.locator('#btn-p2-said');
   await playerTwoSaid.click();
-  await expect(page.getByText(/PLAYER 1 の大勝利/)).toBeVisible();
+  await expect(page.getByText('PLAYER 1 の勝利', { exact: true })).toBeVisible();
   await expect(playerOneSaid).toBeDisabled();
   await expect(playerTwoSaid).toBeDisabled();
   await playerOneSaid.click({ force: true });
-  await expect(page.getByText(/PLAYER 1 の大勝利/)).toBeVisible();
+  await expect(page.getByText('PLAYER 1 の勝利', { exact: true })).toBeVisible();
   await page.locator('#btn-ng-duel-next').click();
   await dealWords();
   await playerOneSaid.click();
-  await expect(page.getByText(/PLAYER 2 の大勝利/)).toBeVisible();
+  await expect(page.getByText('PLAYER 2 の勝利', { exact: true })).toBeVisible();
 });
 
 test('朝までそれ正解で記事のお題を保ち、時間切れ後は60秒から計り直す', async ({ page }) => {

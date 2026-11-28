@@ -315,7 +315,7 @@
 
     const closeDialog = (dialog) => {
       if (!dialog) return;
-      const close = dialog.querySelector('[id^="btn-close-"], .modal-close-btn');
+      const close = dialog.querySelector('[data-confirm-choice="cancel"], [id^="btn-close-"], .modal-close-btn');
       if (close instanceof HTMLElement) close.click();
       else dialog.classList.add("hidden");
       const previous = returnFocus.get(dialog);

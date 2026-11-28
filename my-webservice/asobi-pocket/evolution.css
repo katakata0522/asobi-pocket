@@ -490,6 +490,11 @@ body.pocket-in-game .site-header {
   animation: spotlightFade 0.22s var(--ease-out);
 }
 
+#view-home #games-grid > .topic-spotlight {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
 @keyframes spotlightFade {
   from {
     opacity: 0.35;
@@ -3036,6 +3041,10 @@ html.dark-mode .card-title-link {
   }
 
   /* 2列グリッドでは全カードの幅を均等に保ち、リズム崩れを防ぐ */
+  #games-grid > .game-card:not(.party-pick) :is(.card-title, .card-summary, .card-meta) {
+    min-block-size: 2lh;
+  }
+
   #games-grid > .party-pick.party-pick-last,
   #games-grid > .party-pick:has(+ .duel-hub),
   #games-grid > .game-card.more-game-last {
@@ -3715,6 +3724,10 @@ html.dark-mode .card-title-link {
 /* Bomb Timer Vector Visual & States */
 .bomb-visual {
   display: inline-flex;
+  flex-direction: column;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  pointer-events: none;
   align-items: center;
   justify-content: center;
   width: 96px;

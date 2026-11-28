@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { acceptGameExits } from './game-navigation';
 
 test.describe.configure({ timeout: 60000 });
 
@@ -41,8 +42,14 @@ async function play(page, id, info) {
     case 'duel-color': {
       await button('#btn-color-start');
       const match=await page.locator('.color-target-word').evaluate(el=>{
-        const colors={'あか':'rgb(239, 68, 68)','あお':'rgb(59, 130, 246)','みどり':'rgb(34, 197, 94)','きいろ':'rgb(234, 179, 8)','むらさき':'rgb(168, 85, 247)'};
-        return getComputedStyle(el).color===colors[el.textContent.trim()];
+        const colors = {
+          'あか': 'rgb(239, 68, 68)', 'あお': 'rgb(59, 130, 246)', 'みどり': 'rgb(34, 197, 94)',
+          'きいろ': 'rgb(202, 138, 4)', 'むらさき': 'rgb(147, 51, 234)',
+        };
+        const ink = getComputedStyle(el).color;
+        const word = el.textContent.trim();
+        if (!(word in colors) || !Object.values(colors).includes(ink)) throw new Error('未定義の色です');
+        return ink === colors[word];
       });
       await button(match?'#btn-p1-yes':'#btn-p1-no');
       await expect(page.locator('.duel-score').filter({hasText:'1 / 5'})).toBeVisible(); break;
@@ -58,7 +65,7 @@ async function play(page, id, info) {
 }
 
 test('主力7本と2人対決の入口から各ゲームで操作できる', async ({ page }, info) => {
-  page.on('dialog',d=>d.accept());
+  await acceptGameExits(page);
   for (const id of [...picks, ...duels]) {
     await page.goto(home);
     await expect(page.locator('.party-pick')).toHaveCount(7);
@@ -76,7 +83,7 @@ test('主力7本と2人対決の入口から各ゲームで操作できる', asy
 });
 
 test('以前のURLと記事の選択お題を直接開いて遊べる', async ({page},info)=>{
-  page.on('dialog',d=>d.accept());
+  await acceptGameExits(page);
   for(const [route,id] of [...all.map(x=>[x,x]),['gem-tap','duel-reflex'],['stroop-effect','duel-color'],['wordwolf','word-wolf']]){
     await page.goto(home+'#game/'+route); await play(page,id,info);
   }
@@ -90,7 +97,8 @@ test('以前のURLと記事の選択お題を直接開いて遊べる', async ({
 test('旧版のお気に入り全件から元のゲームを選べる',async ({page},info)=>{
   await page.goto(home);
   await page.evaluate(saved=>localStorage.setItem('asobi_favorites',saved),info.project.metadata.savedFavorites ?? JSON.stringify(all));
-  await page.reload();page.on('dialog',d=>d.accept());
+  await page.reload();
+  await acceptGameExits(page);
   const mobile=page.locator('#btm-nav-fav');
   await press(await mobile.isVisible()?mobile:page.locator('#btn-toggle-fav-filter'),info);
   for(const id of all){

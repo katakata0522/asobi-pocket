@@ -488,7 +488,7 @@
     const danger = Boolean(options.danger);
 
     const existing = document.getElementById("asobi-inline-confirm-modal");
-    if (existing) existing.remove();
+    existing?.querySelector('[data-confirm-choice="cancel"]')?.click();
 
     return new Promise((resolve) => {
       const prevFocus = document.activeElement;
@@ -540,7 +540,7 @@
       backdrop.querySelector('[data-confirm-choice="ok"]').addEventListener("click", () => close(true));
       document.addEventListener("keydown", onKeydown, true);
       document.body.appendChild(backdrop);
-      backdrop.querySelector('[data-confirm-choice="ok"]')?.focus();
+      backdrop.querySelector(danger ? '[data-confirm-choice="cancel"]' : '[data-confirm-choice="ok"]').focus();
     });
   }
 
