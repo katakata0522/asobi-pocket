@@ -3041,6 +3041,10 @@ html.dark-mode .card-title-link {
   }
 
   /* 2列グリッドでは全カードの幅を均等に保ち、リズム崩れを防ぐ */
+  #games-grid > .game-card:not(.party-pick) :is(.card-title, .card-summary, .card-meta) {
+    min-block-size: 2lh;
+  }
+
   #games-grid > .party-pick.party-pick-last,
   #games-grid > .party-pick:has(+ .duel-hub),
   #games-grid > .game-card.more-game-last {

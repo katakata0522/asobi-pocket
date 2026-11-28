@@ -42,8 +42,14 @@ async function play(page, id, info) {
     case 'duel-color': {
       await button('#btn-color-start');
       const match=await page.locator('.color-target-word').evaluate(el=>{
-        const colors={'あか':'rgb(239, 68, 68)','あお':'rgb(59, 130, 246)','みどり':'rgb(34, 197, 94)','きいろ':'rgb(234, 179, 8)','むらさき':'rgb(168, 85, 247)'};
-        return getComputedStyle(el).color===colors[el.textContent.trim()];
+        const colors = {
+          'あか': 'rgb(239, 68, 68)', 'あお': 'rgb(59, 130, 246)', 'みどり': 'rgb(34, 197, 94)',
+          'きいろ': 'rgb(202, 138, 4)', 'むらさき': 'rgb(147, 51, 234)',
+        };
+        const ink = getComputedStyle(el).color;
+        const word = el.textContent.trim();
+        if (!(word in colors) || !Object.values(colors).includes(ink)) throw new Error('未定義の色です');
+        return ink === colors[word];
       });
       await button(match?'#btn-p1-yes':'#btn-p1-no');
       await expect(page.locator('.duel-score').filter({hasText:'1 / 5'})).toBeVisible(); break;
