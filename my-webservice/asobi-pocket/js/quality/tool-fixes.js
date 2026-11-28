@@ -489,6 +489,7 @@
         const id = ids[Math.floor(Math.random() * ids.length)];
         if (!winners.includes(id)) winners.push(id);
       }
+      toast("success", `${points.size}人から${winners.length}人を決定しました`);
       celebrate(48);
     };
 

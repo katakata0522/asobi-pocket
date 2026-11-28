@@ -59,3 +59,4 @@ class ToastManager {
 }
 
 const Toast = new ToastManager();
+document.addEventListener("DOMContentLoaded", () => Toast.init());

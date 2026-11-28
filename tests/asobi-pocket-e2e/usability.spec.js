@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { openDetailScores } from './game-navigation';
 test.beforeEach(async ({ page }) => {
   await page.route('https://www.googletagmanager.com/**', route => route.fulfill({ body: '', contentType: 'application/javascript' }));
 });
@@ -19,6 +20,14 @@ test('folded discovery shows games first and retains removable conditions', asyn
   await page.locator('#btn-clear-filters').click();
   await expect(page.locator('#games-grid .game-card')).toHaveCount(16);
   await expect(page.locator('#games-grid .duel-mode-link')).toHaveCount(3);
+  const playTopic = page.locator('#btn-spotlight-play');
+  const firstTopic = await playTopic.getAttribute('href');
+  await page.getByRole('button', { name: '別のお題を見る' }).click();
+  await expect(playTopic).not.toHaveAttribute('href', firstTopic);
+  const topicUrl = await playTopic.evaluate(link => link.href);
+  await playTopic.click();
+  await expect(page).toHaveURL(topicUrl);
+  await expect(page.locator('#tool-mount-point')).toBeVisible();
 });
 
 test('mobile search opens the filters and places the input in view', async ({ page }) => {
@@ -53,13 +62,12 @@ test('opening and configuring a game needs no exit confirmation and restores the
   const card = page.locator('.game-card[data-id="word-wolf"] .card-title-link');
   await card.scrollIntoViewIfNeeded();
   const before = await page.evaluate(() => scrollY);
-  const dialogs = []; page.on('dialog', async d => { dialogs.push(d.message()); await d.dismiss(); });
   await card.click();
   await page.locator('[data-time="300"]').click();
   await page.locator('#btn-back-home').click();
   await expect(page.locator('#view-home')).toBeVisible();
   await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(before - 3);
-  expect(dialogs).toEqual([]);
+  await expect(page.locator('#asobi-inline-confirm-modal')).toHaveCount(0);
   await expect(page.locator('#recent-games')).toContainText('ワードウルフ');
   expect((await page.locator('#recent-games').boundingBox()).y).toBeLessThan((await page.locator('#games-grid').boundingBox()).y);
 });
@@ -68,16 +76,18 @@ test('an active round is kept when exit is cancelled and browser Back also respe
   await page.goto('/');
   await page.locator('.game-card[data-id="ito"] .card-title-link').click();
   await page.locator('#btn-start-ito').click();
-  page.once('dialog', dialog => dialog.dismiss());
   await page.locator('#btn-back-home').click();
+  await page.getByRole('button', { name: 'ゲームを続ける' }).click();
   await expect(page.locator('#view-detail')).toBeVisible();
   await expect(page).toHaveURL(/#game\/ito$/);
-  page.once('dialog', dialog => dialog.dismiss());
   await page.goBack();
+  await expect(page.getByRole('button', { name: 'ゲームを続ける' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#asobi-inline-confirm-modal')).toHaveCount(0);
   await expect(page).toHaveURL(/#game\/ito$/);
   await expect(page.locator('#view-detail')).toBeVisible();
-  page.once('dialog', dialog => dialog.accept());
   await page.locator('#btn-back-home').click();
+  await page.getByRole('button', { name: '終了して移動' }).click();
   await expect(page.locator('#view-home')).toBeVisible();
 });
 
@@ -102,8 +112,7 @@ test('card widths and heights match and support controls do not cover the play b
   expect(Math.max(...rects.map(r => r.w)) - Math.min(...rects.map(r => r.w))).toBeLessThan(1);
   expect(Math.max(...rects.map(r => r.h)) - Math.min(...rects.map(r => r.h))).toBeLessThan(1);
   await page.locator('.game-card[data-id="ito"] .card-title-link').click();
-  await expect(page.locator('#btn-detail-scoreboard')).toBeVisible();
   await expect(page.locator('#btn-toggle-scoreboard')).not.toBeVisible();
-  await page.locator('#btn-detail-scoreboard').click();
+  await openDetailScores(page);
   await expect(page.locator('#scoreboard-drawer')).toBeVisible();
 });

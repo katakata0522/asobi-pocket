@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { openDetailScores } from './game-navigation';
 
 // 本番計測へ自動テストを混ぜず、ゲーム自身の処理だけを検証する。
 test.beforeEach(async ({ page }) => {
@@ -45,8 +46,8 @@ test('discovery, game start, stamp semantics, and settings stay healthy', async 
   await expect(toastRegion).toHaveAttribute('role', 'status');
   await expect(toastRegion).toHaveAttribute('aria-live', 'polite');
 
-  page.once('dialog', (dialog) => dialog.accept());
   await page.locator('#btn-back-home').click();
+  await page.getByRole('button', { name: '終了して移動' }).click();
   await expect(page.locator('#view-home')).toBeVisible();
 
   await page.locator('#btn-open-settings').click();
@@ -61,8 +62,7 @@ test('scoreboard rename persists through scoring', async ({ page }) => {
   const errors = collectRuntimeErrors(page);
 
   await page.goto('/#game/ito');
-  await expect(page.locator('#btn-detail-scoreboard')).toBeVisible();
-  await page.locator('#btn-detail-scoreboard').click();
+  await openDetailScores(page);
   await expect(page.locator('#scoreboard-drawer')).toBeVisible();
 
   const nameInput = page.locator('.score-player-name').first();
@@ -118,13 +118,12 @@ test('rhythm timer interval is cleaned up when leaving a game', async ({ page })
   });
 
   await page.goto('/#game/yamanote-game');
-  await expect(page.locator('#btn-toggle-rhythm')).toBeVisible();
-  await page.locator('#btn-toggle-rhythm').click();
+  await page.getByRole('button', { name: /リズムスタート/ }).click();
 
   await expect.poll(() => page.evaluate(() => window.__asobiActiveIntervals.size)).toBeGreaterThan(0);
 
-  page.once('dialog', (dialog) => dialog.accept());
   await page.locator('#btn-back-home').click();
+  await page.getByRole('button', { name: '終了して移動' }).click();
   await expect(page.locator('#view-home')).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.__asobiActiveIntervals.size)).toBe(0);
 

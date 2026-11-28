@@ -837,6 +837,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const viewHome = document.getElementById("view-home");
   const viewDetail = document.getElementById("view-detail");
   const gamesGrid = document.getElementById("games-grid");
+  const spotlightSection = document.getElementById("topic-spotlight");
   const emptyState = document.getElementById("empty-state");
   const searchInput = document.getElementById("search-input");
   const clearSearchBtn = document.getElementById("btn-clear-search");
@@ -1146,6 +1147,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const featured = browse && f.tag === "all" && f.quickPlayers === "all" && f.exactPlayers === "all" && f.maxDuration === "all";
     const modes = browse ? [...duelModes.keys()].map(id => list.find(g => g.id === id)).filter(Boolean) : [];
     const groupDuels = modes.length > 1;
+    if (!featured && spotlightSection && gamesGrid.contains(spotlightSection)) {
+      document.getElementById("discovery-filters").before(spotlightSection);
+    }
     document.getElementById("games-grid-title").textContent = featured ? "みんなで遊ぶ おすすめ7選" : f.onlyFavorite ? "お気に入りの遊び" : "遊びを選ぶ";
     document.getElementById("jump-to-duels").hidden = !featured || !groupDuels;
     filterResultCount?.setAttribute("role", "status");
@@ -1227,6 +1231,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (game) appendCard(game);
       }
       if (groupDuels) fragment.appendChild(makeDuelHub(modes));
+      if (spotlightSection) fragment.appendChild(spotlightSection);
       const more = document.createElement("h2");
       more.className = "more-games-title";
       more.textContent = "ほかの遊び";
@@ -1371,7 +1376,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // 今日のお題プレビュー（1タップ切り替え＋該当ゲームへ直行）
-  const spotlightSection = document.getElementById("topic-spotlight");
   const spotlightGameEl = document.getElementById("spotlight-game");
   const spotlightPromptEl = document.getElementById("spotlight-prompt");
   const spotlightNextBtn = document.getElementById("btn-spotlight-next");
