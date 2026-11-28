@@ -1,11 +1,12 @@
 import { test, expect } from '@playwright/test';
+import { openDetailScores } from './game-navigation';
 
 const open = (page, id) => page.goto('./?asobi_test=1#game/' + id);
 const button = (page, id) => page.locator('#' + id).click();
 
 test('席の名前と番号は手渡し・投票・再戦で一致する', async ({page}) => {
   await open(page, 'word-wolf');
-  await button(page,'btn-detail-scoreboard');
+  await openDetailScores(page);
   await page.locator('.score-player-name').first().fill('アキ');
   await button(page,'btn-close-scoreboard');
   await page.locator('#range-player-count').press('Home');
@@ -38,6 +39,7 @@ for (const peace of [false, true]) {
       await expect(page.locator('#secret-role-card')).toBeHidden();
       await button(page,'btn-reveal-role');
       if(await page.locator('.btn-rob').count()) await page.locator('.btn-rob').first().click();
+      if(await page.locator('.btn-seer-target').count()) await page.locator('.btn-seer-target').first().click();
       await page.clock.runFor(2100); await button(page,'btn-next-ww-player');
     }
     await button(page,'btn-ww-finish');
@@ -84,7 +86,8 @@ test('ポーカーの利得を3局累計し新しい対戦は0点から', async 
     await button(page,'poker-begin-choices');await button(page,'poker-reveal');await button(page,'btn-p1-fold');
     await expect(page.locator('.playing-card')).toHaveCount(0);
     await button(page,'poker-reveal');await button(page,'btn-p2-bet');await button(page,'btn-poker-open');
-    await expect(page.locator('#tool-mount-point')).toContainText('合計：P1 -'+round+'点 ／ P2 '+round+'点');
+    const total = page.locator('.result-metric-cell').filter({ hasText: '3局合計（点）' });
+    await expect(total.locator('.result-metric-value')).toHaveText(`P1 -${round} / P2 +${round}`);
     if(round===3) await expect(page.locator('#poker-champion')).toContainText('PLAYER 2');
     await button(page,'btn-poker-next');
   }
@@ -104,8 +107,13 @@ test('20の扉は別のお題を伏せて新局を開始する',async ({page})=>
   await expect(page.locator('.secret-topic-display')).toHaveCount(0);
   await button(page,'btn-toggle-secret');await expect(page.locator('.secret-topic-display')).toBeVisible();
   await button(page,'btn-toggle-secret');await button(page,'btn-log-yes');
-  page.once('dialog',d=>d.dismiss());await button(page,'btn-draw-secret');await expect(page.locator('.log-item')).toHaveCount(1);
-  page.once('dialog',d=>d.accept());await button(page,'btn-draw-secret');await expect(page.locator('.log-item')).toHaveCount(0);
+  await button(page,'btn-draw-secret');
+  const dialog = page.getByRole('dialog', { name: '新しいお題に切り替えますか？' });
+  await dialog.getByRole('button', { name: '続ける' }).click();
+  await expect(page.locator('.log-item')).toHaveCount(1);
+  await button(page,'btn-draw-secret');
+  await dialog.getByRole('button', { name: '切り替える' }).click();
+  await expect(page.locator('.log-item')).toHaveCount(0);
   await expect(page.locator('.remaining-count')).toContainText('20 / 20');
   await expect(page.locator('.secret-topic-display')).toHaveCount(0);
 });

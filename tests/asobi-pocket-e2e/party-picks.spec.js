@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { acceptGameExits } from './game-navigation';
 
 test.describe.configure({ timeout: 60000 });
 
@@ -58,7 +59,7 @@ async function play(page, id, info) {
 }
 
 test('主力7本と2人対決の入口から各ゲームで操作できる', async ({ page }, info) => {
-  page.on('dialog',d=>d.accept());
+  await acceptGameExits(page);
   for (const id of [...picks, ...duels]) {
     await page.goto(home);
     await expect(page.locator('.party-pick')).toHaveCount(7);
@@ -76,7 +77,7 @@ test('主力7本と2人対決の入口から各ゲームで操作できる', asy
 });
 
 test('以前のURLと記事の選択お題を直接開いて遊べる', async ({page},info)=>{
-  page.on('dialog',d=>d.accept());
+  await acceptGameExits(page);
   for(const [route,id] of [...all.map(x=>[x,x]),['gem-tap','duel-reflex'],['stroop-effect','duel-color'],['wordwolf','word-wolf']]){
     await page.goto(home+'#game/'+route); await play(page,id,info);
   }
@@ -90,7 +91,8 @@ test('以前のURLと記事の選択お題を直接開いて遊べる', async ({
 test('旧版のお気に入り全件から元のゲームを選べる',async ({page},info)=>{
   await page.goto(home);
   await page.evaluate(saved=>localStorage.setItem('asobi_favorites',saved),info.project.metadata.savedFavorites ?? JSON.stringify(all));
-  await page.reload();page.on('dialog',d=>d.accept());
+  await page.reload();
+  await acceptGameExits(page);
   const mobile=page.locator('#btm-nav-fav');
   await press(await mobile.isVisible()?mobile:page.locator('#btn-toggle-fav-filter'),info);
   for(const id of all){
