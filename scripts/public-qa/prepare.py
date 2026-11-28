@@ -10,8 +10,12 @@ import argparse
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
+import os
 from pathlib import Path, PurePosixPath
+import random
 import struct
+import time
+import urllib.error
 import urllib.request
 import urllib.parse
 import zlib
@@ -47,10 +51,16 @@ def materialize(root,entry):
         url=urllib.parse.urlsplit(entry['url'])
         if url.scheme!='https' or url.netloc!='katakatalab.com' or url.query or url.fragment:
             raise ValueError('Only anonymous published site dependencies are allowed')
-        request=urllib.request.Request(entry['url'],headers={'User-Agent':'public-source-ci','Cache-Control':'no-cache'})
-        with urllib.request.urlopen(request,timeout=40) as response:
-            if urllib.parse.urlsplit(response.url).netloc!='katakatalab.com':raise ValueError('Unexpected dependency redirect')
-            data=response.read(entry['bytes']+1)
+        for attempt in range(5):
+            request=urllib.request.Request(entry['url'],headers={'User-Agent':'public-source-ci','Cache-Control':'no-cache'})
+            try:
+                with urllib.request.urlopen(request,timeout=20) as response:
+                    if urllib.parse.urlsplit(response.url).netloc!='katakatalab.com':raise ValueError('Unexpected dependency redirect')
+                    data=response.read(entry['bytes']+1)
+                break
+            except (urllib.error.URLError,TimeoutError,OSError):
+                if attempt==4:raise
+                time.sleep(min(12.0,1.5*(2**attempt))+random.uniform(0.2,1.0))
         if len(data)!=entry['bytes'] or hashlib.sha256(data).hexdigest()!=entry['sha256']:
             raise ValueError('Published dependency changed: '+entry['path'])
     target.parent.mkdir(parents=True,exist_ok=True)
@@ -63,7 +73,9 @@ def main():
     options=parser.parse_args()
     root=options.root.resolve()
     spec=json.loads((root/'qa/published-dependencies.json').read_text(encoding='utf8'))
-    with ThreadPoolExecutor(max_workers=6) as pool:list(pool.map(lambda entry:materialize(root,entry),spec['files']))
+    if os.environ.get('GITHUB_ACTIONS')=='true':
+        time.sleep(random.uniform(0.2,2.5))
+    with ThreadPoolExecutor(max_workers=2) as pool:list(pool.map(lambda entry:materialize(root,entry),spec['files']))
     # Test fixtures contain only already-public response headers; actual Apache
     # routing, directory/auth rules and PHP configuration remain private.
     for entry in spec.get('server_fixtures',[]):
