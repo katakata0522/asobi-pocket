@@ -50,8 +50,7 @@ window.Analytics = Analytics;
 document.addEventListener("DOMContentLoaded", () => {
   // HTMLエスケープ（tools.jsと安全に共有・フォールバック付き）
   const escapeHTML = window.escapeHTML || function (str) {
-    if (typeof str !== "string") return String(str || "");
-    return str
+    return String(str ?? "")
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
@@ -64,7 +63,9 @@ document.addEventListener("DOMContentLoaded", () => {
     get(key, defaultVal) {
       try {
         const val = localStorage.getItem(key);
-        return val ? JSON.parse(val) : defaultVal;
+        const value = val === null ? null : JSON.parse(val);
+        if (value === null || typeof value !== typeof defaultVal || Array.isArray(value) !== Array.isArray(defaultVal)) return defaultVal;
+        return value;
       } catch (e) {
         return defaultVal;
       }
@@ -322,15 +323,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const TopicManager = {
     getCustomTopics(gameId) {
       const data = Storage.get("asobi_custom_topics", {});
-      return data[gameId] || [];
+      if (!Array.isArray(data[gameId])) return [];
+      return data[gameId].filter(topic =>
+        typeof topic === "string" ? Boolean(topic.trim()) :
+          gameId === "sea-turtle" && typeof topic?.question === "string" && typeof topic?.answer === "string"
+      );
     },
     addCustomTopic(gameId, topic, index = null) {
       const isQuiz = gameId === "sea-turtle" && topic && typeof topic === "object";
-      const value = isQuiz ? {question: topic.question.trim(), answer: topic.answer.trim()} : String(topic || "").trim();
+      if (isQuiz && (typeof topic.question !== "string" || typeof topic.answer !== "string")) return false;
+      if (!isQuiz && typeof topic !== "string") return false;
+      const value = isQuiz ? {question: topic.question.trim(), answer: topic.answer.trim()} : topic.trim();
       if (isQuiz ? !value.question || !value.answer : !value) return false;
       if (gameId === "word-wolf" && !customWolfPair(value)) return false;
       const data = Storage.get("asobi_custom_topics", {});
-      if (!data[gameId]) data[gameId] = [];
+      data[gameId] = this.getCustomTopics(gameId);
       if (index === null) data[gameId].push(value);
       else if (Number.isInteger(index) && index >= 0 && index < data[gameId].length) data[gameId][index] = value;
       else return false;
@@ -339,18 +346,19 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     removeCustomTopic(gameId, index) {
       const data = Storage.get("asobi_custom_topics", {});
-      if (data[gameId]) {
+      data[gameId] = this.getCustomTopics(gameId);
+      if (Number.isInteger(index) && index >= 0 && index < data[gameId].length) {
         data[gameId].splice(index, 1);
         Storage.set("asobi_custom_topics", data);
       }
     },
     getExcludedTopics(gameId) {
       const data = Storage.get("asobi_excluded_topics", {});
-      return data[gameId] || [];
+      return Array.isArray(data[gameId]) ? data[gameId].filter(topic => typeof topic === "string") : [];
     },
     excludeTopic(gameId, topic) {
       const data = Storage.get("asobi_excluded_topics", {});
-      if (!data[gameId]) data[gameId] = [];
+      data[gameId] = this.getExcludedTopics(gameId);
       if (!data[gameId].includes(topic)) {
         data[gameId].push(topic);
         Storage.set("asobi_excluded_topics", data);
@@ -359,7 +367,7 @@ document.addEventListener("DOMContentLoaded", () => {
     unexcludeTopic(gameId, topic) {
       const data = Storage.get("asobi_excluded_topics", {});
       if (data[gameId]) {
-        data[gameId] = data[gameId].filter(t => t !== topic);
+        data[gameId] = this.getExcludedTopics(gameId).filter(t => t !== topic);
         Storage.set("asobi_excluded_topics", data);
       }
     },
@@ -385,15 +393,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 万能ミニスコアボード
   const ScoreBoard = {
-    players: Storage.get("asobi_scoreboard_players", [
-      { name: "プレイヤー1", score: 0 },
-      { name: "プレイヤー2", score: 0 }
-    ]),
+    players: normalizeScorePlayers(Storage.get("asobi_scoreboard_players", [])),
     save() {
       Storage.set("asobi_scoreboard_players", this.players);
     },
     addPlayer(name) {
-      const n = name && name.trim() ? name.trim() : `プレイヤー${this.players.length + 1}`;
+      if (this.players.length >= MAX_SCORE_PLAYERS) return;
+      const n = name?.trim().slice(0, 40) || `プレイヤー${this.players.length + 1}`;
       this.players.push({ name: n, score: 0 });
       this.save();
       this.render();
@@ -409,7 +415,7 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     changeScore(index, delta) {
       if (this.players[index]) {
-        this.players[index].score += delta;
+        this.players[index].score = scoreboardPoints(this.players[index].score + delta);
         Sound.playClick();
         this.save();
         const container = document.getElementById("scoreboard-players-list");
@@ -426,7 +432,7 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     renamePlayer(index, newName) {
       if (this.players[index]) {
-        const trimmed = (newName || "").trim();
+        const trimmed = (newName || "").trim().slice(0, 40);
         this.players[index].name = trimmed || `プレイヤー${index + 1}`;
         this.save();
       }
